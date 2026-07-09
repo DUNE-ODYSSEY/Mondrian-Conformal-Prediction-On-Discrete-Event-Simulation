@@ -10,6 +10,7 @@ results/figures/*
 !results/figures/.gitkeep
 results/tables/*
 !results/tables/.gitkeep
+!results/tables/*.csv
 *.egg-info/
 .pytest_cache/
 .DS_Store

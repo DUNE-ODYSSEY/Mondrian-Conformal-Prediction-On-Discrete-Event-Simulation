@@ -9,3 +9,6 @@ mapie
 jupyter
 pytest
 python-pptx
+kaggle
+pyreadr
+pyarrow

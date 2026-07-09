@@ -62,10 +62,59 @@ Script: `src/utils/extract_distributions.py` — run via
 `.venv\Scripts\python.exe src\utils\extract_distributions.py`. Outputs land in
 `results/tables/`.
 
+## 2026-07-10 — Week 4-5: DES build, caught and fixed a bad calibration assumption
+
+First version of `src/des/er_simulation.py` (SimPy) produced obviously broken output:
+54 patients/day with 650-min average waits, when real data implies ~1500+/day.
+Root cause was an **unverified guess**, not a code bug: I'd assumed the Kaggle
+dataset spans 365 days to convert its total record count into a daily arrival
+rate. Checked the actual Kaggle dataset description instead of continuing to
+guess — it states the data covers **March 2014 - July 2017 (1248 days)** across
+**three EDs** (`dep_name` A/B/C: one academic, two community), not one year at
+one site.
+
+Fixes made:
+- `extract_distributions.py` now filters to a single department (default `A`,
+  the largest/most likely academic site: 322,283 of 560,486 visits) instead of
+  pooling all three EDs, and uses `STUDY_PERIOD_DAYS = 1248` instead of the
+  wrong 365-day guess. Real calibrated rate: **258.2 visits/day** for department A.
+- Fixed a second latent bug found during this pass: the `"23-02"` arrival-hour
+  bin wraps midnight (hours 23,0,1,2), but the original `hour // 4` indexing
+  put it at hours 0-3 instead. Replaced with an explicit hour→bin map.
+- Simplified the DES's resource model from two nested pools (`doctors` +
+  `beds`) down to **one combined `capacity` resource** (bed+provider slot for
+  the full visit). We have no real data to calibrate a doctor:bed ratio, so a
+  second resource pool would only add more unverified numbers without adding
+  insight for this project's actual question (UQ methodology, not hospital
+  operations realism). This is also the standard M/G/c simplification used in
+  ED queueing literature.
+- Picked `n_capacity=30` from a quick offered-load (Erlang) calculation using
+  the real arrival rate and literature service times (~22 erlangs average load,
+  ~34 erlangs at the 11-14 peak bin) — not a guess, but not over-engineered
+  either; documented inline in `er_simulation.py`.
+
+**Validation** (`src/des/validate.py`, 200 simulated days): mean simulated
+patients/day = 235.1 vs. real 258.2 (**91.0% match**). The ~9% shortfall is
+expected and not a calibration flaw: patients still queued when a simulated
+24h day ends are cut off (right-censoring at the day boundary) rather than
+carried into a "next day," since each run is meant to be one independent
+sample for Week 6-7's surrogate training data, not a continuous rollout.
+Output: `results/tables/des_validation.csv`.
+
+**Lesson for later weeks:** don't hardcode a numeric assumption (day counts,
+site scope, etc.) without checking the source — the 365-day guess produced a
+result wrong by ~28x and would have silently poisoned every downstream step
+(surrogate training, UQ) if not caught here.
+
 ## Status vs. roadmap (as of 2026-07-09)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
   3 core papers in depth — **not done**, this is reading/analysis work only the
   user can do.
 - **Week 3**: Done, with the hybrid-calibration caveat above.
-- **Week 4-5** (SimPy DES build): not started.
+- **Week 4-5** (SimPy DES build + validation against real stats): done —
+  `src/des/er_simulation.py`, `src/des/validate.py`, 91.0% match to real
+  daily volume (see 2026-07-10 entry above for the full story, including a
+  caught calibration bug).
+- **Week 6-7** (run DES across scenarios to generate surrogate training data,
+  train surrogate, evaluate MAE/RMSE/R²): not started.

@@ -1,0 +1,10 @@
+,value
+n_days_simulated,200.0
+n_capacity,30.0
+real_visits_per_day,258.2395833333333
+sim_mean_visits_per_day,235.075
+sim_std_visits_per_day,11.691141473129287
+ratio_sim_over_real,0.9102980920495342
+sim_mean_wait_minutes,18.92879336997908
+sim_mean_total_minutes,135.42921312197296
+sim_mean_p95_wait_minutes,117.04566291982428

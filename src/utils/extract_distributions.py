@@ -10,6 +10,12 @@ level (1 = most urgent, 5 = least urgent).
 Service time source: log-normal parameters commonly used in ED DES studies,
 e.g. Ahalt et al. (2018) and similar ED queueing simulation papers that
 report mean/SD treatment time by ESI level.
+
+The dataset combines three EDs (`dep_name` A/B/C: one academic, two
+community — per the Kaggle dataset description) collected March 2014 -
+July 2017 (1248 days). Our DES models one ED, so we calibrate on a single
+department (default: A, the largest/academic site) rather than the pooled
+total — pooling all three sites would overstate one ED's real arrival rate.
 """
 
 import pandas as pd
@@ -17,6 +23,9 @@ import pandas as pd
 RAW = "data/processed/triage_data.parquet"
 OUT_TABLES = "results/tables"
 OUT_FIGURES = "results/figures"
+
+DEPARTMENT = "A"
+STUDY_PERIOD_DAYS = 1248  # March 2014 - July 2017, per Kaggle dataset description
 
 # (mean_minutes, sd_minutes) per ESI level, log-normal, from ED sim literature
 SERVICE_TIME_PARAMS_BY_ESI = {
@@ -28,12 +37,13 @@ SERVICE_TIME_PARAMS_BY_ESI = {
 }
 
 
-def load_data():
-    return pd.read_parquet(RAW)
+def load_data(department=DEPARTMENT):
+    df = pd.read_parquet(RAW)
+    return df[df["dep_name"] == department]
 
 
 def arrival_distribution(df):
-    """Real arrival counts by 4-hour bin, day of week, and month."""
+    """Real arrival counts by 4-hour bin, day of week, and month, for one ED."""
     by_hour_bin = df["arrivalhour_bin"].value_counts().sort_index()
     by_day = df["arrivalday"].value_counts()
     by_month = df["arrivalmonth"].value_counts()
@@ -47,6 +57,7 @@ def esi_distribution(df):
 
 def main():
     df = load_data()
+    visits_per_day = len(df) / STUDY_PERIOD_DAYS
 
     by_hour_bin, by_day, by_month = arrival_distribution(df)
     esi_mix = esi_distribution(df)
@@ -62,6 +73,13 @@ def main():
     service_time_df.index.name = "esi"
     service_time_df.to_csv(f"{OUT_TABLES}/service_time_params.csv")
 
+    pd.Series(
+        {"department": DEPARTMENT, "study_period_days": STUDY_PERIOD_DAYS,
+         "total_visits": len(df), "visits_per_day": visits_per_day},
+    ).to_csv(f"{OUT_TABLES}/calibration_meta.csv", header=["value"])
+
+    print(f"Department {DEPARTMENT}: {len(df)} visits over {STUDY_PERIOD_DAYS} days"
+          f" = {visits_per_day:.1f} visits/day\n")
     print("Arrivals by 4h bin:\n", by_hour_bin, "\n")
     print("Arrivals by day:\n", by_day, "\n")
     print("Arrivals by month:\n", by_month, "\n")

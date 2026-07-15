@@ -137,6 +137,40 @@ versus a well-fit target like `n_patients` where intervals should stay tight.
 Models saved to `models/*.joblib` (gitignored — regenerable via the two
 scripts above, not checked into GitHub).
 
+## 2026-07-10 — Week 8: GP baseline UQ
+
+`src/uq/gp_baseline.py`: Gaussian Process per target, predictive mean +/- z*std
+as the (1-alpha) interval, alpha=0.1 (90% target coverage) fixed here since
+**standard/Mondrian CP in Phase 2 must target the same alpha** for the
+comparison to mean anything.
+
+GP trained on a 1000-point subsample of the training set, not the full
+~4000 — sklearn's exact GP is O(n^3) (benchmarked: ~8s at n=1000, ~43s at
+n=2000, so full-scale would be tens of minutes across 4 targets). This is
+also directly relevant to the project's own narrative: GP's poor scalability
+vs. CP's near-constant calibration cost is one of the things Week 14-15's
+computation-time comparison is meant to show, so it's worth having fit/predict
+timings recorded now (`fit_seconds`/`predict_seconds` columns) rather than
+just discarding them.
+
+Same train/test split (`random_state=42, test_size=0.2`) as `train_surrogate.py`
+— every UQ method needs to be evaluated on identical test points.
+
+**Results** (`results/tables/gp_baseline_metrics.csv`):
+
+| target | target coverage | empirical coverage | mean interval width |
+|---|---|---|---|
+| n_patients | 90% | 88.5% | 39.3 |
+| mean_wait_minutes | 90% | 87.7% | 43.6 |
+| mean_total_minutes | 90% | 88.8% | 43.4 |
+| p95_wait_minutes | 90% | 90.1% | 350.3 |
+
+Slight undercoverage on 3/4 targets (87.7-88.8% vs. 90% target) is expected
+for GP — no finite-sample coverage guarantee, unlike CP. This is the actual
+gap the project is testing whether Mondrian CP closes in this domain.
+Interval width scales with target difficulty (tight for `n_patients`, very
+wide for `p95_wait_minutes`), consistent with the Week 6-7 surrogate R² results.
+
 ## Status vs. roadmap (as of 2026-07-10)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
@@ -149,4 +183,6 @@ scripts above, not checked into GitHub).
   caught calibration bug).
 - **Week 6-7** (run DES across scenarios to generate surrogate training data,
   train surrogate, evaluate MAE/RMSE/R²): done — see entry above.
-- **Week 8** (GP baseline UQ, coverage + interval width): not started.
+- **Week 8** (GP baseline UQ, coverage + interval width): done — see entry above.
+  **This completes the mid-sem deliverable's technical work** (DES + surrogate +
+  GP baseline). Remaining for mid-sem: literature review + the PPT itself.

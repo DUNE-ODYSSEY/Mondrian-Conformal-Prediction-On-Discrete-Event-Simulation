@@ -14,3 +14,4 @@ results/tables/*
 *.egg-info/
 .pytest_cache/
 .DS_Store
+models/*.joblib

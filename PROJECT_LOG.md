@@ -106,7 +106,38 @@ site scope, etc.) without checking the source — the 365-day guess produced a
 result wrong by ~28x and would have silently poisoned every downstream step
 (surrogate training, UQ) if not caught here.
 
-## Status vs. roadmap (as of 2026-07-09)
+## 2026-07-10 — Week 6-7: surrogate training data + surrogate model
+
+- `src/surrogate/generate_training_data.py`: ran the calibrated DES across
+  5000 randomly sampled scenarios (`n_capacity` in [15,45], `arrival_rate_multiplier`
+  in [0.8,1.3]), each with its own random seed so DES stochasticity (arrival
+  randomness, ESI mix, service-time variance) stays in the labels — that
+  residual noise is what the UQ step (Week 8+) needs to characterize.
+  Output: `data/processed/surrogate_training_data.parquet` (~75s to generate).
+- `src/surrogate/train_surrogate.py`: trained `HistGradientBoostingRegressor`
+  (gradient boosting, not a NN — simpler and standard for this tabular
+  2-input problem) as one model per target metric. 80/20 train/test split.
+
+**Results** (`results/tables/surrogate_metrics.csv`):
+
+| target | MAE | RMSE | R² |
+|---|---|---|---|
+| n_patients | 9.90 | 12.59 | 0.929 |
+| mean_wait_minutes | 8.86 | 13.23 | 0.787 |
+| mean_total_minutes | 9.88 | 13.61 | 0.762 |
+| p95_wait_minutes | 66.94 | 102.47 | 0.647 |
+
+`p95_wait_minutes` is the weakest fit (R²=0.65) — expected, since a tail
+statistic from one noisy simulated day depends heavily on the specific
+stochastic realization, not just the two scalar scenario parameters. This
+is actually a useful property going forward: it's the metric most likely to
+show CP intervals doing real work (wider, more informative uncertainty)
+versus a well-fit target like `n_patients` where intervals should stay tight.
+
+Models saved to `models/*.joblib` (gitignored — regenerable via the two
+scripts above, not checked into GitHub).
+
+## Status vs. roadmap (as of 2026-07-10)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
   3 core papers in depth — **not done**, this is reading/analysis work only the
@@ -117,4 +148,5 @@ result wrong by ~28x and would have silently poisoned every downstream step
   daily volume (see 2026-07-10 entry above for the full story, including a
   caught calibration bug).
 - **Week 6-7** (run DES across scenarios to generate surrogate training data,
-  train surrogate, evaluate MAE/RMSE/R²): not started.
+  train surrogate, evaluate MAE/RMSE/R²): done — see entry above.
+- **Week 8** (GP baseline UQ, coverage + interval width): not started.

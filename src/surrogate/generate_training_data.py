@@ -26,7 +26,10 @@ ARRIVAL_MULTIPLIER_RANGE = (0.8, 1.3)
 OUT_PATH = "data/processed/surrogate_training_data.parquet"
 
 
-def generate(n_scenarios=N_SCENARIOS, seed=0):
+def generate(n_scenarios=N_SCENARIOS, seed=0, seed_offset=0):
+    """seed_offset shifts the per-scenario DES seeds so a second call (e.g. for
+    CP calibration data) draws fully independent randomness from the first,
+    on top of already using a different `seed` for the parameter sampling."""
     rng = np.random.default_rng(seed)
     n_capacity = rng.integers(N_CAPACITY_RANGE[0], N_CAPACITY_RANGE[1] + 1, size=n_scenarios)
     arrival_mult = rng.uniform(*ARRIVAL_MULTIPLIER_RANGE, size=n_scenarios)
@@ -36,7 +39,7 @@ def generate(n_scenarios=N_SCENARIOS, seed=0):
         result = run_scenario(
             n_capacity=int(n_capacity[i]),
             arrival_rate_multiplier=float(arrival_mult[i]),
-            seed=i,
+            seed=seed_offset + i,
         )
         rows.append(
             {

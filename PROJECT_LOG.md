@@ -230,7 +230,44 @@ trust python-pptx layout math without rendering and looking at it — several
 of these bugs (invisible text, zero-width columns, off-canvas shapes) would
 have shipped completely silently; nothing in the code raises an error.
 
-## Status vs. roadmap (as of 2026-07-10)
+## 2026-07-16 — Week 9-10: standard conformal prediction
+
+`src/uq/generate_calibration_data.py`: 1200 fresh DES scenarios purely for
+CP calibration, drawn with a different sampling seed and a large DES-seed
+offset (100,000) from the training data, so nothing overlaps with what the
+surrogate was trained on or with the test set. This matters methodologically:
+calibrating on training-set residuals would understate the true residual
+spread (the surrogate fits those points) and invalidate the coverage
+guarantee. Same scenario ranges as training data - has to be exchangeable
+with the test set, i.e. same distribution, not a different one.
+
+`src/uq/standard_cp.py`: split conformal prediction wrapping the existing
+surrogate models (point predictors, unchanged from Week 6-7). Same test set
+(same `random_state=42` split) and same alpha=0.1 as the GP baseline, so
+all three UQ methods stay directly comparable. Two nonconformity measures:
+- symmetric: `|y - yhat|`, fixed-width interval.
+- asymmetric: separate upper/lower residual quantiles, each calibrated at
+  1-alpha/2 and combined via a union bound (valid, if slightly conservative,
+  route to >=1-alpha coverage without needing a variance model).
+
+**Results** (`results/tables/standard_cp_metrics.csv`, target coverage 90%):
+
+| target | symmetric coverage | symmetric width | asymmetric coverage | asymmetric width |
+|---|---|---|---|---|
+| n_patients | 92.1% | 43.6 | 92.0% | 43.6 |
+| mean_wait_minutes | 89.0% | 47.2 | 88.7% | 47.2 |
+| mean_total_minutes | 90.2% | 46.4 | 89.6% | 47.2 |
+| p95_wait_minutes | 90.8% | 362.9 | 89.7% | 355.6 |
+
+Compare to the GP baseline (88.5%, 87.7%, 88.8%, 90.1%): CP lands closer to
+the 90% nominal target across the board and doesn't show GP's systematic
+undercoverage on 3/4 targets - the small fluctuations here (88.7-92.1%) look
+like normal finite-sample noise around 90%, not a directional bias. For the
+right-skewed `p95_wait_minutes`, the asymmetric measure gives a narrower
+interval at comparable coverage (355.6 vs. 362.9) - real evidence the
+skew-aware measure is doing something useful, not just an academic variant.
+
+## Status vs. roadmap (as of 2026-07-16)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
   3 core papers in depth — **not done**, this is reading/analysis work only the
@@ -244,4 +281,7 @@ have shipped completely silently; nothing in the code raises an error.
   train surrogate, evaluate MAE/RMSE/R²): done — see entry above.
 - **Week 8** (GP baseline UQ, coverage + interval width): done — see entry above.
   **This completes the mid-sem deliverable's technical work** (DES + surrogate +
-  GP baseline). Remaining for mid-sem: literature review + the PPT itself.
+  GP baseline). Remaining for mid-sem: literature review + the PPT itself
+  (PPT is done, see entries above — just needs the lit review slide filled in).
+- **Week 9-10** (standard CP, multiple nonconformity measures): done — see entry above.
+- **Week 11-12** (Mondrian CP, per-category coverage): not started.

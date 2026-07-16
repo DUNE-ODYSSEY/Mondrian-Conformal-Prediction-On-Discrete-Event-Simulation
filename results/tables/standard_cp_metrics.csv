@@ -1,0 +1,5 @@
+target,alpha,target_coverage,symmetric_coverage,symmetric_mean_width,asymmetric_coverage,asymmetric_mean_width
+n_patients,0.1,0.9,0.921,43.623039205583105,0.92,43.565119598935794
+mean_wait_minutes,0.1,0.9,0.89,47.15513462696662,0.887,47.16800261705935
+mean_total_minutes,0.1,0.9,0.902,46.38626450713109,0.896,47.188215794223886
+p95_wait_minutes,0.1,0.9,0.908,362.86425054022004,0.897,355.597406805739

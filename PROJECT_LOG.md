@@ -171,6 +171,26 @@ gap the project is testing whether Mondrian CP closes in this domain.
 Interval width scales with target difficulty (tight for `n_patients`, very
 wide for `p95_wait_minutes`), consistent with the Week 6-7 surrogate R² results.
 
+## 2026-07-16 — Mid-sem PPT built
+
+`slides/build_mid_sem_ppt.py` generates `slides/mid_sem_presentation.pptx`
+(python-pptx) — 9 slides per the roadmap spec, populated with the real
+numbers from `results/tables/` (DES validation, surrogate MAE/RMSE/R², GP
+baseline coverage/width). Team: G Venugopalan (CB.AI.U4AID25115), Vipin
+Sudhakar (CB.AI.U4AID25166), Rithvik Arulprakash (CB.AI.U4AID25148),
+Harshith Kv (CB.AI.U4AID25119). Course: 23AID201.
+
+Slide 8 (literature review snapshot) is a **clearly marked placeholder** —
+category boxes with blank counts (`[ __ ] papers reviewed`) and an amber
+"PLACEHOLDER — update before presenting" banner — since the literature
+review is being done separately by the user and isn't finished. Not faked.
+
+Verified visually by rendering all 9 slides to PNG via PowerPoint COM
+automation (`Presentations.Open` + `.Export`) before calling this done —
+no overlap/overflow issues, including on the data-dense Slide 7 (three
+tables). Re-run the build script any time `results/tables/` changes;
+edit `TEAM`/`COURSE_CODE` at the top of the script if roster changes.
+
 ## Status vs. roadmap (as of 2026-07-10)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

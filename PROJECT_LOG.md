@@ -191,6 +191,45 @@ no overlap/overflow issues, including on the data-dense Slide 7 (three
 tables). Re-run the build script any time `results/tables/` changes;
 edit `TEAM`/`COURSE_CODE` at the top of the script if roster changes.
 
+## 2026-07-16 — Mid-sem PPT redesigned (less "AI pitch deck", more standard student deck)
+
+The first version of the PPT looked like a generated pitch deck — dark hero
+title slide, a repeated kicker/underline/page-number formula on every slide,
+hand-typed bullet glyphs instead of native bullets, a curated Tailwind-blue
+palette, and perfectly symmetric card grids. Rebuilt `slides/build_mid_sem_ppt.py`
+to use PowerPoint's actual default theme and native layouts/placeholders
+(Title Slide, Title and Content, Two Content) instead of custom-drawn boxes
+for nearly everything, and loosened the bullet text so it reads more like
+notes than marketing copy.
+
+Caught three real layout bugs by rendering every slide to PNG via PowerPoint
+COM automation before calling it done (`Presentations.Open` + `.Export` —
+same verification approach used for the first PPT version):
+- Title slide: title/subtitle placeholders sized for a short 1-line title
+  overlapped when given the actual 2-line project title. Fixed by explicit
+  positioning + smaller font.
+- Slide 5 (pipeline diagram): default `Presentation()` template is 10x7.5in
+  (4:3), not 13.333x7.5in widescreen — confirmed by inspecting
+  `prs.slide_width`/layout placeholder positions directly rather than
+  guessing. My box x-positions assumed the wider canvas and ran off the
+  right edge. Also, PowerPoint's built-in autoshapes carry a theme "shape
+  style" that defaults text to white (assuming a colored fill) — since
+  these boxes use no fill, the labels rendered invisible white-on-white
+  until font color was set explicitly.
+- Slide 4 (two-content columns): setting only `.top`/`.height` on a
+  placeholder that has no prior explicit transform creates a fresh xfrm
+  with the *unset* fields (`.left`/`.width`) defaulting to zero — collapsed
+  the column to zero width, wrapping every line to one character. Fixed by
+  always setting all four of left/top/width/height together. Also had to
+  explicitly shrink the level-0 bullet font (inherits a large ~28pt default
+  meant for short headings), which was pushing sub-bullets off the bottom
+  of the slide.
+
+**Lesson for building any future slides/report programmatically:** never
+trust python-pptx layout math without rendering and looking at it — several
+of these bugs (invisible text, zero-width columns, off-canvas shapes) would
+have shipped completely silently; nothing in the code raises an error.
+
 ## Status vs. roadmap (as of 2026-07-10)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

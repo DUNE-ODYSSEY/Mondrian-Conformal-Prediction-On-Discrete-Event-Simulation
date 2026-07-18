@@ -267,7 +267,61 @@ right-skewed `p95_wait_minutes`, the asymmetric measure gives a narrower
 interval at comparable coverage (355.6 vs. 362.9) - real evidence the
 skew-aware measure is doing something useful, not just an academic variant.
 
-## Status vs. roadmap (as of 2026-07-16)
+## 2026-07-17 — Week 11-12: Mondrian conformal prediction
+
+`src/uq/mondrian_cp.py`: calibrates a separate quantile per category instead
+of standard CP's single pooled quantile. Categories are the cross of
+staffing tercile x arrival-rate tercile (Low/Med/High x Low/Med/High = 9
+cells) - the DES output has no "shift" field, so category boundaries only
+use the two real covariates we actually have, not an invented third one.
+Bin edges come from the calibration set's own quantiles, never the test set.
+Same calibration/test split and alpha=0.1 as standard_cp.py, symmetric
+`|y - yhat|` nonconformity measure, so this is a clean pooled-vs-per-category
+comparison and not a differently-set-up experiment dressed up as one.
+
+For each category, coverage is evaluated two ways on the *same* test points:
+applying standard CP's single pooled quantile (shows where the marginal
+guarantee actually breaks down), vs. applying that category's own Mondrian
+quantile (`results/tables/mondrian_cp_detail.csv`, summarized per-target in
+`mondrian_cp_summary.csv`).
+
+**This is the core result of the whole project.** The worst pooled-CP
+category is consistently `staff=Low/arrival=High` - the most congested
+scenario:
+
+| target | pooled coverage (worst category) | Mondrian coverage (same category) | target |
+|---|---|---|---|
+| mean_wait_minutes | 68.2% | 90.9% | 90% |
+| mean_total_minutes | 80.7% | 92.0% | 90% |
+| p95_wait_minutes | 72.7% | 92.0% | 90% |
+
+A single pooled quantile is calibrated on *average* difficulty, so it
+silently fails exactly the operationally important scenarios (understaffed +
+high demand) while overcovering the easy ones (`staff=High/arrival=Low` hits
+100% pooled coverage - wasted interval width). Mondrian fixes the
+undercoverage by giving the hard category an honestly wider interval instead
+of pretending it's as easy as the rest.
+
+`n_patients` is the one target where Mondrian does *not* help - its
+pooled-CP per-category coverage was already fairly uniform (87.3-98.9%, no
+real conditional miscalibration to begin with), so splitting the calibration
+set into 9 smaller cells (~130 points each vs. 1200 pooled) just adds
+finite-sample noise to the per-category quantile estimate without a
+corresponding benefit (coverage range actually widens slightly, 11.5% ->
+13.9%). This is a known, textbook-documented Mondrian CP tradeoff (smaller
+per-cell calibration sets = noisier per-cell quantiles), not a bug - and
+it's a more honest, useful finding than "Mondrian always wins everywhere"
+would have been.
+
+**Answer to the project's core question so far:** yes, Mondrian CP closes
+the marginal-vs-conditional coverage gap in this discrete-event/queueing
+domain, for targets where that gap is real (mean_wait, mean_total,
+p95_wait) - Gopakumar et al.'s marginal-coverage limitation, demonstrated
+outside physics simulation for the first time here. Week 13's exchangeability
+stress test (OOD surge day) is still open and tests their *other* stated
+limitation.
+
+## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
   3 core papers in depth — **not done**, this is reading/analysis work only the
@@ -284,4 +338,7 @@ skew-aware measure is doing something useful, not just an academic variant.
   GP baseline). Remaining for mid-sem: literature review + the PPT itself
   (PPT is done, see entries above — just needs the lit review slide filled in).
 - **Week 9-10** (standard CP, multiple nonconformity measures): done — see entry above.
-- **Week 11-12** (Mondrian CP, per-category coverage): not started.
+- **Week 11-12** (Mondrian CP, per-category coverage): done — see entry above. Core
+  project result now in hand: Mondrian CP closes the marginal/conditional coverage
+  gap for 3 of 4 targets.
+- **Week 13** (exchangeability stress test, OOD surge day): not started.

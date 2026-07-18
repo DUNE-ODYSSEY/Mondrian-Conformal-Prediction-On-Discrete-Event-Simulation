@@ -452,6 +452,40 @@ Three takeaways, in order of how much they matter for the project:
    ones, and per-category calibration recovers some of that efficiency on
    net, not just redistributing it.
 
+## 2026-07-17 — Full project results deck (16 slides, not the final end-sem PPT)
+
+User asked for a comprehensive working deck covering everything through
+Week 15 — all results in order, why Mondrian CP was used and why it's
+better, what was accomplished, and an explicit verdict on whether the
+project's novelty target was met — explicitly separate from the final
+end-sem PPT, which will follow the instructor's specific guidelines once
+shared. `slides/build_full_results_ppt.py` -> `slides/full_project_results.pptx`.
+
+**Design note:** built this first using the same "native PowerPoint theme"
+approach as the redesigned mid-sem PPT, but the user said they preferred
+the *original* polished/custom-drawn style from the first mid-sem PPT
+attempt (dark hero title slide, colored kicker/title/underline header
+formula, banded tables, card-style callouts) — explicitly asked to go back
+to that style for this deck. Rebuilt accordingly. **This means the "make it
+look hand-made, not AI-generated" feedback from earlier was specific to the
+mid-sem PPT context, not a standing rule for every future deck** — ask
+before assuming which style is wanted for the end-sem PPT too.
+
+16 slides: title, problem statement, research gap, **why Mondrian CP**
+(dedicated slide, before any results — pooled quantile's failure mode vs.
+per-category calibration), methodology, real-world data, then results in
+order (DES validation, surrogate accuracy, GP baseline, standard CP,
+**Mondrian CP core finding**, full 3-panel comparison chart, exchangeability
+stress test), then **what we accomplished**, an explicit **novelty verdict**
+slide, and an honest limitations slide.
+
+Verified the same way as both mid-sem PPT versions: rendered all 16 slides
+to PNG via PowerPoint COM automation before calling it done. Clean this
+time — no layout bugs, likely because this design uses fully explicit
+absolute positioning for every shape on a fixed 13.333x7.5in canvas (no
+native placeholders inheriting from a layout, which is what caused the
+zero-width-column and off-canvas bugs in the mid-sem PPT rebuild).
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

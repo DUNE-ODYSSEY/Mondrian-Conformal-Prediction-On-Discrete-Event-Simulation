@@ -387,6 +387,71 @@ reporting a wrong-but-narrow interval without any signal something's off.
 That's a real practical property, even though it doesn't rescue coverage
 here.
 
+## 2026-07-17 — Week 14-15: full GP vs. standard CP vs. Mondrian CP comparison
+
+`src/uq/full_comparison.py`: assembles everything computed in Weeks 8-12
+into one table and one 3-panel chart (`results/tables/full_comparison.csv`,
+`results/figures/full_comparison.png`) - coverage, mean interval width,
+computation time, all three methods, all four targets, on the same test set.
+
+Coverage/width for GP and standard CP are pulled straight from their
+existing result tables (standard CP's symmetric variant, for a fair
+like-for-like single-interval comparison). Mondrian's *marginal* coverage/
+width isn't something Week 11-12 computed - that entry only reported
+per-category spread - so it's derived fresh here by re-applying the
+per-category quantiles across the whole test set and aggregating, the same
+way GP/standard CP report one overall number.
+
+**Computation time** is measured on a like-for-like basis: GP's cost is its
+own model-fitting time (`fit_seconds` from Week 8). CP doesn't fit a model -
+it wraps the already-trained surrogate - so its fair cost is its own
+calibration step (computing the empirical residual quantile/quantiles),
+timed fresh here since Weeks 9-12 didn't record it. Caught a timing artifact
+before trusting the numbers: the first `model.predict()` call in a fresh
+Python process pays a one-off cost (thread-pool/JIT warm-up) that has
+nothing to do with the algorithm - `n_patients`' standard-CP timing came out
+as 1.65s vs. ~0.01s for every other target until a warm-up predict call was
+added before starting the timer. Re-ran after the fix; all targets now land
+consistently around 0.009-0.012s for both CP variants.
+
+**Results** (`results/tables/full_comparison.csv`):
+
+| target | method | coverage | mean width | computation time |
+|---|---|---|---|---|
+| n_patients | GP | 88.5% | 39.3 | 11.46s |
+| n_patients | Standard CP | 92.1% | 43.6 | 0.012s |
+| n_patients | Mondrian CP | 91.7% | 43.5 | 0.011s |
+| mean_wait_minutes | GP | 87.7% | 43.6 | 7.13s |
+| mean_wait_minutes | Standard CP | 89.0% | 47.2 | 0.009s |
+| mean_wait_minutes | Mondrian CP | 91.4% | 40.1 | 0.011s |
+| mean_total_minutes | GP | 88.8% | 43.4 | 6.95s |
+| mean_total_minutes | Standard CP | 90.2% | 46.4 | 0.009s |
+| mean_total_minutes | Mondrian CP | 91.8% | 45.5 | 0.010s |
+| p95_wait_minutes | GP | 90.1% | 350.3 | 7.05s |
+| p95_wait_minutes | Standard CP | 90.8% | 362.9 | 0.009s |
+| p95_wait_minutes | Mondrian CP | 91.3% | 314.2 | 0.011s |
+
+Three takeaways, in order of how much they matter for the project:
+
+1. **Speed: CP is ~650-1000x faster than GP to calibrate**, consistently,
+   across every target. This isn't a marginal implementation detail - it's
+   a real practical argument for CP-based UQ in a setting like ER staffing
+   where you'd want to recalibrate often as conditions change, and a GP
+   refit taking 7-11s per metric doesn't scale the way a ~0.01s CP
+   calibration does.
+2. **Mondrian CP's marginal coverage is consistently at or above standard
+   CP's** (and both sit closer to the 90% target than GP on average),
+   despite Mondrian being calibrated on ~9x smaller per-category slices of
+   the same calibration data.
+3. **Mondrian CP is also usually narrower on average**, not just more
+   locally honest - `mean_wait_minutes` (40.1 vs. 47.2, ~15% tighter) and
+   `p95_wait_minutes` (314.2 vs. 362.9, ~13% tighter) both improve over
+   pooled standard CP. This is a bit more than the Week 11-12 story
+   (Mondrian fixes undercoverage in hard categories) - it suggests pooling
+   was also *wasting* width in easy categories to compensate for the hard
+   ones, and per-category calibration recovers some of that efficiency on
+   net, not just redistributing it.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
@@ -412,4 +477,6 @@ here.
   marginal coverage (Week 11-12, Mondrian closes the gap where real) and
   exchangeability (this entry, breaks down as expected, root cause identified).
 - **Week 14-15** (full GP vs. standard CP vs. Mondrian CP comparison — coverage,
-  width, computation time): not started.
+  width, computation time): done — see entry above. All the quantitative work
+  the end-sem deliverable needs is now in hand.
+- **Week 16** (end-sem PPT + final report): not started.

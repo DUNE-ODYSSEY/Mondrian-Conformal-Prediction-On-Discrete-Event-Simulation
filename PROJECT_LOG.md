@@ -321,6 +321,72 @@ outside physics simulation for the first time here. Week 13's exchangeability
 stress test (OOD surge day) is still open and tests their *other* stated
 limitation.
 
+## 2026-07-17 — Week 13: exchangeability stress test
+
+`src/uq/exchangeability_stress_test.py`: keeps the Week 9-12 calibration
+fixed exactly as-is and pushes the *test* distribution's arrival_rate_multiplier
+progressively past the training range (0.8-1.3) up to 3.0x, with n_capacity
+still drawn normally from [15,45] - isolates the shift to arrival rate alone.
+300 DES days per severity level, both standard CP and Mondrian CP evaluated
+on the same test points. Output: `results/tables/exchangeability_stress_test.csv`.
+
+**In range (0.8, 1.0, 1.3x) coverage matches Week 9-12** (82-95%, both
+methods), confirming the test harness is consistent before looking at the
+OOD region.
+
+**Past the training boundary, coverage collapses fast:**
+
+| arrival multiplier | n_patients | mean_wait | mean_total | p95_wait |
+|---|---|---|---|---|
+| 1.3 (in range) | 93.3% | 83.0% | 88.0% | 82.0% |
+| 1.5 | 78.7% | 68.7% | 73.7% | 69.7% |
+| 1.8 | 70.3% | 42.7% | 47.3% | 43.0% |
+| 2.0 | 64.7% | 34.3% | 39.0% | 33.0% |
+| 3.0 | 31.7% | 12.3% | 4.7% | 78.3%* |
+
+(standard CP shown; Mondrian tracks closely, see below. *p95_wait's apparent
+recovery at 2.5-3.0x is explained below - not a good sign.)
+
+**Root cause, verified directly, not inferred:** the gradient-boosting
+surrogate (`HistGradientBoostingRegressor`) is tree-based, and tree models
+cannot extrapolate past the range of their training data - predictions for
+any input outside that range clip to whatever leaf the boundary training
+points fell into. Checked this directly: `mean_wait_minutes`'s prediction is
+**frozen at 42.4** for every arrival multiplier from 1.3 through 3.0, and
+`p95_wait_minutes`'s is **frozen at 221.2** across the same range, while the
+DES's actual output keeps moving. As the true value drifts further from a
+prediction that literally cannot move, the residual grows past whatever the
+calibration quantile allows, and coverage fails - not because CP's math is
+wrong, but because the point predictor it's wrapping stops being informative
+outside its training domain. Both standard and Mondrian CP fail here since
+neither can fix an uninformative underlying prediction; Mondrian's per-category
+quantiles are also derived from in-range calibration data, so they're equally
+blind to the shift.
+
+**The `p95_wait_minutes` "recovery" at 2.5-3.0x is not the interval working -
+it's a data-generating-process artifact.** Diagnostic run (n=40/point,
+`n_capacity=30` fixed): true `p95_wait_minutes` goes 99.8 (1.0x) -> 249.5
+(1.3x) -> 378.3 (1.5x) -> 420.4 (2.0x) -> 172.1 (2.5x) -> 297.9 (3.0x) -
+non-monotonic, not a clean saturation curve. This connects back to the
+Week 4-5 finding that patients still queued when a simulated day ends are
+right-censored out of the stats: at extreme overload, *fewer* patients
+finish service within 24h at all, shrinking and changing the composition of
+the "completed visits" pool the p95 is computed over. The true value drifting
+back down toward the frozen prediction is coincidental, driven by the
+censoring artifact getting worse, not by the surrogate or the interval
+becoming more reliable.
+
+**Answer to Gopakumar et al.'s exchangeability limitation, in this domain:**
+confirmed broken outside the training distribution, and both standard and
+Mondrian CP degrade together once it does - Mondrian's per-category structure
+doesn't protect against exchangeability violation, only against pooling
+categories that are individually still in-distribution. One thing worth
+noting for the report: the failure is *detectable*, not silent - residuals
+balloon and coverage measurably craters rather than the surrogate confidently
+reporting a wrong-but-narrow interval without any signal something's off.
+That's a real practical property, even though it doesn't rescue coverage
+here.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
@@ -341,4 +407,9 @@ limitation.
 - **Week 11-12** (Mondrian CP, per-category coverage): done — see entry above. Core
   project result now in hand: Mondrian CP closes the marginal/conditional coverage
   gap for 3 of 4 targets.
-- **Week 13** (exchangeability stress test, OOD surge day): not started.
+- **Week 13** (exchangeability stress test, OOD surge day): done — see entry
+  above. Both stated Gopakumar et al. limitations now tested in this domain:
+  marginal coverage (Week 11-12, Mondrian closes the gap where real) and
+  exchangeability (this entry, breaks down as expected, root cause identified).
+- **Week 14-15** (full GP vs. standard CP vs. Mondrian CP comparison — coverage,
+  width, computation time): not started.

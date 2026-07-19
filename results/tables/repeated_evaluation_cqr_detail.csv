@@ -1,0 +1,241 @@
+repeat,target,method,coverage,mean_width
+0,n_patients,CQR,0.894,40.52275196411557
+0,n_patients,Mondrian CQR,0.92,43.65135163616647
+0,mean_wait_minutes,CQR,0.883,37.04969235190876
+0,mean_wait_minutes,Mondrian CQR,0.916,41.891350755076374
+0,mean_total_minutes,CQR,0.866,38.55954278965731
+0,mean_total_minutes,Mondrian CQR,0.88,40.904450631668006
+0,p95_wait_minutes,CQR,0.914,276.4764408268789
+0,p95_wait_minutes,Mondrian CQR,0.919,288.47290033045095
+1,n_patients,CQR,0.902,43.894271836909255
+1,n_patients,Mondrian CQR,0.914,44.952974305907766
+1,mean_wait_minutes,CQR,0.905,39.12056709539748
+1,mean_wait_minutes,Mondrian CQR,0.918,43.78372900600365
+1,mean_total_minutes,CQR,0.894,40.15475396623396
+1,mean_total_minutes,Mondrian CQR,0.898,42.99623711276391
+1,p95_wait_minutes,CQR,0.912,279.77037488402107
+1,p95_wait_minutes,Mondrian CQR,0.926,297.3210337479338
+2,n_patients,CQR,0.902,41.320160606543176
+2,n_patients,Mondrian CQR,0.916,43.16615345294276
+2,mean_wait_minutes,CQR,0.912,38.80456840681766
+2,mean_wait_minutes,Mondrian CQR,0.925,42.621546792175565
+2,mean_total_minutes,CQR,0.924,39.8790466581376
+2,mean_total_minutes,Mondrian CQR,0.933,42.99355070613921
+2,p95_wait_minutes,CQR,0.918,274.1566347240612
+2,p95_wait_minutes,Mondrian CQR,0.927,293.1814031201057
+3,n_patients,CQR,0.883,40.89293415946678
+3,n_patients,Mondrian CQR,0.888,41.62444334685694
+3,mean_wait_minutes,CQR,0.9,37.11162401960867
+3,mean_wait_minutes,Mondrian CQR,0.921,42.01759653098613
+3,mean_total_minutes,CQR,0.902,38.71946958623136
+3,mean_total_minutes,Mondrian CQR,0.916,41.667059502135785
+3,p95_wait_minutes,CQR,0.9,274.8421378345676
+3,p95_wait_minutes,Mondrian CQR,0.912,289.73817011114755
+4,n_patients,CQR,0.904,42.5686507825397
+4,n_patients,Mondrian CQR,0.921,43.69392010966241
+4,mean_wait_minutes,CQR,0.898,38.56671083287652
+4,mean_wait_minutes,Mondrian CQR,0.922,43.348642392693144
+4,mean_total_minutes,CQR,0.884,39.38187508312109
+4,mean_total_minutes,Mondrian CQR,0.899,41.69226792822819
+4,p95_wait_minutes,CQR,0.92,279.7296575703912
+4,p95_wait_minutes,Mondrian CQR,0.933,301.3337673195427
+5,n_patients,CQR,0.898,43.1759604743125
+5,n_patients,Mondrian CQR,0.903,44.604660657815636
+5,mean_wait_minutes,CQR,0.881,37.75533873042959
+5,mean_wait_minutes,Mondrian CQR,0.916,42.833411958544936
+5,mean_total_minutes,CQR,0.897,40.84156941315602
+5,mean_total_minutes,Mondrian CQR,0.922,43.798497595195336
+5,p95_wait_minutes,CQR,0.904,278.3332702585349
+5,p95_wait_minutes,Mondrian CQR,0.911,281.7060048322986
+6,n_patients,CQR,0.902,41.22899393420826
+6,n_patients,Mondrian CQR,0.926,43.86472730545995
+6,mean_wait_minutes,CQR,0.886,36.93518638603321
+6,mean_wait_minutes,Mondrian CQR,0.909,41.37174479571177
+6,mean_total_minutes,CQR,0.897,40.0215373177965
+6,mean_total_minutes,Mondrian CQR,0.916,42.187750795789114
+6,p95_wait_minutes,CQR,0.885,270.12977914033985
+6,p95_wait_minutes,Mondrian CQR,0.892,278.231799565373
+7,n_patients,CQR,0.903,41.89796795629149
+7,n_patients,Mondrian CQR,0.903,42.86712897029254
+7,mean_wait_minutes,CQR,0.899,38.15024681839716
+7,mean_wait_minutes,Mondrian CQR,0.917,42.70378344211336
+7,mean_total_minutes,CQR,0.903,39.89899081340862
+7,mean_total_minutes,Mondrian CQR,0.905,41.960120868441344
+7,p95_wait_minutes,CQR,0.9,277.7305553022459
+7,p95_wait_minutes,Mondrian CQR,0.918,294.00346000164177
+8,n_patients,CQR,0.905,40.90388205394067
+8,n_patients,Mondrian CQR,0.91,42.161071124283154
+8,mean_wait_minutes,CQR,0.904,37.67880862668527
+8,mean_wait_minutes,Mondrian CQR,0.923,42.14694642685196
+8,mean_total_minutes,CQR,0.902,41.072246310112824
+8,mean_total_minutes,Mondrian CQR,0.913,43.60499242156233
+8,p95_wait_minutes,CQR,0.912,270.3425827697777
+8,p95_wait_minutes,Mondrian CQR,0.919,280.5307512540546
+9,n_patients,CQR,0.895,40.99999467706093
+9,n_patients,Mondrian CQR,0.907,42.623739872717316
+9,mean_wait_minutes,CQR,0.887,37.97076335377997
+9,mean_wait_minutes,Mondrian CQR,0.912,41.26104328031752
+9,mean_total_minutes,CQR,0.9,40.6456750845583
+9,mean_total_minutes,Mondrian CQR,0.908,41.59852807659976
+9,p95_wait_minutes,CQR,0.898,278.7311186705477
+9,p95_wait_minutes,Mondrian CQR,0.913,288.6163073117981
+10,n_patients,CQR,0.919,41.50174514780599
+10,n_patients,Mondrian CQR,0.923,43.00559514844911
+10,mean_wait_minutes,CQR,0.925,39.39808430921657
+10,mean_wait_minutes,Mondrian CQR,0.937,44.010341914009224
+10,mean_total_minutes,CQR,0.92,42.62271485319157
+10,mean_total_minutes,Mondrian CQR,0.927,44.68861928839938
+10,p95_wait_minutes,CQR,0.913,281.53000034538786
+10,p95_wait_minutes,Mondrian CQR,0.924,305.6594009239983
+11,n_patients,CQR,0.889,41.15193334921981
+11,n_patients,Mondrian CQR,0.91,42.94856994909679
+11,mean_wait_minutes,CQR,0.897,37.68930709270363
+11,mean_wait_minutes,Mondrian CQR,0.914,40.991400167151994
+11,mean_total_minutes,CQR,0.904,41.53517275888602
+11,mean_total_minutes,Mondrian CQR,0.893,42.78708462544469
+11,p95_wait_minutes,CQR,0.905,276.8102043138165
+11,p95_wait_minutes,Mondrian CQR,0.92,290.62134209647263
+12,n_patients,CQR,0.904,42.07343452478388
+12,n_patients,Mondrian CQR,0.912,43.75464717405921
+12,mean_wait_minutes,CQR,0.911,38.08560152162792
+12,mean_wait_minutes,Mondrian CQR,0.937,43.17240924347537
+12,mean_total_minutes,CQR,0.894,39.75459912880552
+12,mean_total_minutes,Mondrian CQR,0.91,43.26317628727663
+12,p95_wait_minutes,CQR,0.907,268.4724882393613
+12,p95_wait_minutes,Mondrian CQR,0.924,291.097965501053
+13,n_patients,CQR,0.916,42.98942126033445
+13,n_patients,Mondrian CQR,0.93,44.77842926884056
+13,mean_wait_minutes,CQR,0.904,37.011122168686356
+13,mean_wait_minutes,Mondrian CQR,0.928,40.99567141539631
+13,mean_total_minutes,CQR,0.906,40.30249943587128
+13,mean_total_minutes,Mondrian CQR,0.917,42.48776416757317
+13,p95_wait_minutes,CQR,0.908,269.25030771003804
+13,p95_wait_minutes,Mondrian CQR,0.924,292.4884380606965
+14,n_patients,CQR,0.902,43.55785468841623
+14,n_patients,Mondrian CQR,0.907,45.43730153837812
+14,mean_wait_minutes,CQR,0.907,36.006771093135875
+14,mean_wait_minutes,Mondrian CQR,0.934,40.142924771095245
+14,mean_total_minutes,CQR,0.893,38.66165237658158
+14,mean_total_minutes,Mondrian CQR,0.901,40.95156271846911
+14,p95_wait_minutes,CQR,0.905,268.9525972921664
+14,p95_wait_minutes,Mondrian CQR,0.92,281.81137504235096
+15,n_patients,CQR,0.892,40.30914093332918
+15,n_patients,Mondrian CQR,0.903,42.30845060013085
+15,mean_wait_minutes,CQR,0.899,37.22937378846266
+15,mean_wait_minutes,Mondrian CQR,0.931,42.81905631909506
+15,mean_total_minutes,CQR,0.907,41.44054884085598
+15,mean_total_minutes,Mondrian CQR,0.915,43.32701373701741
+15,p95_wait_minutes,CQR,0.908,277.32658118256165
+15,p95_wait_minutes,Mondrian CQR,0.928,301.4118836050506
+16,n_patients,CQR,0.889,40.98789538799844
+16,n_patients,Mondrian CQR,0.9,41.91331799974197
+16,mean_wait_minutes,CQR,0.899,38.03878147728792
+16,mean_wait_minutes,Mondrian CQR,0.919,41.563569696484514
+16,mean_total_minutes,CQR,0.91,41.69267918643985
+16,mean_total_minutes,Mondrian CQR,0.906,42.90434699228242
+16,p95_wait_minutes,CQR,0.911,284.3619188352253
+16,p95_wait_minutes,Mondrian CQR,0.913,295.7346473893656
+17,n_patients,CQR,0.918,43.869291362049374
+17,n_patients,Mondrian CQR,0.916,44.591737777065546
+17,mean_wait_minutes,CQR,0.919,38.89859608976066
+17,mean_wait_minutes,Mondrian CQR,0.927,42.94088718678994
+17,mean_total_minutes,CQR,0.92,41.09963070323192
+17,mean_total_minutes,Mondrian CQR,0.926,42.957141809349096
+17,p95_wait_minutes,CQR,0.926,274.39932176258964
+17,p95_wait_minutes,Mondrian CQR,0.933,281.9520624783537
+18,n_patients,CQR,0.905,42.02717233349006
+18,n_patients,Mondrian CQR,0.923,44.745759064679184
+18,mean_wait_minutes,CQR,0.92,37.2411120249334
+18,mean_wait_minutes,Mondrian CQR,0.928,41.930514309473935
+18,mean_total_minutes,CQR,0.92,40.04123641514799
+18,mean_total_minutes,Mondrian CQR,0.921,42.011008068684376
+18,p95_wait_minutes,CQR,0.904,268.25123963209404
+18,p95_wait_minutes,Mondrian CQR,0.924,294.2131514592895
+19,n_patients,CQR,0.895,42.13886831196178
+19,n_patients,Mondrian CQR,0.904,43.456544389813104
+19,mean_wait_minutes,CQR,0.92,38.471607080544096
+19,mean_wait_minutes,Mondrian CQR,0.937,40.820807636825734
+19,mean_total_minutes,CQR,0.923,41.58785130636484
+19,mean_total_minutes,Mondrian CQR,0.933,42.89178635197001
+19,p95_wait_minutes,CQR,0.93,263.22032016792195
+19,p95_wait_minutes,Mondrian CQR,0.946,278.89052678945825
+20,n_patients,CQR,0.906,41.395100287391216
+20,n_patients,Mondrian CQR,0.915,42.91456444116967
+20,mean_wait_minutes,CQR,0.9,36.64145343523796
+20,mean_wait_minutes,Mondrian CQR,0.925,41.72833317051431
+20,mean_total_minutes,CQR,0.895,38.39567455206174
+20,mean_total_minutes,Mondrian CQR,0.895,41.110041961795744
+20,p95_wait_minutes,CQR,0.91,272.264135583697
+20,p95_wait_minutes,Mondrian CQR,0.925,294.61018400421193
+21,n_patients,CQR,0.908,43.31762539721964
+21,n_patients,Mondrian CQR,0.921,44.886288294373635
+21,mean_wait_minutes,CQR,0.898,37.52403837442952
+21,mean_wait_minutes,Mondrian CQR,0.931,42.73502954868914
+21,mean_total_minutes,CQR,0.916,41.210715660338515
+21,mean_total_minutes,Mondrian CQR,0.914,42.85745638392589
+21,p95_wait_minutes,CQR,0.922,277.74338935263216
+21,p95_wait_minutes,Mondrian CQR,0.939,299.15505191973244
+22,n_patients,CQR,0.892,43.3170850356575
+22,n_patients,Mondrian CQR,0.905,45.48495818986546
+22,mean_wait_minutes,CQR,0.894,37.29157633554352
+22,mean_wait_minutes,Mondrian CQR,0.918,41.34408480983641
+22,mean_total_minutes,CQR,0.902,41.67583786146158
+22,mean_total_minutes,Mondrian CQR,0.908,43.94573202882302
+22,p95_wait_minutes,CQR,0.925,273.892163924009
+22,p95_wait_minutes,Mondrian CQR,0.949,309.00179139260007
+23,n_patients,CQR,0.879,40.10521412574564
+23,n_patients,Mondrian CQR,0.888,42.21437860037614
+23,mean_wait_minutes,CQR,0.909,37.86736645773937
+23,mean_wait_minutes,Mondrian CQR,0.925,41.669909340900716
+23,mean_total_minutes,CQR,0.889,39.48890203248903
+23,mean_total_minutes,Mondrian CQR,0.898,43.28311653448568
+23,p95_wait_minutes,CQR,0.903,274.38328265108623
+23,p95_wait_minutes,Mondrian CQR,0.924,292.80302859643416
+24,n_patients,CQR,0.886,39.970825904788015
+24,n_patients,Mondrian CQR,0.897,41.50309533117016
+24,mean_wait_minutes,CQR,0.893,39.45027569341801
+24,mean_wait_minutes,Mondrian CQR,0.911,42.67979349003093
+24,mean_total_minutes,CQR,0.889,40.6814317617708
+24,mean_total_minutes,Mondrian CQR,0.901,43.434672577011646
+24,p95_wait_minutes,CQR,0.898,286.5125262974027
+24,p95_wait_minutes,Mondrian CQR,0.899,291.8784180557255
+25,n_patients,CQR,0.897,42.10411568050855
+25,n_patients,Mondrian CQR,0.896,42.865353606829565
+25,mean_wait_minutes,CQR,0.892,38.24694238450956
+25,mean_wait_minutes,Mondrian CQR,0.909,42.36698655041347
+25,mean_total_minutes,CQR,0.909,40.79143085818288
+25,mean_total_minutes,Mondrian CQR,0.917,43.2943561954712
+25,p95_wait_minutes,CQR,0.894,276.6171661966778
+25,p95_wait_minutes,Mondrian CQR,0.91,292.326896629923
+26,n_patients,CQR,0.909,44.16288830990175
+26,n_patients,Mondrian CQR,0.913,45.21276654348879
+26,mean_wait_minutes,CQR,0.903,39.992898924650476
+26,mean_wait_minutes,Mondrian CQR,0.919,44.90573896962449
+26,mean_total_minutes,CQR,0.884,39.61553855586986
+26,mean_total_minutes,Mondrian CQR,0.901,41.6066097326936
+26,p95_wait_minutes,CQR,0.907,290.09725035462634
+26,p95_wait_minutes,Mondrian CQR,0.921,311.33302662562204
+27,n_patients,CQR,0.894,42.64919294426711
+27,n_patients,Mondrian CQR,0.899,43.598071730703104
+27,mean_wait_minutes,CQR,0.92,39.73818060438367
+27,mean_wait_minutes,Mondrian CQR,0.925,45.0916680510562
+27,mean_total_minutes,CQR,0.905,42.574558527314814
+27,mean_total_minutes,Mondrian CQR,0.919,45.64325652645402
+27,p95_wait_minutes,CQR,0.912,280.8139752132803
+27,p95_wait_minutes,Mondrian CQR,0.929,309.2530527732285
+28,n_patients,CQR,0.881,40.283836758488135
+28,n_patients,Mondrian CQR,0.882,41.47935187695857
+28,mean_wait_minutes,CQR,0.874,37.13310519598431
+28,mean_wait_minutes,Mondrian CQR,0.914,41.95598618929741
+28,mean_total_minutes,CQR,0.894,40.18303517995792
+28,mean_total_minutes,Mondrian CQR,0.904,42.45409323406631
+28,p95_wait_minutes,CQR,0.902,272.85611204597853
+28,p95_wait_minutes,Mondrian CQR,0.916,290.44860479779123
+29,n_patients,CQR,0.903,41.51485238321177
+29,n_patients,Mondrian CQR,0.91,42.193336363772936
+29,mean_wait_minutes,CQR,0.888,36.995388586699704
+29,mean_wait_minutes,Mondrian CQR,0.909,40.625811040429554
+29,mean_total_minutes,CQR,0.905,40.64859155123048
+29,mean_total_minutes,Mondrian CQR,0.92,42.63473903974931
+29,p95_wait_minutes,CQR,0.903,268.7057418944857
+29,p95_wait_minutes,Mondrian CQR,0.915,283.62577268007493

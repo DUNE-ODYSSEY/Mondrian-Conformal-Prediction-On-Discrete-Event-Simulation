@@ -571,6 +571,85 @@ generalizability beyond a single site. `src/surrogate/train_quantile_surrogates.
 exists (CQR's quantile regressors) but hasn't been run yet - paused here per
 user's explicit request to tackle these one at a time rather than all at once.
 
+## 2026-07-19 — Publication-rigor upgrade, part 2: CQR and Mondrian-CQR
+
+`src/surrogate/train_quantile_surrogates.py`: trained lower/upper quantile
+regressors (`HistGradientBoostingRegressor(loss="quantile")`, alpha/2 and
+1-alpha/2) per target, same train/test split as the original mean surrogate
+(`random_state=42`) so it's a fair comparison, not a differently-trained
+model. Raw (uncalibrated) `[qlo, qhi]` interval coverage on the test set was
+81-92% - below target on 3/4 metrics, exactly why CQR's conformal
+calibration step is needed rather than trusting the quantile regressor
+alone. Sanity table: `results/tables/quantile_surrogate_metrics.csv`.
+
+`src/uq/repeated_evaluation_cqr.py`: CQR nonconformity score
+`max(qlo(x)-y, y-qhi(x))`, calibrated pooled (CQR) and per-category
+(Mondrian CQR), run across the **exact same 30 (calibration, test) draws**
+as part 1 (`repeated_evaluation.py`) - identical seed formula, and
+`generate()` is deterministic given a seed, so this reproduces
+byte-identical scenario data without saving/reloading it. That means CQR's
+results are validly *paired* with the GP/standard/Mondrian CP results, not
+a separately-drawn comparison - every significance test below uses the same
+30 draws across all 5 methods. No GP involved, so this ran in ~29 minutes
+instead of part 1's ~82 (GP refitting was almost the entire earlier cost).
+
+**Results** (`results/tables/repeated_evaluation_cqr_summary.csv`, 30 repeats,
+target coverage 90%):
+
+| target | CQR coverage / width | Mondrian CQR coverage / width |
+|---|---|---|
+| n_patients | 89.9% / 41.9 | 90.9% / 43.4 |
+| mean_wait_minutes | 90.1% / 37.9 | 92.2% / 42.3 |
+| mean_total_minutes | 90.2% / 40.4 | 91.1% / 42.7 |
+| p95_wait_minutes | 90.9% / **275.6** | 92.2% / 292.7 |
+
+(recap for comparison, from part 1: GP 88.3-89.6% / 39-355; Standard CP
+89.8-90.1% / 41-377; Mondrian CP 90.8-91.4% / 41-329.)
+
+**Formal paired significance tests**
+(`results/tables/repeated_evaluation_cqr_significance.csv`), all against the
+same 30 draws:
+
+- **CQR vs. Standard CP**: coverage statistically indistinguishable on 3/4
+  targets (p=0.18-0.99), CQR significantly better on `p95_wait_minutes`
+  (+0.79pp, p=0.0013) - but width is **significantly narrower on every
+  target** (p<0.005 all four, p<1e-20 for three of them). `p95_wait_minutes`
+  specifically: CQR is ~101 units narrower than Standard CP's 377 width
+  (~27% reduction) at equal-or-better coverage. This is the clearest result
+  in the whole comparison: CQR dominates the naive symmetric-residual
+  baseline outright for this target, not a coverage/width tradeoff.
+- **CQR vs. Mondrian CP**: CQR has slightly *lower* coverage (-0.5 to -1.1pp,
+  significant on 3/4 targets) but *narrower* width on every target
+  (significant on 3/4, p=0.028 on the fourth) - a genuine tradeoff, not a
+  strict win either direction. CQR and Mondrian CP sit at different points
+  on the same coverage/width frontier.
+- **Mondrian CQR vs. Mondrian CP**: adding per-category calibration on top
+  of CQR's already-adaptive score improves coverage further (+0.3 to
+  +1.1pp, significant on 3/4 targets) at a width cost on `n_patients` and
+  `mean_total_minutes` (both p<1e-5) - except on **`p95_wait_minutes`,
+  where Mondrian CQR is both higher-coverage (+0.82pp, p=0.003) *and*
+  narrower (-35.9, p<1e-17) than Mondrian CP** - a clean two-way win on the
+  single hardest target in the whole project.
+- **CQR vs. Mondrian CQR**: Mondrian CQR is significantly higher-coverage
+  and significantly wider than pooled CQR on every target (all p<1e-6) -
+  per-category calibration still adds value on top of an already-adaptive
+  nonconformity score, just less dramatically than it did on top of the
+  naive symmetric score in part 1 (Mondrian CP's gain over Standard CP was
+  much larger). Makes sense: CQR's quantile regressors already absorb a lot
+  of the heteroscedasticity across the staffing/arrival-rate space that
+  Mondrian's category partitioning was implicitly correcting for.
+
+**What this means for the project's story:** the five methods form a real
+coverage/width frontier, not a strict ranking - GP undercovers with tight
+intervals, Standard CP is closest to naively "correct" but wasteful in
+width, Mondrian CP fixes conditional undercoverage at some width cost, CQR
+gets most of Mondrian's benefit "for free" by being width-adaptive instead
+of category-adaptive, and Mondrian CQR (combining both ideas) wins outright
+on the hardest, most skewed target (`p95_wait_minutes`) where it matters
+most. That's a materially stronger, more nuanced contribution than "Mondrian
+beats everything," and it's now backed by paired significance tests on 30
+independent draws rather than a single split.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

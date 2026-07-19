@@ -1,0 +1,13 @@
+target,quantile_label,quantile,pinball_loss
+n_patients,qlo,0.05,1.2949623093878562
+n_patients,qhi,0.95,1.3876976384010364
+n_patients,raw_interval_coverage,,0.837
+mean_wait_minutes,qlo,0.05,1.167589803588997
+mean_wait_minutes,qhi,0.95,1.3943608867972535
+mean_wait_minutes,raw_interval_coverage,,0.869
+mean_total_minutes,qlo,0.05,1.2787745380830615
+mean_total_minutes,qhi,0.95,1.552066490202395
+mean_total_minutes,raw_interval_coverage,,0.81
+p95_wait_minutes,qlo,0.05,7.103996857297346
+p95_wait_minutes,qhi,0.95,10.496973388609542
+p95_wait_minutes,raw_interval_coverage,,0.919

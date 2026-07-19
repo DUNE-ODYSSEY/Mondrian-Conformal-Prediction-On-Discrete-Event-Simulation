@@ -47,6 +47,12 @@ N_REPEATS = 30
 N_CALIBRATION = 1200
 N_TEST = 1000
 N_GP_TRAIN = 1000
+GP_N_RESTARTS = 1  # was 2 in Week 8's one-off gp_baseline.py; halved here since this
+# refits GP fresh on every one of 30 repeats. N_GP_TRAIN is left unchanged (1000,
+# same as Week 8) so GP's data budget stays directly comparable to the original
+# baseline - only the optimizer's restart count (a speed/thoroughness knob, not
+# the comparison basis) is reduced. One restart still escapes the worst local
+# optima for a kernel this simple (2D RBF + white noise).
 
 
 def gp_predict(target, cal_df, test_df, seed):
@@ -58,7 +64,7 @@ def gp_predict(target, cal_df, test_df, seed):
     y_train = cal_df.iloc[gp_idx][target].values
 
     kernel = ConstantKernel(1.0) * RBF(length_scale=[1.0, 1.0]) + WhiteKernel(1.0)
-    gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True, n_restarts_optimizer=2, random_state=seed)
+    gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True, n_restarts_optimizer=GP_N_RESTARTS, random_state=seed)
     gp.fit(X_train_s, y_train)
     y_pred, y_std = gp.predict(X_test_s, return_std=True)
     return y_pred, y_std

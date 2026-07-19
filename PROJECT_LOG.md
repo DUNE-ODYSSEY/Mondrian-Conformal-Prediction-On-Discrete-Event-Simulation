@@ -486,6 +486,91 @@ absolute positioning for every shape on a fixed 13.333x7.5in canvas (no
 native placeholders inheriting from a layout, which is what caused the
 zero-width-column and off-canvas bugs in the mid-sem PPT rebuild).
 
+## 2026-07-19 — Publication-rigor upgrade, part 1: repeated evaluation with statistical significance
+
+User asked to push the project toward publication readiness. Biggest gap
+identified: every Week 8-15 result was a **single point estimate** from one
+train/test split - no way to tell whether a coverage number like "68.2%" was
+a robust effect or one unlucky calibration draw. Nothing else (a second
+surrogate, a second dataset, CQR) matters if the base numbers aren't shown
+to be stable first, so this came first.
+
+`src/uq/repeated_evaluation.py`: repeats the full GP / standard-CP /
+Mondrian-CP pipeline across **30 independent (calibration, test) draws**,
+not the single split used before. Both calibration *and* test data are
+freshly generated DES scenarios every repeat (never reused across repeats or
+from the original training/calibration/stress-test data - seed ranges kept
+disjoint: calibration draws use DES seed_offset 500,000+r*10,000, test draws
+700,000+r*10,000). This captures both calibration-quantile variance and
+evaluation-sample variance - answers "does this number replicate," not just
+"was this split lucky." The pre-trained Week 6-7 surrogate is reused
+unchanged (only its calibration/test data varies); GP is refit fresh each
+repeat, matching how `gp_baseline.py` already worked.
+
+**Performance note, caught before committing to a long run:** a 2-repeat
+smoke test took 426s (213s/repeat) - GP refitting alone was ~45s/target vs.
+the ~9s benchmarked in Week 8, apparently needing more optimizer restarts to
+converge on different calibration draws each time. Reduced
+`GaussianProcessRegressor`'s `n_restarts_optimizer` from 2 to 1 (a
+speed/thoroughness knob, not GP's data budget - `N_GP_TRAIN` stayed at 1000,
+unchanged from Week 8, so GP's comparison basis is untouched) and re-verified
+with another smoke test before running the full version: 75s/repeat, a 2.8x
+speedup. The full 30-repeat run still took ~82 minutes in practice (variable
+per-repeat DES cost - higher-capacity scenarios mean more concurrent SimPy
+processes), longer than the 38-minute extrapolation from 2 repeats, but
+finished cleanly.
+
+**Results** (`results/tables/repeated_evaluation_summary.csv`, 30 repeats,
+target coverage 90%):
+
+| target | method | coverage (mean ± std) | 95% CI half-width | width (mean ± std) |
+|---|---|---|---|---|
+| n_patients | GP | 89.64% ± 1.04% | 0.37% | 40.5 ± 1.0 |
+| n_patients | Standard CP | 90.14% ± 1.15% | 0.41% | 41.4 ± 1.1 |
+| n_patients | Mondrian CP | 91.04% ± 1.26% | 0.45% | 42.3 ± 1.4 |
+| mean_wait_minutes | GP | 88.31% ± 1.30% | 0.47% | 44.4 ± 1.1 |
+| mean_wait_minutes | Standard CP | 90.09% ± 1.29% | 0.46% | 48.0 ± 1.5 |
+| mean_wait_minutes | Mondrian CP | 91.07% ± 0.99% | 0.35% | 41.7 ± 1.4 |
+| mean_total_minutes | GP | 89.09% ± 1.14% | 0.41% | 44.0 ± 1.1 |
+| mean_total_minutes | Standard CP | 89.80% ± 1.28% | 0.46% | 46.6 ± 1.4 |
+| mean_total_minutes | Mondrian CP | 90.77% ± 1.16% | 0.41% | 44.0 ± 1.4 |
+| p95_wait_minutes | GP | 88.97% ± 1.23% | 0.44% | 354.6 ± 11.5 |
+| p95_wait_minutes | Standard CP | 90.06% ± 1.09% | 0.39% | 377.1 ± 12.6 |
+| p95_wait_minutes | Mondrian CP | 91.35% ± 1.29% | 0.46% | 328.6 ± 13.4 |
+
+Small standard deviations (~1-1.3 percentage points) and tight 95% CIs
+(~0.35-0.47 points) across all 12 target/method combinations confirm the
+original Weeks 8-14 point estimates were **not lucky single-split
+artifacts** - this is the statistical-rigor gap closed.
+
+**Formal significance test**, not just eyeballing CIs
+(`results/tables/repeated_evaluation_significance.csv`): paired t-test on
+per-repeat coverage (same 30 calibration/test draws underlie all three
+methods, so this is a proper paired comparison, not independent samples).
+Mondrian CP's coverage advantage over both standard CP and GP is
+**significant at p < 0.001 for every one of the 4 targets** (most p-values
+below 1e-05, e.g. p=1.4e-10 for Mondrian vs. GP on `mean_wait_minutes`).
+This is a materially stronger claim than Week 14-15's single-split table
+could support on its own.
+
+**New pattern that sharpens the Week 14-15 finding:** with 30 repeats
+averaged out, Mondrian CP's mean coverage now sits **consistently above**
+90% (90.8-91.4%) across all four targets, while GP consistently undercovers
+(88.3-89.6%) and standard CP lands almost exactly on target (89.8-90.1%).
+Combined with Mondrian being narrower on 3 of 4 targets (all but
+`n_patients`, where it's marginally wider: 42.3 vs. 41.4), the picture is now
+statistically defensible, not just directionally suggestive: Mondrian CP
+delivers equal-or-better coverage *and* usually tighter intervals than
+pooled standard CP, and both CP variants outperform GP's coverage reliability.
+
+**Still open** (next parts of the publication-rigor push, per user's
+request): CQR as a stronger baseline for skewed targets, a second surrogate
+architecture to check whether the Week 13 exchangeability finding is
+specific to gradient boosting, and a second department to test
+generalizability beyond a single site. `src/surrogate/train_quantile_surrogates.py`
+exists (CQR's quantile regressors) but hasn't been run yet - paused here per
+user's explicit request to tackle these one at a time rather than all at once.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

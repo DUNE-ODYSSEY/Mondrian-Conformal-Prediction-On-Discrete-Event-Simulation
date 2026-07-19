@@ -650,6 +650,34 @@ most. That's a materially stronger, more nuanced contribution than "Mondrian
 beats everything," and it's now backed by paired significance tests on 30
 independent draws rather than a single split.
 
+## 2026-07-19 — Emergency: zeroth review PPT (preponed to tomorrow)
+
+User's zeroth review got moved up with no warning. Needed a short, simple
+deck fast: abstract, problem statement, literature review, research gap,
+novelty/bridging statement, aim & objectives, methodology/workflow, roadmap.
+Explicitly *not* the mid-sem or full-results deck — this is the earlier
+proposal-stage review, so no results tables, no deep technical detail.
+
+`slides/build_zeroth_review_ppt.py` -> `slides/zeroth_review.pptx`, 9 slides.
+Same polished custom-drawn design as `build_full_results_ppt.py` (project's
+established preference).
+
+**Literature review slide - important integrity call:** asked the user
+first whether they had specific papers ready to cite. They didn't yet, so
+the slide is built around the base paper (Gopakumar et al. 2026, already
+verified/used throughout this project) plus three named *categories* (CP
+foundations, surrogate modeling, queueing/DES) with an explicit "in
+progress, target 30 papers" note - deliberately **no fabricated citations**.
+Asking before assuming was the right call here; inventing plausible-looking
+papers would have been a real academic-integrity risk, not just a
+formatting shortcut, and this user has consistently valued precision over
+looking more finished than the work actually is.
+
+Verified the same way as every other deck in this project: rendered all 9
+slides to PNG via PowerPoint COM automation before calling it done - no
+layout bugs, given the emergency there was no room to discover one live
+during tomorrow's review.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

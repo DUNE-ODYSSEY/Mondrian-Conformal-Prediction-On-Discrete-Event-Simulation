@@ -678,6 +678,81 @@ slides to PNG via PowerPoint COM automation before calling it done - no
 layout bugs, given the emergency there was no room to discover one live
 during tomorrow's review.
 
+## 2026-07-20 — Publication-rigor upgrade, part 3: second surrogate architecture (MLP)
+
+`src/surrogate/train_mlp_surrogate.py`: trained an MLP (`Pipeline(StandardScaler,
+MLPRegressor)`, hidden layers (64,64), early stopping) per target, same
+train/test split as the original gradient-boosting surrogate
+(`random_state=42`) - a fair architecture comparison on identical data.
+**In-distribution accuracy is nearly identical to gradient boosting**
+(`results/tables/mlp_surrogate_metrics.csv`): R² within ~0.01 of GBR on all
+four targets (e.g. `p95_wait_minutes`: MLP 0.653 vs. GBR 0.647). This
+matters - it means any *difference* found in the exchangeability stress
+test below is a genuine architectural effect, not just "one model is
+better than the other overall."
+
+`src/uq/exchangeability_stress_test_mlp.py`: identical setup to Week 13's
+stress test (same calibration data, same severity levels, same seeds) but
+loading the MLP models instead. Motivation: Week 13 traced gradient
+boosting's coverage collapse to a specific, verified mechanism - tree
+predictions freeze past the training range. An MLP doesn't have that
+limitation; it keeps producing different predictions outside the training
+range. The open question was whether that makes exchangeability violation
+less damaging with a different architecture.
+
+**Result: it does not - and the mechanism is more interesting than "both
+architectures fail."** MLP's prediction genuinely keeps moving with severity
+(`n_patients` at capacity=30: 202 at 0.8x -> 521 at 3.0x, confirmed via the
+`yhat_capacity30` column - not frozen like GBR's 247.8 constant). But
+**coverage is worse with MLP, not better** - `n_patients` and
+`mean_total_minutes` both hit **exactly 0% coverage** by 2.0x, versus GBR's
+more graceful degradation (31.7% and 4.7% respectively at 3.0x).
+
+**Root cause, verified directly** (diagnostic script comparing true DES
+output to both models' predictions at `n_capacity=30` across severities):
+the true DES output **saturates** at high severity - `n_patients` true mean
+goes 235 (1.0x) -> 245 (1.3x) -> 252 (1.5x) -> 259 (2.0x) -> 272 (2.5x) ->
+281 (3.0x), clearly flattening, not growing proportionally with arrival
+rate. This is the same day-boundary right-censoring mechanism from Week
+4-5/13: at extreme overload, more arrivals just queue up and don't complete
+service within the 24h simulated day, so the count of *completed* visits
+saturates rather than scaling with demand. `mean_total_minutes` shows the
+identical pattern (133 -> 168 -> 178 -> 172 -> 181 -> 210, saturating with
+some noise, not linear).
+
+Against that saturating true value: **GBR's frozen prediction (247.8 /
+159.7) turns out to be a reasonable approximation by accident** - the true
+function actually is roughly flat in this regime, so "frozen" is
+qualitatively the right shape, just not perfectly calibrated to how much it
+saturates (error ~33 / ~50 at the extreme). **MLP's prediction extrapolates
+the upward trend it learned near the training boundary and keeps
+extrapolating it linearly outward** (521.2 / 500.1 at 3.0x) - confidently
+wrong, overshooting the true saturating value by a huge margin (error ~240
+/ ~290, roughly 6-9x larger than GBR's error).
+
+**This inverts the naive intuition.** The assumption going in was that an
+architecture capable of extrapolating (MLP) should handle distribution
+shift better than one that can't (tree ensembles). The opposite happened
+here: confident-but-wrong extrapolation is worse than frozen-but-
+coincidentally-plausible extrapolation, specifically because the true
+relationship in this domain saturates rather than growing without bound.
+`mean_wait_minutes` and `p95_wait_minutes` degrade less catastrophically
+with MLP (down to 11-18% coverage by 3.0x rather than exactly 0%), but
+still severely - roughly comparable in overall severity to GBR's collapse
+on those same targets.
+
+**Strengthened answer to Gopakumar et al.'s exchangeability limitation:**
+testing a second, structurally different architecture shows the coverage
+breakdown under distribution shift isn't an artifact of one specific
+surrogate's limitation (tree freezing) - it happens with a fundamentally
+different model class too, just via the opposite mechanism (unconstrained
+extrapolation instead of none at all). That's a more general, more
+defensible claim than a single-architecture result could support: in this
+domain, exchangeability violation breaks CP's coverage guarantee regardless
+of which surrogate architecture is wrapped, though the specific failure
+mode and severity per target depends on how that architecture happens to
+extrapolate relative to the true (here, saturating) relationship.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

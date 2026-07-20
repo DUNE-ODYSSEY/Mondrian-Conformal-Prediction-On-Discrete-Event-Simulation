@@ -142,7 +142,8 @@ def build():
               team_text, size=13, color=WHITE, align=PP_ALIGN.CENTER)
     add_text(s, Inches(1), Inches(5.85), Inches(11.3), Inches(0.4),
               f"Course: {COURSE_CODE}", size=13, color=RGBColor(0x93, 0xC5, 0xFD), align=PP_ALIGN.CENTER)
-    nn()
+    add_text(s, Inches(12.2), Inches(7.05), Inches(0.9), Inches(0.35),
+              f"{nn()} / {TOTAL_SLIDES}", size=11, color=RGBColor(0x93, 0xC5, 0xFD), align=PP_ALIGN.RIGHT)
 
     # ---------------- Slide 2: Abstract ----------------
     s = blank_slide(prs)

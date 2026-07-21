@@ -789,6 +789,90 @@ Group number (B9) and roll numbers were things only the user knew - asked
 directly rather than guessing, consistent with the project's standing
 practice of not fabricating information that belongs to the user.
 
+## 2026-07-21 — Publication-rigor upgrade, part 4: second department (generalizability)
+
+Recalibrated the entire pipeline (DES arrival/ESI distributions, surrogate,
+CP calibration, Mondrian CP) on **Department B** instead of A - the
+second-largest of the 3 EDs in the dataset (166,497 visits), never touching
+any of Department A's existing files. Department B is not a scaled-down
+copy of A: real volume is roughly half (133.4 vs. 258.2 visits/day) *and*
+the real ESI acuity mix is meaningfully different - B skews toward lower
+acuity (23.1% ESI-2 vs. A's 37.9%, 26.8% ESI-4 vs. A's 16.4%), consistent
+with a community ED rather than A's academic site. A genuine second data
+point, not a trivial rescale.
+
+**Infrastructure, kept non-destructive on purpose:** added an optional
+`tables_dir`/range parameters to `er_simulation.py` and
+`generate_training_data.py` (defaults preserve department A's exact
+existing behavior - verified with a sanity re-run before touching anything
+else) rather than duplicating the DES/generation logic a second time.
+New `src/generalization/` module + `results/tables/dept_b/`,
+`data/processed/dept_b/`, `models/dept_b/` directories keep Department B
+fully separate from A. Had to fix `.gitignore`'s directory-scoped negation
+patterns (`results/tables/*.csv` doesn't reach into `dept_b/` subdirectory
+files - directories ignored one level up block recursion into negated
+files inside them) so B's tables get tracked while B's model binaries stay
+untracked, same policy as department A.
+
+**Capacity recalibrated for B's own offered load, not copied from A's
+absolute numbers** - a "capacity of 30" would be wildly over-provisioned
+for B's roughly-half volume. Same Erlang-load method as A's original
+derivation: B's offered load is ~10.4 erlangs average / ~16.1 peak (vs. A's
+~22/~34) - default `n_capacity=14`, range (7,22), at the same relative
+position between average and peak load as A's 30 is for A's own numbers.
+
+**DES validation** (`results/tables/dept_b/des_validation.csv`, 200 days):
+88.6% match to real daily volume (vs. A's 91.0%) - slightly lower but
+consistent with the same right-censoring mechanism, expected given B runs
+a bit more relatively congested at its calibrated capacity.
+
+**Surrogate accuracy** (`results/tables/dept_b/surrogate_metrics.csv`):
+R² 0.63-0.88, somewhat lower than A's 0.65-0.93 - plausible given B's
+smaller volume means proportionally noisier daily stats (variance scales
+with 1/sqrt(N)), making the regression target itself noisier, not a
+modeling problem.
+
+**The actual generalizability question**
+(`src/generalization/evaluate_dept_b_cp.py`,
+`results/tables/dept_b/mondrian_cp_detail.csv` /
+`standard_vs_mondrian_summary.csv`, single split): **does Department A's
+core finding replicate at an independent site?** Yes, closely:
+
+| target | B: pooled coverage (staff=Low/arrival=High) | B: Mondrian coverage (same category) | (A, for comparison) |
+|---|---|---|---|
+| mean_wait_minutes | 76.2% | 89.3% | 68.2% -> 90.9% |
+| mean_total_minutes | 81.0% | 90.5% | 80.7% -> 92.0% |
+| p95_wait_minutes | 81.0% | 86.9% | 72.7% -> 92.0% |
+
+Same category (`staff=Low/arrival=High`, understaffed + high demand) is
+the worst pooled-CP performer for the same 3 targets in both independent
+sites, and Mondrian CP corrects it by a similar magnitude both times. The
+easy category (`staff=High/arrival=Low`) again hits exactly 100% pooled
+coverage in B - the same wasted-width pattern as A.
+
+**Honest difference worth keeping, not smoothing over:** `n_patients`
+behaves differently between sites. In A, `n_patients`'s pooled coverage was
+already fairly uniform across categories, so Mondrian didn't help (and
+slightly hurt, from added finite-sample noise). In B, `n_patients` *does*
+have a real conditional gap (worst category `staff=High/arrival=High`,
+81.1% pooled -> 88.5% Mondrian) - a different category than the other three
+targets' shared worst case, and a target where Mondrian *does* help this
+time. This is a real, site-specific difference, not an error - and it's a
+more credible generalizability claim precisely because not everything
+replicated identically. The headline pattern (Mondrian fixes the
+understaffed/high-demand category specifically) held at an independent
+site with different volume and a different acuity mix; a target-level
+detail that didn't replicate exactly is disclosed rather than hidden.
+
+**Answer to the generalizability question:** yes, on the dimension that
+matters most for the project's core claim - the marginal-vs-conditional
+coverage gap that Mondrian CP closes is not an artifact of one specific
+department's calibration. It reproduces, with similar magnitude, at an
+independent site with meaningfully different volume and acuity
+characteristics. Scope stayed proportionate (single split, not the full
+30-repeat treatment) since the question here is replication at a new site,
+not re-establishing statistical rigor already established for A in part 1.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

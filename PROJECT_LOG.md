@@ -753,6 +753,42 @@ of which surrogate architecture is wrapped, though the specific failure
 mode and severity per target depends on how that architecture happens to
 extrapolate relative to the true (here, saturating) relationship.
 
+## 2026-07-21 — Zeroth review PPT restructured to professor's exact template
+
+Professor specified the required structure directly (relayed by user, twice
+- second message corrected/replaced the first): title (names, roll numbers,
+group number B9), table of contents, abstract, **literature review in table
+format**, research gap, problem statement, methodology (diagrams, allowed
+multiple slides), results, conclusion, references, thank you. Rebuilt
+`slides/build_zeroth_review_ppt.py` from scratch to this exact 12-slide
+structure, replacing the previous ad-hoc structure entirely.
+
+Kept two things from the project's established practice despite the
+rewrite: literature review and references list **only real, verified
+items** (the base paper, the Kaggle dataset) - no fabricated citations,
+same reasoning as before. Results slide shows real preliminary numbers
+already produced (DES validation 91.0% match, surrogate R² table) rather
+than the full publication-grade findings from later in the project -
+proportionate to what a zeroth review should show, not an attempt to look
+more finished than the work actually is at this stage.
+
+**Caught a real bug during verification** (rendered all 12 slides to PNG
+before calling it done, same as every prior deck): the literature review
+table has multi-line cells (e.g. "Conformal Prediction\nFoundations").
+`cell.text = "..."` in python-pptx splits on `\n` into **separate
+paragraphs**, not a single run with a line break - but the table styling
+loop only touched `paragraphs[0].runs[0]`, so every second line fell back
+to an unstyled, much larger default font size. Visually broken (mismatched
+font sizes within the same cell) until fixed by looping over all paragraphs
+and all runs, not just the first of each. Same class of bug as the two
+previous PPT rebuilds (invisible text, zero-width columns) - reinforces
+that python-pptx layout code needs to be rendered and looked at, not
+trusted from reading the code.
+
+Group number (B9) and roll numbers were things only the user knew - asked
+directly rather than guessing, consistent with the project's standing
+practice of not fabricating information that belongs to the user.
+
 ## Status vs. roadmap (as of 2026-07-17)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

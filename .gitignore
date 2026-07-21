@@ -12,7 +12,9 @@ results/figures/*
 results/tables/*
 !results/tables/.gitkeep
 !results/tables/*.csv
+!results/tables/dept_b/
 *.egg-info/
 .pytest_cache/
 .DS_Store
 models/*.joblib
+models/dept_b/

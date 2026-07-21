@@ -58,11 +58,17 @@ def lognormal_params_from_mean_sd(mean, sd):
     return mu, sigma
 
 
-def load_calibration():
-    """Real arrival-by-hour-bin distribution and real ESI mix (single department)."""
-    arrivals = pd.read_csv(f"{TABLES}/arrivals_by_hour_bin.csv", index_col=0)["count"]
+def load_calibration(tables_dir=TABLES):
+    """Real arrival-by-hour-bin distribution and real ESI mix (single department).
+
+    tables_dir defaults to the department-A tables used throughout the project;
+    pass a different directory (e.g. results/tables/dept_b) to calibrate the
+    same DES logic against a different department's real distributions without
+    touching department A's files.
+    """
+    arrivals = pd.read_csv(f"{tables_dir}/arrivals_by_hour_bin.csv", index_col=0)["count"]
     arrivals = arrivals.reindex(HOUR_BINS)
-    esi_mix = pd.read_csv(f"{TABLES}/esi_mix.csv", index_col=0)["proportion"]
+    esi_mix = pd.read_csv(f"{tables_dir}/esi_mix.csv", index_col=0)["proportion"]
     return arrivals, esi_mix
 
 
@@ -126,8 +132,8 @@ class ERSimulation:
         }
 
 
-def run_scenario(n_capacity=30, arrival_rate_multiplier=1.0, seed=None):
-    arrivals_by_bin, esi_mix = load_calibration()
+def run_scenario(n_capacity=30, arrival_rate_multiplier=1.0, seed=None, tables_dir=TABLES):
+    arrivals_by_bin, esi_mix = load_calibration(tables_dir)
     sim = ERSimulation(n_capacity, arrivals_by_bin, esi_mix, arrival_rate_multiplier, seed=seed)
     return sim.run()
 

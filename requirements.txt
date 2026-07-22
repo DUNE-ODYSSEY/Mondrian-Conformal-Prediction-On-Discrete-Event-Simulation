@@ -9,6 +9,7 @@ mapie
 jupyter
 pytest
 python-pptx
+python-docx
 kaggle
 pyreadr
 pyarrow

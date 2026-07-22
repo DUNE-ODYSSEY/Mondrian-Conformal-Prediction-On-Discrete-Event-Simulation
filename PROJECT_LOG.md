@@ -917,6 +917,47 @@ PNG via PowerPoint COM automation, checked each one individually (including
 re-verifying slide 11's header specifically after the fix), before calling
 it done.
 
+## 2026-07-23 — Two standalone assignments derived from the project
+
+Professor asked for two short (2-4 page) written assignments based on the
+project, fully open on topic/format. User delegated topic selection.
+Picked the two most self-contained, scientifically distinct findings so the
+two assignments don't overlap and both had complete real data already in
+hand - no new experiments needed, this was purely a writing task:
+
+1. **"Closing the Marginal-to-Conditional Coverage Gap: Mondrian Conformal
+   Prediction in ER Discrete-Event Simulation"** - the core Mondrian CP
+   finding (the `staff=Low/arrival=High` story), statistically validated
+   across 30 repeats, plus the Department B replication and the Mondrian
+   CQR extension as supporting evidence.
+2. **"When Extrapolation Fails: Testing Conformal Prediction's
+   Exchangeability Assumption Across Surrogate Architectures"** - the
+   exchangeability stress test across both surrogate architectures (GBR,
+   MLP), centered on the counter-intuitive finding that confidently-wrong
+   extrapolation (MLP) is worse than frozen-but-coincidentally-plausible
+   extrapolation (GBR), traced to the DES's saturating true relationship.
+
+New tooling: installed `python-docx` (no system dependencies, unlike
+`weasyprint`; `pandoc` wasn't available either) to produce real `.docx`
+files - `reports/assignments/build_assignment{1,2}.py` ->
+`assignment1_mondrian_cp_coverage_gap.docx` /
+`assignment2_exchangeability_extrapolation.docx`. Converted both to PDF via
+Word COM automation (same pattern as the PowerPoint verification workflow
+used throughout this project) rather than leaving PDF generation to the
+user.
+
+**Verified by reading the actual PDF output**, not just trusting the
+generation script - both came out 3-4 pages, tables intact, headings and
+captions styled correctly, well within the requested 2-4 page scope. Every
+number in both reports traces directly to `results/tables/` - written
+purely from already-verified project results, nothing new asserted.
+
+User also gave a standing instruction partway through this session: proceed
+directly with file reads/writes/edits and bash commands in this project
+without asking for confirmation first (saved as
+`feedback_er_conformal_uq_autonomy` in the memory system) - applied for the
+rest of this task and going forward.
+
 ## Status vs. roadmap (as of 2026-07-21)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and

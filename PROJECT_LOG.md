@@ -873,7 +873,51 @@ characteristics. Scope stayed proportionate (single split, not the full
 30-repeat treatment) since the question here is replication at a new site,
 not re-establishing statistical rigor already established for A in part 1.
 
-## Status vs. roadmap (as of 2026-07-17)
+## 2026-07-21 — Publication-rigor upgrade, part 5: consolidated into the full results deck
+
+Closing the loop on the publication-rigor push: brought all four parts
+(30-repeat statistical significance, CQR/Mondrian-CQR, MLP robustness
+check, Department B generalizability) into `slides/full_project_results.pptx`
+rather than leaving them only in result tables and this log.
+
+`src/uq/publication_comparison_chart.py`: new authoritative 5-method
+comparison chart (`results/figures/publication_comparison.png`) built from
+the 30-repeat summaries (parts 1-2) instead of the single-split point
+estimates the original `full_comparison.py` chart used - coverage and width
+with 95% CI error bars, all five methods (GP, Standard CP, Mondrian CP,
+CQR, Mondrian CQR) on the same 30 seeds.
+
+Deck grew from 16 to 21 slides: kept the original single-split comparison
+(now captioned as such) and added a second slide with the rigorous version
+directly after it, plus four new slides (statistical rigor, CQR, MLP
+robustness, Department B) inserted before the summary slides. Updated "What
+We Accomplished" and the novelty verdict to state the strengthened claim
+(statistically validated, cross-architecture, cross-site) instead of the
+original single-test framing, and updated "Limitations" to reflect what's
+now actually been tested vs. still open (removed the now-stale "generalization
+untested" and "different architecture might behave differently" caveats,
+replaced with accurate current scope boundaries - 2 of 3 departments tested,
+2 of many possible architectures tested).
+
+**Caught the same class of bug a third time:** this script's `add_table()`
+had the identical multi-line-cell font-size bug found in the zeroth review
+script earlier today (`cell.text` with embedded `\n` creates separate
+paragraphs; styling only `paragraphs[0].runs[0]` leaves subsequent lines at
+an unstyled, oversized default) - already live on the existing slide 11
+(`"Pooled coverage\n(staff=Low / arrival=High)"` header), just never caught
+because it wasn't looked at carefully enough post-render the first time.
+Fixed the same way: loop over all paragraphs and all runs. **Worth carrying
+forward as a standing rule for any future python-pptx script in this
+project: any table helper function must loop over all paragraphs, not just
+paragraphs[0], from the start** - this is now the third time this exact bug
+has appeared across three independently-written scripts.
+
+Verified the same way as every deck before it: rendered all 21 slides to
+PNG via PowerPoint COM automation, checked each one individually (including
+re-verifying slide 11's header specifically after the fix), before calling
+it done.
+
+## Status vs. roadmap (as of 2026-07-21)
 
 - **Week 1-2**: Environment setup ✅ done. Literature review (30 papers) and
   3 core papers in depth — **not done**, this is reading/analysis work only the
@@ -900,4 +944,16 @@ not re-establishing statistical rigor already established for A in part 1.
 - **Week 14-15** (full GP vs. standard CP vs. Mondrian CP comparison — coverage,
   width, computation time): done — see entry above. All the quantitative work
   the end-sem deliverable needs is now in hand.
-- **Week 16** (end-sem PPT + final report): not started.
+- **Publication-rigor upgrade** (user-requested, beyond the original roadmap):
+  done, all 5 parts — 30-repeat statistical significance testing, CQR/Mondrian-CQR
+  as a stronger baseline, a second surrogate architecture (MLP) confirming the
+  exchangeability finding isn't gradient-boosting-specific, a second department
+  confirming the core finding isn't one-site-specific, and all of it consolidated
+  into `slides/full_project_results.pptx` (21 slides). This substantially
+  exceeds what the original roadmap asked for at this stage.
+- **Zeroth review**: done — `slides/zeroth_review.pptx`, restructured to the
+  professor's exact requested template (title/group/roll numbers, TOC, abstract,
+  literature review table, research gap, problem statement, methodology,
+  results, conclusion, references, thank you).
+- **Week 16** (end-sem PPT + final report): not started — waiting on the
+  instructor's specific guidelines, per user's earlier instruction.

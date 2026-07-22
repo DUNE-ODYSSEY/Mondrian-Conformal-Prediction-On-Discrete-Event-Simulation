@@ -1,5 +1,7 @@
 """
-Full project results deck (through Week 15) - not the final end-sem PPT,
+Full project results deck (through Week 15, plus the publication-rigor
+upgrade: 30-repeat statistical significance, CQR/Mondrian-CQR, a second
+surrogate architecture, a second department) - not the final end-sem PPT,
 which will follow the instructor's specific guidelines once shared. This is
 a comprehensive working deck: all results in order, why Mondrian CP was
 used and why it's better, what was accomplished, and an explicit verdict on
@@ -43,7 +45,7 @@ WARN = RGBColor(0xD9, 0x77, 0x06)
 
 SLIDE_W = Inches(13.333)
 SLIDE_H = Inches(7.5)
-TOTAL_SLIDES = 16
+TOTAL_SLIDES = 21
 
 
 def new_deck():
@@ -136,12 +138,15 @@ def add_table(slide, x, y, w, h, headers, rows, col_widths=None, font_size=13,
         cell.text = hdr
         cell.fill.solid()
         cell.fill.fore_color.rgb = header_color
-        p = cell.text_frame.paragraphs[0]
-        p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
-        run = p.runs[0]
-        run.font.size = Pt(font_size)
-        run.font.bold = True
-        run.font.color.rgb = WHITE
+        # cell.text splits on "\n" into separate paragraphs, not a single run
+        # with a line break — style every paragraph/run, not just the first,
+        # or unstyled lines fall back to a much larger default font size.
+        for p in cell.text_frame.paragraphs:
+            p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+            for run in p.runs:
+                run.font.size = Pt(font_size)
+                run.font.bold = True
+                run.font.color.rgb = WHITE
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
         cell.margin_top = Pt(4)
         cell.margin_bottom = Pt(4)
@@ -151,14 +156,14 @@ def add_table(slide, x, y, w, h, headers, rows, col_widths=None, font_size=13,
             cell.text = str(val)
             cell.fill.solid()
             cell.fill.fore_color.rgb = LIGHT_BG if i % 2 == 0 else WHITE
-            p = cell.text_frame.paragraphs[0]
-            p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
-            run = p.runs[0]
-            run.font.size = Pt(font_size)
-            run.font.color.rgb = TEXT_DARK
-            if highlight_map and (i, j) in highlight_map:
-                run.font.color.rgb = highlight_map[(i, j)]
-                run.font.bold = True
+            for p in cell.text_frame.paragraphs:
+                p.alignment = PP_ALIGN.CENTER if j > 0 else PP_ALIGN.LEFT
+                for run in p.runs:
+                    run.font.size = Pt(font_size)
+                    run.font.color.rgb = TEXT_DARK
+                    if highlight_map and (i, j) in highlight_map:
+                        run.font.color.rgb = highlight_map[(i, j)]
+                        run.font.bold = True
             cell.vertical_anchor = MSO_ANCHOR.MIDDLE
             cell.margin_top = Pt(4)
             cell.margin_bottom = Pt(4)
@@ -218,7 +223,7 @@ def build():
     add_text(s, Inches(1), Inches(1.3), Inches(11.3), Inches(2.0),
               PROJECT_TITLE, size=32, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
     add_text(s, Inches(1), Inches(3.35), Inches(11.3), Inches(0.5),
-              "Full Project Results (through Week 15)", size=17, color=RGBColor(0x93, 0xC5, 0xFD),
+              "Full Project Results + Publication-Rigor Upgrade", size=17, color=RGBColor(0x93, 0xC5, 0xFD),
               align=PP_ALIGN.CENTER, italic=True)
     team_text = "   |   ".join([f"{nm} ({i})" for nm, i in TEAM])
     add_text(s, Inches(1), Inches(5.35), Inches(11.3), Inches(0.8),
@@ -461,7 +466,18 @@ def build():
     add_text(s, Inches(0.7), Inches(6.45), Inches(11.9), Inches(0.9),
               "CP calibrates ~650–1000x faster than GP (~0.01s vs. 7–11.5s). Mondrian CP's marginal "
               "coverage matches or beats standard CP's despite ~9x smaller per-category calibration "
-              "slices, and is also usually narrower — pooling was wasting width in easy categories.",
+              "slices, and is also usually narrower — pooling was wasting width in easy categories. "
+              "(Single-split result — see the 30-repeat validated version on the next slide.)",
+              size=13, italic=True, color=TEXT_MUTED)
+
+    # ---------------- Slide 12b: Publication-grade comparison (5 methods, 30 repeats) ----------------
+    s = blank_slide(prs)
+    slide_header(s, "Results — Validated", "All 5 Methods, 30 Independent Repeats", next_num(), title_size=24)
+    s.shapes.add_picture("results/figures/publication_comparison.png", Inches(0.7), Inches(1.5), width=Inches(11.9))
+    add_text(s, Inches(0.7), Inches(6.6), Inches(11.9), Inches(0.8),
+              "Error bars are 95% CI on the mean across 30 independent calibration/test draws — tight "
+              "enough to read as single dots, meaning these differences are stable, not single-split noise. "
+              "CQR (adaptive, quantile-regression-based) joins the comparison as a fifth method.",
               size=13, italic=True, color=TEXT_MUTED)
 
     # ---------------- Slide 13: Exchangeability stress test ----------------
@@ -488,7 +504,107 @@ def build():
               "Both stated Gopakumar et al. limitations are now tested in this domain.",
               size=13, color=TEXT_DARK)
 
-    # ---------------- Slide 14: What we accomplished ----------------
+    # ---------------- Slide 14: Statistical rigor (30 repeats) ----------------
+    s = blank_slide(prs)
+    slide_header(s, "Publication-Rigor Upgrade", "Statistical Rigor: 30 Independent Repeats", next_num(), title_size=22)
+    add_text(s, Inches(0.7), Inches(1.6), Inches(11.9), Inches(0.9),
+              "Every result so far was a single train/test split — no way to tell if a number like "
+              "\"68.2% coverage\" was a robust effect or one unlucky draw. Repeated the full GP / "
+              "standard-CP / Mondrian-CP pipeline across 30 independent (calibration, test) draws.",
+              size=15, color=TEXT_DARK)
+    add_table(s, Inches(0.7), Inches(2.65), Inches(11.9), Inches(2.4),
+              ["Target", "Method", "Coverage (mean ± 95% CI)", "Width (mean ± 95% CI)"],
+              [
+                  ["mean_wait_minutes", "GP", "88.31% ± 0.47%", "44.4 ± 1.1"],
+                  ["mean_wait_minutes", "Standard CP", "90.09% ± 0.46%", "48.0 ± 1.5"],
+                  ["mean_wait_minutes", "Mondrian CP", "91.07% ± 0.35%", "41.7 ± 1.4"],
+                  ["p95_wait_minutes", "GP", "88.97% ± 0.44%", "354.6 ± 11.5"],
+                  ["p95_wait_minutes", "Standard CP", "90.06% ± 0.39%", "377.1 ± 12.6"],
+                  ["p95_wait_minutes", "Mondrian CP", "91.35% ± 0.46%", "328.6 ± 13.4"],
+              ], col_widths=[Inches(2.9), Inches(2.4), Inches(3.4), Inches(3.2)], font_size=12)
+    add_rect(s, Inches(0.7), Inches(5.3), Inches(11.9), Inches(1.75), LIGHT_BG, line=True)
+    add_text(s, Inches(1.0), Inches(5.45), Inches(11.3), Inches(1.5),
+              "Paired t-test (same 30 draws underlie all methods): Mondrian CP's coverage advantage over "
+              "both standard CP and GP is significant at p < 0.001 on every one of the 4 targets, most "
+              "p-values below 1e-05. With averaging, Mondrian CP's coverage now sits consistently above "
+              "90% while GP consistently undercovers — a statistically defensible claim, not just a "
+              "directionally suggestive one.", size=13, color=TEXT_DARK)
+
+    # ---------------- Slide 15: CQR ----------------
+    s = blank_slide(prs)
+    slide_header(s, "Publication-Rigor Upgrade", "CQR: A Stronger, Adaptive Baseline", next_num(), title_size=24)
+    add_text(s, Inches(0.7), Inches(1.6), Inches(11.9), Inches(1.0),
+              "Conformalized Quantile Regression (CQR) calibrates an interval that adapts to the local "
+              "spread predicted by quantile regressors, instead of one fixed width (standard CP) or one "
+              "fixed width per category (Mondrian CP) built from a mean predictor.",
+              size=15, color=TEXT_DARK)
+    add_table(s, Inches(0.7), Inches(2.7), Inches(11.9), Inches(1.7),
+              ["Target", "Standard CP", "Mondrian CP", "CQR", "Mondrian CQR"],
+              [
+                  ["p95_wait_minutes (coverage)", "90.1%", "91.4%", "90.9%", "92.2%"],
+                  ["p95_wait_minutes (width)", "377.1", "328.6", "275.6", "292.7"],
+              ], col_widths=[Inches(3.5), Inches(2.1), Inches(2.1), Inches(2.1), Inches(2.1)], font_size=12)
+    add_rect(s, Inches(0.7), Inches(4.7), Inches(11.9), Inches(2.35), LIGHT_BG, line=True)
+    add_text(s, Inches(1.0), Inches(4.85), Inches(11.3), Inches(2.1),
+              "CQR dominates standard CP outright on p95_wait_minutes — equal-or-better coverage, ~27% "
+              "narrower interval (p < 0.005). Against Mondrian CP it's a genuine tradeoff: slightly lower "
+              "coverage, but narrower — different points on the same coverage/width frontier. Combining "
+              "both ideas (Mondrian CQR) wins on both axes simultaneously for p95_wait_minutes — higher "
+              "coverage AND narrower than Mondrian CP alone. The five methods form a real frontier, not a "
+              "strict ranking: each adds value in a different way.", size=13, color=TEXT_DARK)
+
+    # ---------------- Slide 16: MLP robustness check ----------------
+    s = blank_slide(prs)
+    slide_header(s, "Publication-Rigor Upgrade", "Robustness Check: A Second Surrogate", next_num(), title_size=24)
+    add_text(s, Inches(0.7), Inches(1.6), Inches(11.9), Inches(0.9),
+              "Trained an MLP (neural network) surrogate — nearly identical in-distribution accuracy to "
+              "gradient boosting (R² within ~0.01 on every target) — and re-ran the exchangeability stress "
+              "test to see if the coverage collapse was specific to tree-based extrapolation.",
+              size=15, color=TEXT_DARK)
+    add_table(s, Inches(0.7), Inches(2.6), Inches(11.9), Inches(1.4),
+              ["n_capacity=30", "Arrival 1.0x", "Arrival 1.3x", "Arrival 2.0x", "Arrival 3.0x", "True (3.0x)"],
+              [
+                  ["GBR prediction", "240.5", "247.8", "247.8 (frozen)", "247.8 (frozen)", "280.9"],
+                  ["MLP prediction", "234.8", "245.8", "336.5", "521.2", "280.9"],
+              ], col_widths=[Inches(2.3), Inches(1.9), Inches(1.9), Inches(2.0), Inches(1.9), Inches(1.9)], font_size=11)
+    add_rect(s, Inches(0.7), Inches(4.25), Inches(11.9), Inches(2.8), LIGHT_BG, line=True)
+    add_text(s, Inches(1.0), Inches(4.4), Inches(11.3), Inches(2.55),
+              "Counter-intuitive result: the true DES output saturates at extreme overload (the same "
+              "day-boundary censoring effect from Slide 7 — fewer patients finish within a day). GBR's "
+              "frozen prediction happens to land close to that saturating value by coincidence (error "
+              "~33). The MLP keeps extrapolating the upward trend it learned near the training boundary "
+              "and overshoots massively (error ~240, 7x worse) — n_patients and mean_total_minutes both "
+              "hit exactly 0% coverage with the MLP by 2.0x severity, worse than GBR's 31.7%/4.7% at "
+              "3.0x. The ability to extrapolate is not automatically better than not being able to — "
+              "confidently-wrong extrapolation is worse than frozen-but-plausible extrapolation here. "
+              "Strengthens the exchangeability finding: the breakdown isn't one architecture's quirk.",
+              size=13, color=TEXT_DARK)
+
+    # ---------------- Slide 17: Second department ----------------
+    s = blank_slide(prs)
+    slide_header(s, "Publication-Rigor Upgrade", "Generalizability: A Second Department", next_num(), title_size=24)
+    add_text(s, Inches(0.7), Inches(1.6), Inches(11.9), Inches(0.9),
+              "Recalibrated the entire pipeline — DES, surrogate, CP — on Department B (166,497 visits, "
+              "roughly half A's volume, meaningfully different ESI acuity mix — a community rather than "
+              "academic site) to test whether the core finding is specific to one department.",
+              size=15, color=TEXT_DARK)
+    add_table(s, Inches(0.7), Inches(2.65), Inches(11.9), Inches(1.7),
+              ["Target", "Dept. B: pooled (worst category)", "Dept. B: Mondrian", "Dept. A (for comparison)"],
+              [
+                  ["mean_wait_minutes", "76.2%", "89.3%", "68.2% -> 90.9%"],
+                  ["mean_total_minutes", "81.0%", "90.5%", "80.7% -> 92.0%"],
+                  ["p95_wait_minutes", "81.0%", "86.9%", "72.7% -> 92.0%"],
+              ], col_widths=[Inches(3.0), Inches(3.2), Inches(2.5), Inches(3.2)], font_size=12)
+    add_rect(s, Inches(0.7), Inches(4.65), Inches(11.9), Inches(2.4), LIGHT_BG, line=True)
+    add_text(s, Inches(1.0), Inches(4.8), Inches(11.3), Inches(2.15),
+              "Same worst category (understaffed + high demand) in both independent sites, similar "
+              "correction magnitude from Mondrian CP, same wasted-width pattern on the easy category. "
+              "Honest difference worth keeping: n_patients behaves differently between sites — a real "
+              "conditional gap appears in Department B that wasn't present in A, and Mondrian helps there "
+              "this time. That's disclosed, not smoothed over — and it's part of what makes the "
+              "replication credible rather than suspiciously perfect.", size=13, color=TEXT_DARK)
+
+    # ---------------- Slide 18: What we accomplished ----------------
     s = blank_slide(prs)
     slide_header(s, "Summary", "What We Accomplished", next_num())
     add_bullets(s, Inches(0.7), Inches(1.75), Inches(11.9), Inches(5), [
@@ -496,51 +612,55 @@ def build():
         "data — 91.0% match to real daily patient volume.",
         "Generated a 5000-scenario training sweep and trained a surrogate model with strong accuracy on "
         "3 of 4 targets (R² 0.76–0.93).",
-        "Implemented a GP baseline, standard conformal prediction (two nonconformity measures), and "
-        "Mondrian conformal prediction, all evaluated on the same test split and target coverage.",
+        "Implemented and compared 5 UQ methods — GP baseline, standard CP, Mondrian CP, CQR, and "
+        "Mondrian CQR — all on the same test data and target coverage.",
         "Demonstrated Mondrian CP closing a real marginal-vs-conditional coverage gap (68–81% pooled "
-        "coverage in the hardest category, corrected to 91–92%), and quantified where it doesn't help.",
-        "Ran an exchangeability stress test across 8 severity levels and root-caused the coverage "
-        "collapse to a specific, verified mechanism, not just \"it broke.\"",
-        "Full head-to-head comparison of all three UQ methods on coverage, interval width, and "
-        "computation time.",
-    ], size=16, space_after=13)
+        "coverage in the hardest category, corrected to 91–92%), validated with paired significance "
+        "tests (p < 0.001) across 30 independent repeats, not a single lucky split.",
+        "Ran an exchangeability stress test across 8 severity levels with two structurally different "
+        "surrogate architectures, and root-caused the coverage collapse to a specific, verified "
+        "mechanism in each case, not just \"it broke.\"",
+        "Replicated the core finding at a second, independent department with different volume and "
+        "acuity mix — the marginal-vs-conditional gap Mondrian CP closes is not a one-site artifact.",
+    ], size=15, space_after=11)
 
-    # ---------------- Slide 15: Did we meet our novelty ----------------
+    # ---------------- Slide 19: Did we meet our novelty ----------------
     s = blank_slide(prs)
     slide_header(s, "Verdict", "Did We Meet Our Novelty Target?", next_num(), title_size=24)
     add_text(s, Inches(0.7), Inches(1.7), Inches(11.9), Inches(1.1),
               "The claim was to test Gopakumar et al. (2026)'s two stated CP limitations — marginal "
               "coverage, exchangeability — outside the physics domains they validated CP in, using a "
               "discrete-event / queueing simulation surrogate instead.", size=16, color=TEXT_DARK)
-    add_rect(s, Inches(0.7), Inches(3.0), Inches(11.9), Inches(2.3), LIGHT_BG, line=True)
-    add_bullets(s, Inches(1.0), Inches(3.25), Inches(11.3), Inches(1.9), [
-        "Marginal coverage limitation: tested. Mondrian CP closes the gap where a real gap exists "
-        "(3 of 4 targets), and the one target where it doesn't help is explained, not hidden.",
-        "Exchangeability limitation: tested. Confirmed it breaks down outside the training "
-        "distribution, with a specific, verified root cause rather than a generic \"performance "
-        "degrades\" statement.",
+    add_rect(s, Inches(0.7), Inches(3.0), Inches(11.9), Inches(2.5), LIGHT_BG, line=True)
+    add_bullets(s, Inches(1.0), Inches(3.2), Inches(11.3), Inches(2.2), [
+        "Marginal coverage limitation: tested, and now statistically validated (p < 0.001, 30 repeats) "
+        "and replicated at a second, independent site.",
+        "Exchangeability limitation: tested with two structurally different surrogate architectures — "
+        "confirmed to break down outside the training distribution regardless of architecture, with a "
+        "specific, verified root cause in each case rather than a generic \"performance degrades\" claim.",
     ], size=15, space_after=10)
-    add_text(s, Inches(0.7), Inches(5.55), Inches(11.9), Inches(1.2),
+    add_text(s, Inches(0.7), Inches(5.75), Inches(11.9), Inches(1.2),
               "Yes — both limitations were tested in a domain they hadn't been tested in before, with "
-              "concrete, quantified answers for each, not just a replication of the base paper's "
-              "physics-domain results.", size=17, bold=True, color=GOOD)
+              "concrete, statistically validated, cross-architecture and cross-site answers, not just a "
+              "single replication of the base paper's physics-domain results.", size=16, bold=True, color=GOOD)
 
-    # ---------------- Slide 16: Limitations & what's left ----------------
+    # ---------------- Slide 20: Limitations & what's left ----------------
     s = blank_slide(prs)
     slide_header(s, "Honesty Check", "Limitations & What's Left", next_num())
     add_bullets(s, Inches(0.7), Inches(1.75), Inches(11.9), Inches(5), [
         "Service/treatment time is literature-calibrated, not derived from the dataset — the dataset "
         "has no discharge timestamp. Disclosed explicitly throughout, not blended silently into the "
         "\"real data\" story.",
-        "Calibrated on one department (the largest/academic site) of one health system — generalization "
-        "to other hospitals or EDs is untested.",
-        "The exchangeability breakdown is partly a surrogate-model artifact (tree-based extrapolation), "
-        "not purely a CP phenomenon — a different surrogate architecture might behave differently OOD.",
+        "Generalizability tested across 2 of the dataset's 3 departments (one academic, one community) — "
+        "both replicate the core finding, but the third department and other health systems entirely are "
+        "still untested.",
+        "The exchangeability breakdown was tested with 2 surrogate architectures (gradient boosting, "
+        "MLP) — both fail outside the training range, via different mechanisms. Other architecture "
+        "families (e.g. a GP-as-surrogate) are untested.",
         "Literature review (30 papers, 3 in depth) still in progress.",
         "This is a working results deck, not the final end-sem PPT — that will follow the instructor's "
         "specific guidelines once shared.",
-    ], size=17, space_after=16)
+    ], size=16, space_after=14)
 
     prs.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

@@ -18,3 +18,4 @@ results/tables/*
 .DS_Store
 models/*.joblib
 models/dept_b/
+literature/pdfs/

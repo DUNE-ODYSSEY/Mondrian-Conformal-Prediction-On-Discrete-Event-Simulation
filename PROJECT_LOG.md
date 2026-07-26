@@ -998,3 +998,56 @@ rest of this task and going forward.
   results, conclusion, references, thank you).
 - **Week 16** (end-sem PPT + final report): not started — waiting on the
   instructor's specific guidelines, per user's earlier instruction.
+
+## 2026-07-24 — Standing instruction: full autonomy on file/bash operations
+
+User gave a fresh standing instruction (previous session's memory of this
+same instruction wasn't available in this session — different memory scope):
+proceed directly with all file reads/writes/edits and bash commands in this
+project without asking for permission first. Applies for this session and
+going forward. Same instruction as the 2026-07-23 entry above, re-affirmed.
+
+## 2026-07-24 — Literature review: 30-paper candidate list sourced
+
+Professor requires a 30-paper literature review (separate from, but feeding
+into, the Week 1-2 roadmap item that's been open since the start). User had
+3 papers already (Shafer & Vovk 2008 tutorial, Gopakumar et al. 2026 base
+paper, Boström & Johansson Mondrian CP — exact citation for the third
+wasn't known and was looked up: PMLR 128, COPA 2020, pp. 114-133).
+
+Sourced 30 real, citation-verified candidates via web search across 5
+categories (CP foundations, Mondrian/conditional coverage, surrogate
+modeling & UQ, queueing theory & ED operations research, DES & ED-specific
+ML) — `literature/candidate_papers.md`. Every citation was checked against
+a primary source (publisher/DOI/preprint page) before inclusion, not
+generated from memory — caught one real error this way: a paper on
+combining Mondrian conformal predictors was initially guessed as
+Löfström/Boström (who write most of the other Mondrian papers) but is
+actually Toccaceli & Gammerman (2019, *Machine Learning* 108, 489-510).
+
+**Deliberately left blank:** the "relevance note" / actual read-and-summarize
+column for all 30. That's the part of a literature review that has to
+reflect genuine engagement with each paper — same integrity line drawn for
+the zeroth-review slide's literature section (no fabricated summaries or
+citations). Two entries flagged with ⚠ need a citation double-check against
+the primary source before final submission (the Mondrian Confidence Machine
+tech report, and the base paper's exact volume/issue/page vs. what search
+returned).
+
+Suggested "3 core papers in depth" (per the original roadmap ask):
+Gopakumar et al. (base paper), Boström & Johansson (Mondrian CP), Romano et
+al. (CQR) — chosen because all three map directly onto code already in this
+repo, so the in-depth treatment can lean on existing results.
+
+Followed up by fetching direct links/DOIs for all 30 and downloading what's
+legitimately open-access: **16 of 30 PDFs** now sit in `literature/pdfs/`
+(arXiv/PMLR/NeurIPS preprints + a few author-hosted copies), gitignored —
+mirrored copies are for the team's own reading, not for redistribution via
+the public GitHub repo. The remaining 14 are linked but not auto-downloaded:
+4 are on PubMed Central and the base paper is on IOPscience, both genuinely
+free but bot-protection-blocked from scripted download (a normal browser
+visit works); the rest (9) are behind real paywalls (Springer/Wiley/
+Elsevier/Annals of Statistics) — needs college library access or an
+author's self-archived copy. Documented all of this directly in
+`literature/candidate_papers.md` so the team isn't guessing which ones
+still need a manual step.

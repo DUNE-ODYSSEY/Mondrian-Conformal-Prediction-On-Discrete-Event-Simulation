@@ -1051,3 +1051,93 @@ Elsevier/Annals of Statistics) — needs college library access or an
 author's self-archived copy. Documented all of this directly in
 `literature/candidate_papers.md` so the team isn't guessing which ones
 still need a manual step.
+
+## 2026-08-04/05 — Professor expanded scope to a single 200+ page book; IEEE/textbook reformat, deep derivations, 10-paper DES cross-check
+
+Professor clarified the two planned 2-4 page assignments are now **one
+consolidated 200+ page book-format report**, styled after a real published
+technical book (user located and shared the actual reference: *Agricultural
+Robotics: Perception, Navigation, Kinematics and Intelligent Farming
+Systems* by Akhil Muraleedharan, Kindle). Consolidated onto the
+Mondrian CP coverage-gap topic (`reports/assignments/build_assignment1_book.py`
++ `book_common.py`) rather than building both topics out separately — that
+topic has substantially more empirical material (5 UQ methods, 30-repeat
+significance testing, cross-site replication) to expand into real content
+without padding. The exchangeability/extrapolation topic was folded in as
+a secondary Section 6.13 rather than dropped.
+
+**Reformatted to IEEE/technical-textbook style**: 7x10in page geometry with
+binding gutter, Times New Roman, decimal heading hierarchy, numbered
+bracket citations `[n]` assigned by true first-appearance order via a
+`cite()`/`CITATION_DB` registry (so renumbering is impossible to get wrong
+by hand), chapter-scoped top-captioned tables / bottom-captioned figures,
+and an auto-generated References chapter that iterates the same registry.
+
+**Added real, worked mathematical derivations** (not just stated formulas)
+in Chapter 4: split conformal prediction's exact finite-sample coverage
+guarantee derived from the exchangeability rank argument (plus the
+two-sided sandwich bound); Mondrian CP's group-conditional guarantee as a
+genuine corollary; CQR's coverage guarantee via the same argument applied
+to the CQR score; the GP posterior mean/variance derived from joint-Gaussian
+conditioning (Schur complement); gradient boosting derived as functional
+gradient descent (Friedman); Little's Law derived from the sample-path
+area argument, then the **Erlang-C waiting-probability formula derived
+from scratch via the M/M/c birth-death process** (balance equations →
+stationary distribution → closed form); the paired t-test's distribution
+derived via Cochran's theorem. Tied back into Chapter 6 with a **new table
+computing real per-server utilization ρ = a/n_capacity** for the worst and
+easiest Mondrian categories directly from `cp_calibration_data.parquet`
+and the real ESI mix (worst category found to sit at or past the M/M/c
+ρ=1 instability boundary the new derivation predicts — a genuine,
+verified, non-obvious quantitative finding, not decoration).
+
+**Sourced 10 real, independently verified ED papers** (Hoot et al. 2008,
+Otto et al. 2022/AKTIN, Theiling et al. 2020/NHAMCS, Karaca et al. 2012,
+Kim et al. 2021, Mahmoodian et al. 2014, Laskowski et al. 2009, Locker &
+Mason 2005, De Santis et al. 2021, Kramer et al. 2020 — full list in
+`literature/candidate_papers.md` Section F) to replace the DES's previously
+vague, unverified "literature-typical, e.g. Ahalt et al. (2018)" service-time
+attribution. Added a new Section 4.2.3.1 with a per-study comparison table
+and two direct numeric comparisons: this project's ESI service-time means
+run below Hoot et al.'s independently reported per-ESI medians at every
+level (and Hoot et al.'s data shows ESI-2 taking longer than ESI-1 —
+a real non-monotonicity this project's strictly-monotonic parameters don't
+capture, disclosed explicitly rather than smoothed over); this project's
+SD/mean ratio (~0.5) runs tighter than Otto et al.'s real AKTIN-registry
+ratio (~0.9), flagged as a second specific, quantified limitation.
+`src/utils/extract_distributions.py`'s docstring updated to point to this
+comparison instead of the old unverified citation.
+
+**Fixed real bugs caught during this pass**, each verified by rendering
+actual PDF pages via PyMuPDF (this project's established verification
+practice) rather than trusting the generation code: a figure-default-width
+bug (5.8in default exceeded the new page's 5.4in content width, every
+figure overflowing the right margin — looked like a rotated/tilted image
+in a PDF viewer); a `Section 6.14` vs `6.13` cross-reference mismatch (14
+places across both files, from an earlier placeholder section number never
+updated when the actual section landed at 6.13); a table-numbering cascade
+after inserting a new table mid-chapter (5 downstream references needed
++1); and a **hardcoded "Table 4.1" reference to a table that didn't exist
+yet**, caught while adding the new service-time cross-check section.
+
+**Removed academic-submission front matter per user correction** (this is
+a book, not a thesis submission): deleted Bonafide Certificate,
+Declaration, and Acknowledgement pages; replaced the Abstract with a plain
+book-style Preface (title page → Preface → Contents → Chapter 1, matching
+the reference book's actual structure). Also **found and fixed why the
+Table of Contents and List of Figures/Tables rendered empty**: the TOC
+uses a real Word `TOC` field that requires Word to compute it before
+export — fixed by calling `doc.Fields.Update()` via COM before `SaveAs2`
+to PDF. The List of Figures/List of Tables pages, however, were
+**structurally unfixable as built** — captions were deliberately written as
+plain Python-computed text (for numbering correctness) rather than real
+Word `SEQ` fields, so Word's `TOC \c` switch had nothing to find. Removed
+those two pages entirely rather than patch a mechanism the reference book
+doesn't use either (its own TOC screenshots show no separate LOF/LOT
+pages).
+
+Page count: 118 (session start) → 135 (IEEE reformat) → 147 (derivations) →
+145 (after removing certificate/declaration/LOF/LOT pages) as of this
+entry. Still short of 200; further content expansion (more theory from the
+10 new papers into Chapter 2, deeper Chapter 6 discussion) is the open
+next step, paused mid-session per user's instruction.

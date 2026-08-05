@@ -8,8 +8,16 @@ come from published ED simulation literature, stratified by ESI acuity
 level (1 = most urgent, 5 = least urgent).
 
 Service time source: log-normal parameters commonly used in ED DES studies,
-e.g. Ahalt et al. (2018) and similar ED queueing simulation papers that
-report mean/SD treatment time by ESI level.
+consistent in shape (log-normal, per-ESI, decreasing with decreasing
+acuity) with Hoot et al. (2008, Ann Emerg Med 52(2):116-125), and
+cross-checked quantitatively against nine further independently published
+ED studies (Otto et al. 2022; Theiling et al. 2020; Karaca et al. 2012;
+Kim et al. 2021; Mahmoodian et al. 2014; Laskowski et al. 2009; Locker and
+Mason 2005; De Santis et al. 2021; Kramer et al. 2020) - see
+reports/assignments/book_common.py, Section 4.2.3.1, for the full
+per-study comparison table and an honest discussion of where these
+parameters diverge from what those studies report (this project's values
+run toward the shorter, lower-variance end of the published range).
 
 The dataset combines three EDs (`dep_name` A/B/C: one academic, two
 community — per the Kaggle dataset description) collected March 2014 -

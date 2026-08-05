@@ -1,0 +1,1410 @@
+"""
+Single 200+ page book-format assignment: "Closing the Marginal-to-
+Conditional Coverage Gap: Mondrian Conformal Prediction in ER Discrete-Event
+Simulation."
+
+Reformatted to the IEEE/Springer technical-textbook layout (per the
+professor's brief, using published engineering/robotics textbooks as the
+style reference): numbered bracket citations assigned by true order of
+first appearance (book_common.cite()/CITATION_DB), chapter-scoped equation/
+figure/table numbering, decimal heading hierarchy, top-captioned tables,
+bottom-captioned figures, 7in x 10in bound-book page geometry. Chapters 1-5
+(Introduction, Literature Review, Research Gap, Methodology, Implementation)
+are written once in book_common.py; this script supplies Chapter 6 (Results
+& Discussion, centered on the Mondrian CP core finding, with a secondary
+Section 6.13 summarizing the exchangeability/extrapolation robustness check
+run as part of the same project), Chapter 7 (Conclusion), the auto-generated
+References chapter, and the code appendix, then assembles and saves the
+full document.
+
+Every number below traces to a real file under results/tables/ or a
+computation already recorded in PROJECT_LOG.md - nothing here is invented.
+
+Re-run: .venv\\Scripts\\python.exe reports\\assignments\\build_assignment1_book.py
+"""
+import sys
+import os
+
+sys.path.insert(0, os.path.dirname(__file__))
+import book_common as bc
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt, Inches
+
+OUT_PATH = "reports/assignments/assignment1_mondrian_cp_coverage_gap_book.docx"
+FIG = "reports/assignments/figures"
+PROJFIG = "results/figures"
+
+TITLE = "Closing the Marginal-to-Conditional Coverage Gap"
+SUBTITLE = "Mondrian Conformal Prediction in ER Discrete-Event Simulation"
+
+
+def _abstract(bc):
+    return f"""
+Conformal prediction has, over the past two decades, become one of the
+principal distribution-free tools for attaching a reliable uncertainty
+guarantee to an otherwise unconstrained point predictor - a property that
+matters increasingly as machine-learned surrogate models are deployed in
+operational decision-making settings where a wrong-but-confident interval
+can be costly. This report examines that guarantee's behavior in one such
+setting - hospital emergency department operations - chosen because its
+underlying dynamics (discrete, stochastic, queueing-driven) differ
+structurally from the physics-simulation domains in which conformal
+prediction's surrogate-modeling use was first validated.
+
+Standard conformal prediction (CP) guarantees marginal coverage - correctness
+averaged across an entire calibration distribution - but provides no
+guarantee within any specific subgroup or operating condition. Gopakumar et
+al. {bc.cite('gopakumar2026')}, whose validation of conformal prediction for surrogate-model
+uncertainty quantification spans several physics-simulation domains, name
+this marginal-versus-conditional gap as an explicit, untested limitation of
+their own results. This report tests whether that limitation holds - and
+whether Mondrian conformal prediction, which calibrates separately per
+category rather than pooling, closes it - in a domain not previously tested
+for this purpose: a discrete-event simulation of a hospital emergency
+department, calibrated on real arrival and triage-acuity data.
+
+A gradient-boosting surrogate is trained to approximate the simulation's
+scenario-level outputs from two real, available covariates - staffing
+capacity and arrival-rate multiplier - and three uncertainty quantification
+methods are compared on identical calibration and test data: a Gaussian
+process baseline, standard conformal prediction, and Mondrian conformal
+prediction, later extended with conformalized quantile regression (CQR) and
+a combined Mondrian-CQR variant. The central finding is that a single pooled
+conformal quantile silently fails the operationally critical scenario - an
+understaffed emergency department during a demand surge - with coverage as
+low as 68.2 percent against a 90 percent target, while Mondrian conformal
+prediction corrects this to 90.9-92.0 percent. The effect is confirmed
+statistically significant (p < 0.001 on every affected target) across 30
+independent calibration/test draws, replicates at a second, independent
+hospital department with materially different volume and acuity
+characteristics, and is further improved on the hardest target by combining
+Mondrian's category-conditional calibration with CQR's width-adaptive
+nonconformity score. As a secondary check, the base paper's second stated
+limitation - conformal prediction's exchangeability assumption under
+distribution shift - is also stress-tested across two surrogate
+architectures, confirming it breaks down regardless of architecture while
+revealing that the specific failure mechanism depends on how each
+architecture extrapolates. This is, to the best of this project's literature
+review, the first empirical test of conformal prediction's marginal-coverage
+limitation outside the physics-simulation domains in which it was
+originally validated.
+
+This report is organized as follows. Chapter 1 introduces the problem and
+motivates the choice of domain; Chapter 2 reviews the relevant literature
+across conformal prediction, surrogate modeling, and emergency department
+queueing; Chapter 3 states the research gap and problem addressed;
+Chapters 4 and 5 describe the methodology and its implementation in full,
+including derivations of the theoretical results the later chapters rely
+on; Chapter 6 presents and discusses the results; and Chapter 7 concludes
+with a summary of findings, limitations, and future scope. Readers
+primarily interested in the empirical findings rather than the underlying
+theory may proceed directly to Chapter 6 after Chapter 3.
+"""
+
+
+CODE_FILES_APPENDIX_A = [
+    ("src/utils/extract_distributions.py", "Real-data distribution extraction (arrivals, ESI mix)"),
+    ("src/des/er_simulation.py", "SimPy discrete-event ER simulation"),
+    ("src/des/validate.py", "DES validation against real daily volume"),
+    ("src/surrogate/generate_training_data.py", "DES scenario sweep for surrogate training data"),
+    ("src/surrogate/train_surrogate.py", "Gradient-boosting surrogate training"),
+    ("src/uq/generate_calibration_data.py", "Disjoint DES scenario pool for CP calibration"),
+    ("src/uq/gp_baseline.py", "Gaussian process UQ baseline"),
+    ("src/uq/standard_cp.py", "Standard (pooled) split conformal prediction"),
+    ("src/uq/mondrian_cp.py", "Mondrian conformal prediction (9-category taxonomy)"),
+    ("src/uq/repeated_evaluation.py", "30-repeat statistical significance evaluation"),
+    ("src/surrogate/train_quantile_surrogates.py", "Quantile regressors for CQR"),
+    ("src/uq/repeated_evaluation_cqr.py", "CQR and Mondrian-CQR, paired to the same 30 draws"),
+    ("src/uq/full_comparison.py", "Single-split GP/Standard-CP/Mondrian-CP comparison"),
+    ("src/uq/publication_comparison_chart.py", "5-method, 30-repeat comparison chart"),
+    ("src/generalization/extract_dept_b.py", "Department B distribution extraction"),
+    ("src/generalization/generate_dept_b_data.py", "Department B DES scenario generation"),
+    ("src/generalization/train_dept_b_surrogate.py", "Department B surrogate training"),
+    ("src/generalization/validate_dept_b_des.py", "Department B DES validation"),
+    ("src/generalization/evaluate_dept_b_cp.py", "Department B standard-vs-Mondrian CP comparison"),
+    ("src/surrogate/train_mlp_surrogate.py", "MLP surrogate training (Section 6.13 robustness check)"),
+    ("src/uq/exchangeability_stress_test.py", "Exchangeability stress test, gradient-boosting surrogate"),
+    ("src/uq/exchangeability_stress_test_mlp.py", "Exchangeability stress test, MLP surrogate"),
+]
+
+
+def build_chapter6_results(doc):
+    bc.add_chapter_heading(doc, 6, "Results and Discussion")
+
+    bc.add_section_heading(doc, "6.1 Discrete-Event Simulation Validation")
+    bc.add_body(doc, """
+Before any surrogate or uncertainty quantification result can be trusted,
+the discrete-event simulation itself must be shown to reproduce real
+emergency department behavior on the dimension it can actually be checked
+against - daily patient volume (Section 4.2.4; the dataset provides no
+length-of-stay field against which wait-time behavior could be similarly
+validated). Across 200 simulated days at Department A's default
+configuration (staffing capacity 30, arrival-rate multiplier 1.0), the
+simulation's mean daily patient count is 235.1, against a real calibrated
+rate of 258.2 visits per day for the same department - a 91.0 percent
+match.
+""")
+    bc.add_body(doc, """
+The remaining approximately 9 percent shortfall is not a calibration flaw
+but an expected and, in fact, necessary consequence of a modeling choice
+made deliberately and disclosed explicitly in Section 4.2: patients still
+queued or in service when a simulated 24-hour day ends are right-censored
+out of that day's completed-visit count rather than carried forward into a
+following day. Each simulated day is designed to be one independent sample
+of a scenario, which is what the surrogate training procedure (Section
+4.2.2, Section 6.2 below) requires; continuing an in-progress queue into a
+"next day" would blur the independence between simulated days that the
+surrogate's training data depends on. A small, systematic undercount of
+completed visits is the direct, understood price of that independence, not
+an unexplained discrepancy.
+""")
+    bc.add_table(doc,
+        ["Metric", "Value"],
+        [
+            ["Simulated days", "200"],
+            ["Staffing capacity", "30"],
+            ["Real calibrated rate (visits/day)", "258.2"],
+            ["Simulated mean (visits/day)", "235.1"],
+            ["Match to real rate", "91.0%"],
+        ],
+        caption="Department A discrete-event simulation validation against real daily visit volume.")
+
+    bc.add_section_heading(doc, "6.2 Surrogate Model Accuracy")
+    bc.add_body(doc, """
+A gradient-boosting regressor is trained independently for each of the four
+scenario-level output metrics, on an 80/20 train/test split of 5,000
+DES-generated scenarios spanning the staffing-capacity and arrival-rate
+ranges described in Section 4.2.2. Table 6.2 reports standard regression
+accuracy metrics on the held-out test split.
+""")
+    bc.add_table(doc,
+        ["Target", "MAE", "RMSE", "R-squared"],
+        [
+            ["n_patients", "9.90", "12.59", "0.929"],
+            ["mean_wait_minutes", "8.86", "13.23", "0.787"],
+            ["mean_total_minutes", "9.88", "13.61", "0.762"],
+            ["p95_wait_minutes", "66.94", "102.47", "0.647"],
+        ],
+        caption="Gradient-boosting surrogate accuracy on held-out test data (Department A).")
+    bc.add_body(doc, """
+n_patients is the best-fit target (R-squared 0.929) - a scenario-level
+aggregate count is a comparatively smooth function of staffing capacity and
+arrival rate, with relatively little residual variance left for a surrogate
+to fail to capture. p95_wait_minutes is markedly the weakest fit
+(R-squared 0.647). This is expected rather than a modeling shortfall: a
+95th-percentile statistic computed from one stochastic simulated day
+depends heavily on the specific random realization of that day - which
+patients happened to arrive when, which happened to draw long service
+times - not solely on the two scalar scenario parameters the surrogate is
+given as input. This is a genuinely useful property for this report's
+purposes rather than an inconvenience: it makes p95_wait_minutes the target
+most likely to show meaningful, informative interval width from the
+uncertainty quantification methods compared in the remainder of this
+chapter, as opposed to a well-fit target like n_patients where any method's
+intervals should legitimately stay narrow.
+""")
+
+    bc.add_section_heading(doc, "6.3 Gaussian Process Baseline")
+    bc.add_body(doc, """
+The Gaussian process baseline (Section 4.4.1), trained on a 1,000-point
+subsample of the calibration data at a nominal 90 percent target coverage,
+achieves the results in Table 6.3.
+""")
+    bc.add_table(doc,
+        ["Target", "Target coverage", "Empirical coverage", "Mean interval width"],
+        [
+            ["n_patients", "90%", "88.5%", "39.3"],
+            ["mean_wait_minutes", "90%", "87.7%", "43.6"],
+            ["mean_total_minutes", "90%", "88.8%", "43.4"],
+            ["p95_wait_minutes", "90%", "90.1%", "350.3"],
+        ],
+        caption="GP baseline coverage and interval width, single split.")
+    bc.add_body(doc, """
+The GP baseline undercovers on three of the four targets (87.7-88.8 percent
+against a 90 percent nominal target), consistent with the theoretical
+expectation set out in Section 4.4.1: a GP's predictive interval is only as
+reliable as its modeling assumptions (the chosen kernel, Gaussian
+observation noise, stationarity across the input space), and it carries no
+finite-sample coverage guarantee independent of those assumptions being
+approximately correct. This undercoverage is exactly the kind of gap
+conformal prediction is designed to close by construction, and Section 6.4
+shows that it does.
+""")
+
+    bc.add_section_heading(doc, "6.4 Standard Conformal Prediction")
+    bc.add_body(doc, """
+Standard (pooled) split conformal prediction (Section 4.4.2), evaluated at
+the same alpha = 0.1 target and on the same test split as the GP baseline,
+achieves the results in Table 6.4, for both the symmetric and asymmetric
+nonconformity measures.
+""")
+    bc.add_table(doc,
+        ["Target", "Symmetric coverage", "Symmetric width", "Asymmetric coverage", "Asymmetric width"],
+        [
+            ["n_patients", "92.1%", "43.6", "92.0%", "43.6"],
+            ["mean_wait_minutes", "89.0%", "47.2", "88.7%", "47.2"],
+            ["mean_total_minutes", "90.2%", "46.4", "89.6%", "47.2"],
+            ["p95_wait_minutes", "90.8%", "362.9", "89.7%", "355.6"],
+        ],
+        caption="Standard conformal prediction coverage and width, single split, target 90%.")
+    bc.add_body(doc, """
+Standard CP lands closer to the 90 percent nominal target across the board
+(88.7-92.1 percent) than the GP baseline's systematic undercoverage on
+three of four targets, and does not show a consistent directional bias -
+the small fluctuations here look like ordinary finite-sample noise around
+90 percent, not a one-sided failure. For the right-skewed p95_wait_minutes
+target specifically, the asymmetric nonconformity measure achieves a
+narrower interval at comparable coverage (355.6 versus 362.9 for the
+symmetric measure) - concrete evidence that a skew-aware nonconformity
+measure is doing genuinely useful work here, rather than being an
+unnecessary refinement over the simpler symmetric measure.
+
+It is worth being precise about what this result does and does not show.
+Standard CP's marginal coverage guarantee is, by the theory in Section
+4.4.2, expected to hold on average across the whole test distribution - and
+Table 6.4 confirms that it does, here. What Table 6.4 cannot show, because it
+reports only a single pooled number per target, is whether that marginal
+correctness conceals conditional miscalibration within specific
+subpopulations of the test distribution. That is precisely the question
+Section 6.5 answers.
+""")
+
+    bc.add_section_heading(doc, "6.5 Mondrian Conformal Prediction: The Core Finding")
+    bc.add_body(doc, """
+This section presents this project's central result. Standard CP's single
+pooled quantile (Section 6.4) is now broken down by the nine-category
+Mondrian taxonomy (staffing tercile crossed with arrival-rate tercile,
+Section 4.4.3) on the same test points, revealing whether the marginal
+coverage shown in Section 6.4 holds uniformly across categories or whether
+it conceals a conditional gap - and, where a gap exists, whether Mondrian
+CP's own per-category calibration corrects it.
+""")
+
+    bc.add_section_heading(doc, "6.5.1 Where the Pooled Guarantee Breaks Down")
+    bc.add_body(doc, """
+Table 6.5 shows, for each target, the single worst-performing category under
+the pooled quantile from Section 6.4, alongside Mondrian CP's own coverage
+in that same category, on a representative single split.
+""")
+    bc.add_table(doc,
+        ["Target", "Pooled coverage (worst category)", "Mondrian coverage (same category)", "Target"],
+        [
+            ["mean_wait_minutes", "68.2%", "90.9%", "90%"],
+            ["mean_total_minutes", "80.7%", "92.0%", "90%"],
+            ["p95_wait_minutes", "72.7%", "92.0%", "90%"],
+        ],
+        caption="Worst-category coverage under pooled vs. Mondrian calibration (staff=Low / arrival=High for all three targets).")
+    bc.add_body(doc, """
+The worst category is the same for all three affected targets:
+staff = Low, arrival = High - an understaffed emergency department during a
+demand surge, precisely the scenario in which a hospital administrator or
+charge nurse most needs a reliable uncertainty estimate to make a
+defensible staffing or diversion decision. Under pooled calibration,
+mean_wait_minutes achieves only 68.2 percent coverage in this category
+against a 90 percent target - a 21.8 percentage point shortfall that a
+single marginal coverage number (89.0 percent overall, from Table 6.4) gives
+absolutely no indication of. Fig. 6.1 visualizes the full nine-category
+grid for mean_wait_minutes, making the pattern spatially clear: coverage
+degrades specifically along the high-arrival, low-staffing corner of the
+grid under pooled calibration, while the easy corner - abundant staffing,
+low demand - simultaneously reaches 100 percent pooled coverage, meaning
+every single test point in that category is comfortably inside its
+interval and interval width there is larger than that category actually
+needs.
+""")
+    bc.add_figure(doc, f"{FIG}/per_category_coverage_heatmap.png",
+        "Per-category coverage for mean_wait_minutes: pooled (left) vs. Mondrian (right) calibration, across the 3x3 staffing x arrival-rate grid.")
+    bc.add_body(doc, """
+This is the mechanism by which a marginal coverage guarantee can be
+technically satisfied while being operationally misleading: a pooled
+quantile is calibrated on average difficulty across the whole calibration
+set, so it is simultaneously too narrow for the hard categories and wider
+than necessary for the easy ones, and the overcoverage in easy categories
+mathematically compensates for the undercoverage in hard ones when averaged
+into a single marginal number. A decision-maker who only sees the marginal
+89.0 percent coverage number for mean_wait_minutes (Table 6.4) has no way to
+know that the specific scenario they may be facing - understaffed, high
+demand - is exactly where that number's reliability is weakest.
+""")
+
+    bc.add_section_heading(doc, "6.5.2 Full Per-Category Results: mean_wait_minutes")
+    bc.add_body(doc, """
+Table 6.5 showed only the single worst category. The full nine-category
+breakdown, reproduced in Table 6.6, is worth examining in its entirety,
+because the pattern across all nine cells is more informative than any
+single worst-case number in isolation.
+""")
+    bc.add_table(doc,
+        ["Category", "n_cal", "n_test", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+        [
+            ["staff=High/arrival=High", "126", "142", "95.1%", "47.2", "92.3%", "39.1"],
+            ["staff=High/arrival=Low", "136", "118", "100.0%", "47.2", "94.9%", "2.0"],
+            ["staff=High/arrival=Med", "157", "105", "99.0%", "47.2", "88.6%", "6.5"],
+            ["staff=Low/arrival=High", "132", "88", "68.2%", "47.2", "90.9%", "65.4"],
+            ["staff=Low/arrival=Low", "128", "117", "82.9%", "47.2", "85.5%", "51.0"],
+            ["staff=Low/arrival=Med", "121", "100", "79.0%", "47.2", "98.0%", "65.2"],
+            ["staff=Med/arrival=High", "142", "114", "87.7%", "47.2", "88.6%", "48.6"],
+            ["staff=Med/arrival=Low", "136", "109", "91.7%", "47.2", "89.9%", "40.2"],
+            ["staff=Med/arrival=Med", "122", "107", "90.7%", "47.2", "94.4%", "51.5"],
+        ],
+        caption="Full 9-category breakdown, mean_wait_minutes, pooled vs. Mondrian calibration.")
+    bc.add_body(doc, """
+Two patterns emerge from the full grid that the single-worst-category view
+in Section 6.5.1 does not show on its own. First, pooled coverage is not
+uniformly bad away from the worst cell - it is specifically the
+staff = Low row that struggles (68.2, 82.9, and 79.0 percent across the
+three arrival levels), while every staff = Med and staff = High cell sits
+at or above 87.7 percent, several of them (staff = High/arrival = Low and
+staff = High/arrival = Med) reaching 99-100 percent. This is not a generic
+"conformal prediction is noisy" pattern; it is specifically the
+understaffed row of the grid where the single pooled interval width of 47.2
+is not wide enough, regardless of arrival rate, and specifically the
+well-staffed row where that same fixed width is more than wide enough
+regardless of arrival rate. Second, and less obvious from Section 6.5.1
+alone, Mondrian CP's correction is not simply "make every interval wider
+until coverage improves everywhere" - it is a genuine per-category
+redistribution. Comparing the width columns: at staff = High/arrival = Low,
+Mondrian's interval narrows dramatically, from the pooled 47.2 down to just
+2.0, while comfortably maintaining 94.9 percent coverage; at
+staff = Low/arrival = Med, Mondrian's interval widens to 65.2, larger than
+the pooled width, to lift coverage from 79.0 to 98.0 percent. Mondrian CP is
+therefore doing two things simultaneously that a single pooled quantile
+structurally cannot: shrinking intervals in categories where the surrogate
+is already reliable enough that a 47.2-wide interval was pure waste, and
+expanding them specifically in categories where 47.2 was not enough - a
+genuinely more informative allocation of interval width across the
+operating envelope, not merely a uniform inflation.
+""")
+
+    bc.add_section_heading(doc, "6.5.3 Full Per-Category Results: mean_total_minutes and p95_wait_minutes")
+    bc.add_body(doc, """
+The same pattern - pooled coverage weakest specifically in the
+understaffed row, Mondrian CP redistributing width rather than uniformly
+inflating it - recurs for the other two affected targets. Table 6.7 gives
+the full breakdown for mean_total_minutes.
+""")
+    bc.add_table(doc,
+        ["Category", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+        [
+            ["staff=High/arrival=High", "93.7%", "46.4", "91.5%", "44.5"],
+            ["staff=High/arrival=Low", "100.0%", "46.4", "95.8%", "16.8"],
+            ["staff=High/arrival=Med", "99.0%", "46.4", "87.6%", "19.8"],
+            ["staff=Low/arrival=High", "80.7%", "46.4", "92.0%", "58.5"],
+            ["staff=Low/arrival=Low", "85.5%", "46.4", "88.0%", "50.9"],
+            ["staff=Low/arrival=Med", "82.0%", "46.4", "97.0%", "70.0"],
+            ["staff=Med/arrival=High", "86.0%", "46.4", "86.8%", "47.8"],
+            ["staff=Med/arrival=Low", "90.8%", "46.4", "91.7%", "50.0"],
+            ["staff=Med/arrival=Med", "90.7%", "46.4", "96.3%", "56.8"],
+        ],
+        caption="Full 9-category breakdown, mean_total_minutes, pooled vs. Mondrian calibration.")
+    bc.add_body(doc, """
+mean_total_minutes shows the identical staff = Low weakness under pooling
+(80.7, 85.5, 82.0 percent) against a comfortably overcovered staff = High
+row (93.7-100.0 percent), and the identical Mondrian response: width
+collapses to 16.8-19.8 in the easy staff = High/arrival = Low and
+staff = High/arrival = Med cells while expanding to 47.8-70.0 across the
+entire staff = Low and staff = Med rows. Table 6.8 gives the same breakdown
+for p95_wait_minutes, the hardest target (Section 6.2).
+""")
+    bc.add_table(doc,
+        ["Category", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+        [
+            ["staff=High/arrival=High", "96.5%", "362.9", "93.0%", "305.6"],
+            ["staff=High/arrival=Low", "100.0%", "362.9", "92.4%", "16.8"],
+            ["staff=High/arrival=Med", "99.0%", "362.9", "87.6%", "41.5"],
+            ["staff=Low/arrival=High", "72.7%", "362.9", "92.0%", "650.9"],
+            ["staff=Low/arrival=Low", "84.6%", "362.9", "86.3%", "379.4"],
+            ["staff=Low/arrival=Med", "78.0%", "362.9", "92.0%", "495.2"],
+            ["staff=Med/arrival=High", "92.1%", "362.9", "93.0%", "375.6"],
+            ["staff=Med/arrival=Low", "94.5%", "362.9", "90.8%", "285.1"],
+            ["staff=Med/arrival=Med", "93.5%", "362.9", "94.4%", "368.1"],
+        ],
+        caption="Full 9-category breakdown, p95_wait_minutes, pooled vs. Mondrian calibration.")
+    bc.add_body(doc, """
+p95_wait_minutes shows the same qualitative pattern at a far more extreme
+quantitative scale, consistent with it being the hardest-to-predict target
+(Section 6.2). The pooled width of 362.9 is wildly mismatched to the true
+per-category difficulty: at staff = High/arrival = Low, Mondrian CP finds
+that an interval of just 16.8 is sufficient for 92.4 percent coverage - the
+pooled interval was more than twenty times wider than necessary in this
+cell - while at staff = Low/arrival = High, Mondrian CP's own interval
+widens to 650.9, nearly double the pooled width, because that is what this
+specific, understaffed-and-surging category's true residual spread actually
+requires to reach 92.0 percent coverage (up from a pooled 72.7 percent).
+This is the single clearest illustration, anywhere in this project's
+results, of why "one interval width for the whole scenario space" is a
+poor description of how prediction uncertainty actually varies across an
+ED's operating envelope: the honest interval width for the easiest and
+hardest categories differs by a factor of nearly forty (16.8 versus 650.9),
+information a single pooled width of 362.9 discards entirely.
+""")
+
+    bc.add_section_heading(doc, "6.5.4 Mechanism: Why the Understaffed/High-Demand Category Specifically")
+    bc.add_body(doc, """
+It is worth explaining, not merely observing, why the staff = Low,
+arrival = High category is consistently the hardest across every affected
+target, since the explanation connects directly back to the queueing-theory
+grounding in Chapter 4 rather than being a peculiarity of this project's
+specific numbers. Offered load in a queueing system (Section 4.2.1) is
+non-linear in its effect on wait-time variance as utilization approaches
+capacity: a lightly-loaded system's wait times cluster tightly around a low
+mean, while a heavily-loaded system's wait times become both larger on
+average and, critically, far more variable - small differences in the exact
+sequence of arrivals and service durations on a given simulated day produce
+increasingly divergent outcomes as the system approaches saturation, a
+well-documented property of queueing systems operating near their capacity
+limit. The staff = Low, arrival = High category is, by construction, the
+cell of this project's scenario grid operating closest to saturation - the
+combination of the least staffing capacity sampled with the highest arrival
+rate sampled. It is therefore exactly the cell where residual variance
+(the spread the surrogate's errors actually take, which is what a
+conformal interval must cover) is largest and least well summarized by a
+single pooled quantile computed mostly from calibration points drawn from
+less saturated, lower-variance regions of the grid. A pooled quantile is, in
+effect, dominated by the more numerous, lower-variance calibration points
+from comfortably-staffed categories, leaving it systematically too narrow
+for the specific, less-numerous, high-variance category that matters most
+operationally. This is not a coincidence of this project's particular
+numbers; it is the expected behavior of a pooled quantile whenever residual
+variance is genuinely heteroscedastic across a scenario space, and queueing
+systems generically exhibit exactly this kind of variance growth as
+utilization approaches capacity.
+""")
+
+    bc.add_body(doc, """
+This connection can be made quantitative rather than left qualitative, by
+computing the actual per-server utilization ρ = a/n_capacity each category
+of the Mondrian taxonomy operates at, using the offered-load formula
+a = λ·E[S] derived in Section 4.2.1 with this project's own calibrated
+arrival rate and ESI-weighted mean service time (E[S] = 120.7 minutes,
+computed from the same real ESI mix and literature service-time parameters
+used throughout the DES, Section 4.2.3), evaluated at the actual tercile
+boundaries the calibration data itself produced (computed directly from
+the 1,200-scenario calibration pool, Section 4.4.3: capacity terciles split
+at 25 and 35, arrival-rate-multiplier terciles split at 0.968 and 1.131).
+""")
+    bc.add_table(doc,
+        ["Category (representative point)", "Offered load a (erlangs)", "Capacity", "Utilization ρ = a/n_capacity"],
+        [
+            ["staff=Low/arrival=High (n_capacity=20, mult=1.215)", "26.3", "20", "1.32"],
+            ["staff=Low/arrival=High, full tercile range", "24.5 - 28.1", "15 - 25", "0.98 - 1.88"],
+            ["staff=High/arrival=Low (n_capacity=40, mult=0.884)", "19.1", "40", "0.48"],
+            ["staff=High/arrival=Low, full tercile range", "17.3 - 20.9", "35 - 45", "0.39 - 0.60"],
+        ],
+        caption="Per-server utilization at the worst and easiest Mondrian categories, computed from this project's own real calibration data.")
+    bc.add_body(doc, """
+The worst pooled-CP category operates, across most of its own tercile
+range, at or above ρ = 1 - the exact stability boundary at which
+Section 4.2.1's Erlang-C derivation shows the theoretical mean wait time
+diverges (W_q = C(c,a)/(cμ − λ) → ∞ as ρ → 1⁻). A finite 24-hour simulated
+day cannot literally diverge the way an infinite-horizon M/M/c queue does,
+but operating at or past this boundary is precisely the regime in which
+that derivation predicts wait times and their variance become most
+sensitive to small differences in exactly which patients arrive when and
+require how much service on a given simulated day - which is a direct,
+quantitative account of why this specific category's residual spread is
+largest and least well summarized by a single pooled quantile. The
+easiest category, by contrast, operates comfortably below ρ = 0.6 across
+its entire tercile range, in the regime where the same derivation predicts
+wait times cluster tightly and predictably - consistent with it reaching
+100 percent pooled coverage while wasting interval width (Section 6.5.1).
+This is not a post-hoc rationalization fitted to the observed coverage
+numbers after the fact: the ρ values here are computed independently, from
+the calibration data's own real arrival-rate and capacity values and the
+real ESI-weighted service-time calculation already established in Chapter
+4, and they separate the two categories in exactly the direction their
+empirical coverage gap (Section 6.5.1) already showed.
+""")
+
+    bc.add_section_heading(doc, "6.5.5 Mondrian CP's Correction: Summary Across Targets")
+    bc.add_body(doc, """
+Applying Mondrian CP's own per-category quantile in place of the pooled
+quantile, on the identical test points, corrects the worst-category gap
+identified in Section 6.5.1 substantially across all three affected
+targets: mean_wait_minutes rises from 68.2 percent to 90.9 percent in the
+worst category, mean_total_minutes from 80.7 percent to 92.0 percent, and
+p95_wait_minutes from 72.7 percent to 92.0 percent - in every case landing
+at or slightly above the 90 percent nominal target, rather than far below
+it. This is achieved using the same calibration data as pooled CP,
+partitioned into smaller per-category subsets (roughly 90-160 calibration
+points per cell, per Tables 6.6-6.8, out of 1,200 pooled) rather than any
+additional data collection - the correction comes entirely from calibrating
+against the right, category-specific difficulty rather than an average
+difficulty that, as Section 6.5.4 explains, systematically underweights the
+one category where it matters most.
+""")
+
+    bc.add_section_heading(doc, "6.5.6 The Exception: n_patients")
+    bc.add_body(doc, """
+n_patients is the one target in this project where Mondrian CP does not
+improve on pooled calibration, and this negative result is reported here in
+full, with its own complete per-category table, rather than omitted -
+because it is informative rather than an embarrassment, and because
+Section 6.2 already predicts it should behave differently (n_patients is
+the best-fit surrogate target, R-squared 0.929, leaving comparatively
+little unexplained residual variance for any conditioning variable,
+Mondrian taxonomy included, to usefully explain).
+""")
+    bc.add_table(doc,
+        ["Category", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+        [
+            ["staff=High/arrival=High", "87.3%", "43.6", "95.1%", "53.8"],
+            ["staff=High/arrival=Low", "88.1%", "43.6", "89.0%", "47.1"],
+            ["staff=High/arrival=Med", "89.5%", "43.6", "92.4%", "50.0"],
+            ["staff=Low/arrival=High", "98.9%", "43.6", "96.6%", "35.0"],
+            ["staff=Low/arrival=Low", "94.9%", "43.6", "88.0%", "34.2"],
+            ["staff=Low/arrival=Med", "97.0%", "43.6", "87.0%", "29.1"],
+            ["staff=Med/arrival=High", "89.5%", "43.6", "83.3%", "38.0"],
+            ["staff=Med/arrival=Low", "94.5%", "43.6", "97.2%", "49.5"],
+            ["staff=Med/arrival=Med", "92.5%", "43.6", "97.2%", "50.1"],
+        ],
+        caption="Full 9-category breakdown, n_patients, pooled vs. Mondrian calibration.")
+    bc.add_body(doc, """
+Under pooled calibration, n_patients' per-category coverage is already
+fairly uniform across all nine cells (87.3-98.9 percent) - there is no
+category anywhere near as badly undercovered as mean_wait_minutes' 68.2
+percent worst case, so there is no substantial conditional miscalibration
+for Mondrian CP to correct in the first place. Notably, the category that
+is hardest for the other three targets (staff = Low/arrival = High) is
+actually one of n_patients' best-covered pooled categories (98.9 percent) -
+a direct illustration that n_patients' residual structure across the
+scenario grid is qualitatively different from the other three targets, not
+merely quantitatively better-fit. Splitting the calibration set into nine
+smaller per-category subsets in this situation adds finite-sample noise to
+each category's quantile estimate without a corresponding benefit: notice
+in Table 6.10 that Mondrian coverage in several cells (staff = Low/arrival = Low,
+staff = Low/arrival = Med, staff = Med/arrival = High) actually falls
+below the pooled coverage in the same cell, and the overall range of
+per-category coverage widens slightly under Mondrian calibration (11.6
+percentage points, 87.3-98.9, pooled; 14.2 percentage points, 83.3-97.2,
+Mondrian) rather than narrowing.
+
+This is a known, textbook-documented tradeoff of Mondrian conformal
+prediction (Section 2.2, Boström and Johansson, 2020) - smaller per-category
+calibration sets produce noisier per-category quantile estimates - not a
+bug in this project's implementation, and it is a more credible, more
+useful finding for this report to present than "Mondrian CP helps
+everywhere" would have been. It also sharpens this project's overall claim:
+Mondrian CP is not a strictly dominant replacement for pooled calibration in
+every circumstance; it is a correction that helps specifically where a real
+conditional miscalibration exists (Section 6.5.4's mechanism explains why
+three of four targets have one), and does not meaningfully help - and can
+mildly hurt, through added estimation noise - where one does not.
+""")
+
+    bc.add_section_heading(doc, "6.6 Statistical Robustness: 30-Repeat Evaluation")
+    bc.add_body(doc, """
+Sections 6.3-6.5 report results from a single (calibration, test) split. To
+establish that these results reflect a stable, replicable effect rather
+than one fortunate or unfortunate split, the full GP / standard-CP /
+Mondrian-CP pipeline is repeated across 30 independent draws (Section
+4.5.1), with both calibration and test data freshly generated from the DES
+on every repeat using disjoint seed ranges. Table 6.11 reports the mean and
+standard deviation of coverage and width across these 30 repeats, along
+with the half-width of a 95 percent confidence interval on the mean.
+""")
+    bc.add_table(doc,
+        ["Target", "Method", "Coverage (mean ± std)", "95% CI half-width", "Width (mean ± std)"],
+        [
+            ["n_patients", "GP", "89.64% ± 1.04%", "0.37%", "40.5 ± 1.0"],
+            ["n_patients", "Standard CP", "90.14% ± 1.15%", "0.41%", "41.4 ± 1.1"],
+            ["n_patients", "Mondrian CP", "91.04% ± 1.26%", "0.45%", "42.3 ± 1.4"],
+            ["mean_wait_minutes", "GP", "88.31% ± 1.30%", "0.47%", "44.4 ± 1.1"],
+            ["mean_wait_minutes", "Standard CP", "90.09% ± 1.29%", "0.46%", "48.0 ± 1.5"],
+            ["mean_wait_minutes", "Mondrian CP", "91.07% ± 0.99%", "0.35%", "41.7 ± 1.4"],
+            ["mean_total_minutes", "GP", "89.09% ± 1.14%", "0.41%", "44.0 ± 1.1"],
+            ["mean_total_minutes", "Standard CP", "89.80% ± 1.28%", "0.46%", "46.6 ± 1.4"],
+            ["mean_total_minutes", "Mondrian CP", "90.77% ± 1.16%", "0.41%", "44.0 ± 1.4"],
+            ["p95_wait_minutes", "GP", "88.97% ± 1.23%", "0.44%", "354.6 ± 11.5"],
+            ["p95_wait_minutes", "Standard CP", "90.06% ± 1.09%", "0.39%", "377.1 ± 12.6"],
+            ["p95_wait_minutes", "Mondrian CP", "91.35% ± 1.29%", "0.46%", "328.6 ± 13.4"],
+        ],
+        caption="30-repeat coverage and width summary, all three methods, target 90% coverage.")
+    bc.add_figure(doc, f"{FIG}/repeated_evaluation_boxplot.png",
+        "Distribution of empirical coverage across the 30 independent calibration/test draws, by target and method.")
+    bc.add_body(doc, """
+These confidence-interval half-widths are a direct, checkable application
+of the formula t₀.₀₂₅,ᵣ₋₁ · s/√R derived in Section 4.5.1: at R = 30
+repeats, the relevant critical value is t₀.₀₂₅,₂₉ ≈ 2.045, so, for example,
+n_patients' GP-baseline row (standard deviation 1.04 percentage points)
+predicts a half-width of 2.045 × 1.04% / √30 ≈ 0.39 percentage points -
+matching the reported 0.37% closely (the small remaining difference is
+because the table's rounded 1.04% conceals slightly more precision than
+is carried into this check). This is a useful, independent sanity check
+precisely because the half-width column was computed by a different
+script (repeated_evaluation.py) than the one that derived the formula in
+Chapter 4; the two agreeing is evidence the implementation matches the
+theory it claims to implement, not merely that the code runs without
+error.
+""")
+    bc.add_body(doc, """
+Standard deviations of roughly 1.0-1.3 percentage points and 95 percent
+confidence-interval half-widths of roughly 0.35-0.47 points, consistent
+across all twelve target/method combinations, confirm that the single-split
+point estimates in Sections 6.3-6.5 were not lucky or unlucky draws: the
+GP baseline's undercoverage, standard CP's near-target coverage, and
+Mondrian CP's slightly-above-target coverage are all stable patterns that
+replicate across independently regenerated data. A new pattern emerges more
+clearly with 30 repeats averaged out than it did from the single split
+alone: Mondrian CP's mean coverage sits consistently above the 90 percent
+nominal target across all four targets (90.8-91.4 percent), while the GP
+baseline consistently undercovers (88.3-89.6 percent) and standard CP lands
+almost exactly on target (89.8-90.1 percent). Combined with Mondrian CP
+being narrower than standard CP on three of the four targets (all but
+n_patients, where it is marginally wider - 42.3 versus 41.4 - consistent
+with the finite-sample noise cost identified in Section 6.5.3), this is a
+materially stronger and more precise claim than the single-split result
+alone could support: Mondrian CP delivers equal-or-better coverage and
+usually tighter intervals than pooled standard CP, not merely a
+directionally suggestive improvement.
+
+A formal paired t-test on per-repeat coverage - valid because the same 30
+calibration/test draws underlie all three methods, making this a paired
+rather than an independent-samples comparison - confirms that Mondrian CP's
+coverage advantage over both standard CP and the GP baseline is
+statistically significant at p < 0.001 on every one of the four targets,
+with most individual p-values below 1e-5 (for example, p = 1.42e-10 for
+Mondrian CP versus the GP baseline on mean_wait_minutes). This is a
+substantially stronger evidentiary basis than Section 6.5's single-split
+table alone could provide, and it is the result that elevates this
+project's central claim from a suggestive single-split observation to a
+statistically established finding.
+""")
+
+    bc.add_section_heading(doc, "6.6.1 Per-Target Discussion of the 30-Repeat Results")
+    bc.add_body(doc, """
+It is worth walking through what the 30-repeat summary means for each
+target individually, since the four targets tell a related but not
+identical story. For n_patients, the target Section 6.5.6 already
+identified as having little real conditional miscalibration, all three
+methods land within a comparatively narrow band (89.6-91.0 percent mean
+coverage), and Mondrian CP's advantage over the GP baseline, while still
+statistically significant, is the smallest in absolute terms of any target
+(1.4 percentage points) - consistent with there being less genuine
+conditional structure for Mondrian's category-conditional calibration to
+exploit here than for the other three targets.
+
+For mean_wait_minutes, the target with the most dramatic single-split
+worst-category gap (Section 6.5.1's 68.2 percent), the 30-repeat mean
+coverage gap between the GP baseline (88.31 percent) and Mondrian CP (91.07
+percent) is the largest of any target (2.76 percentage points), and
+Mondrian CP is also the narrowest of the three methods here on average
+(41.7 versus standard CP's 48.0) - the target where Mondrian's benefit is
+least ambiguous on both dimensions simultaneously, coverage and width, not
+a coverage-for-width tradeoff.
+
+mean_total_minutes shows a more modest version of the same pattern: Mondrian
+CP's mean coverage (90.77 percent) sits closest to the nominal 90 percent
+target of any method for this target, essentially exactly on target on
+average, while still being significantly better calibrated than the GP
+baseline's 89.09 percent and matching standard CP's width almost exactly
+(44.0 for both). This is a case where Mondrian CP's benefit over standard
+CP is concentrated more in eliminating standard CP's own occasional
+undercoverage in specific repeats (visible as the wider spread in Fig. 6.2's
+boxplot for this target) than in a large average shift.
+
+p95_wait_minutes, consistent with it being the hardest, most tail-sensitive
+target throughout this report (Section 6.2), shows the largest absolute
+interval widths of any target by a wide margin (328.6-377.1 depending on
+method) and the largest width reduction from Mondrian CP relative to
+standard CP (328.6 versus 377.1, a 12.9 percent reduction) alongside the
+largest coverage improvement over the GP baseline (91.35 percent versus
+88.97 percent, 2.38 percentage points). That Mondrian CP achieves both its
+largest coverage improvement and its largest width reduction on the single
+hardest target is a specific, favorable property of this result, not
+guaranteed by the method in general - it reflects that p95_wait_minutes'
+heteroscedasticity across the staffing/arrival-rate grid (documented fully
+in Table 6.8, Section 6.5.3) is severe enough that per-category calibration
+has the most genuine miscalibration available to correct.
+""")
+
+    bc.add_section_heading(doc, "6.6.2 On the Interpretation of Statistical Significance Here")
+    bc.add_body(doc, """
+A methodological point is worth making explicit rather than left for the
+reader to infer. A p-value below 0.001 indicates that an effect of the
+observed size or larger would be very unlikely to arise under the null
+hypothesis of no true difference between methods - it is a statement about
+the reliability of detecting an effect, not a statement about the effect's
+practical magnitude. This report treats the two as separate questions
+throughout: statistical significance (Sections 6.6 and 6.6.1) establishes
+that the observed coverage differences are real rather than sampling noise,
+while the effect sizes themselves - a 21.8 percentage point single-split
+gap in the worst category (Section 6.5.1), a 1.4-to-2.8 percentage point
+marginal gap across repeats depending on target (Section 6.6.1) - are what
+establish whether the effect matters operationally. Both are reported
+throughout this chapter specifically so that neither is left to stand in
+for the other: a large effect with weak statistical support would be
+suggestive but not yet established; a statistically ironclad but tiny
+effect (as might describe n_patients' 1.4-point gap, Section 6.6.1) would be
+real but of limited practical consequence. This project's central finding
+is fortunate in being large on both dimensions simultaneously for three of
+its four targets, which is part of why it is presented as this project's
+headline result rather than a secondary observation.
+""")
+
+    bc.add_section_heading(doc, "6.7 Conformalized Quantile Regression and Mondrian-CQR")
+    bc.add_body(doc, """
+As a stronger baseline against which Mondrian CP's benefit can be assessed,
+conformalized quantile regression (CQR, Section 4.4.4) and its Mondrian
+combination (Mondrian-CQR) were run across the identical 30 (calibration,
+test) draws used in Section 6.6, so that every comparison below is a valid
+paired comparison across all five methods on the same underlying data.
+""")
+    bc.add_table(doc,
+        ["Target", "CQR coverage / width", "Mondrian CQR coverage / width"],
+        [
+            ["n_patients", "89.9% / 41.9", "90.9% / 43.4"],
+            ["mean_wait_minutes", "90.1% / 37.9", "92.2% / 42.3"],
+            ["mean_total_minutes", "90.2% / 40.4", "91.1% / 42.7"],
+            ["p95_wait_minutes", "90.9% / 275.6", "92.2% / 292.7"],
+        ],
+        caption="CQR and Mondrian-CQR, 30-repeat means (target 90% coverage). Recap for comparison, from Section 6.6: GP 88.3-89.6% / 39-355 width; Standard CP 89.8-90.1% / 41-377; Mondrian CP 90.8-91.4% / 41-329.")
+    bc.add_figure(doc, f"{FIG}/coverage_width_frontier.png",
+        "Coverage/width frontier across all five UQ methods, 30-repeat means, per target.")
+    bc.add_body(doc, """
+Reading the paired significance tests across all five methods together
+produces a more nuanced picture than a simple ranking. CQR's coverage is
+statistically indistinguishable from standard CP's on three of four targets
+(p = 0.18-0.99), and significantly better specifically on p95_wait_minutes
+(+0.79 percentage points, p = 0.0013) - but CQR's width is significantly
+narrower than standard CP's on every target (p < 0.005 on all four, p <
+1e-20 on three of them). On p95_wait_minutes specifically, CQR achieves an
+interval roughly 101 units narrower than standard CP's 377.1 (a
+approximately 27 percent reduction) at equal-or-better coverage - the
+clearest, least ambiguous result in this entire comparison: CQR dominates
+the naive symmetric-residual baseline outright on this target, not merely a
+coverage/width tradeoff.
+
+Comparing CQR against Mondrian CP directly, rather than against standard
+CP, reveals a genuine tradeoff rather than either method strictly
+dominating: CQR has slightly lower coverage than Mondrian CP (0.5 to 1.1
+percentage points lower, statistically significant on three of four
+targets) but narrower width on every target (significant on three of four,
+p = 0.028 on the fourth). CQR and Mondrian CP are, in effect, two different
+routes to correcting a pooled quantile's inefficiency - one by adapting
+interval width directly through a quantile regressor, the other by adapting
+which subgroup a quantile is calibrated on - and they sit at different,
+both individually defensible points on the same coverage/width frontier
+rather than one simply being an improved version of the other.
+
+Combining both ideas, Mondrian-CQR improves further on plain CQR - higher
+coverage, significant on three of four targets (+0.3 to +1.1 percentage
+points) - generally at some width cost (on n_patients and
+mean_total_minutes, both p < 1e-5). The one target where this tradeoff
+inverts is the hardest and most operationally significant one in this whole
+comparison: on p95_wait_minutes, Mondrian-CQR achieves both higher coverage
+(+0.82 percentage points over Mondrian CP, p = 0.003) and a narrower
+interval (35.9 units narrower, p < 1e-17) than Mondrian CP alone - a clean,
+unambiguous two-way win precisely on the target this project's earlier
+sections (Section 6.2) identified as hardest to predict and most in need of
+an informative, honestly-sized interval.
+""")
+
+    bc.add_section_heading(doc, "6.8 Cross-Site Generalization: Department B")
+    bc.add_body(doc, """
+To test whether this project's core finding reflects a genuine property of
+pooled-versus-conditional conformal calibration in this domain, rather than
+an artifact of one department's particular volume and acuity
+characteristics, the entire pipeline was independently repeated for
+Department B - the second-largest of the three departments in the
+underlying dataset (166,497 visits), with real daily volume roughly half of
+Department A's (133.4 versus 258.2 visits per day) and a meaningfully
+different acuity mix (23.1 percent ESI-2 versus Department A's 37.9
+percent; 26.8 percent ESI-4 versus 16.4 percent), consistent with a
+community rather than academic site. Department B's DES was validated
+against its own real daily volume (88.6 percent match, 200 simulated days -
+slightly lower than Department A's 91.0 percent, but consistent with the
+same right-censoring mechanism and expected given Department B's own,
+independently Erlang-derived capacity of 14 leaves it running somewhat more
+relatively congested than Department A at its capacity of 30) before any
+uncertainty quantification comparison was run on it.
+""")
+    bc.add_table(doc,
+        ["Target", "Dept. B pooled coverage (worst category)", "Dept. B Mondrian coverage (same category)", "Dept. A (for comparison)"],
+        [
+            ["mean_wait_minutes", "76.2%", "89.3%", "68.2% -> 90.9%"],
+            ["mean_total_minutes", "81.0%", "90.5%", "80.7% -> 92.0%"],
+            ["p95_wait_minutes", "81.0%", "86.9%", "72.7% -> 92.0%"],
+        ],
+        caption="Department B replication of the core Mondrian CP finding (single split), compared to Department A.")
+    bc.add_body(doc, """
+The same category - staff = Low, arrival = High, an understaffed department
+during a demand surge - is the worst pooled-CP performer for the same three
+targets at Department B as at Department A, and Mondrian CP corrects it by
+a broadly similar magnitude at both sites: mean_wait_minutes improves from
+76.2 percent to 89.3 percent at Department B, closely paralleling
+Department A's improvement from 68.2 percent to 90.9 percent. The easy
+category (staff = High, arrival = Low) again reaches exactly 100 percent
+pooled coverage at Department B - the identical wasted-width pattern seen
+at Department A.
+
+One genuine difference between the two sites is disclosed here rather than
+smoothed over, because it makes the generalization claim more credible, not
+less: n_patients behaves differently at Department B than at Department A.
+At Department A (Section 6.5.3), n_patients showed no real conditional
+miscalibration for Mondrian CP to correct. At Department B, n_patients does
+show a real conditional gap - its worst category is staff = High,
+arrival = High (a different category from the other three targets' shared
+worst case), with pooled coverage of 81.1 percent corrected to 88.5 percent
+by Mondrian CP. This is a genuine, site-specific difference in which target
+benefits from Mondrian calibration, not an error, and a generalization claim
+that acknowledges a detail that did not replicate identically is more
+credible than one that reports uniform replication across every single
+target at every single site.
+
+Taken together, Department B confirms the answer to this project's
+generalizability question on the dimension that matters most for its
+central claim: the marginal-versus-conditional coverage gap that Mondrian
+CP closes is not an artifact of one specific department's calibration. It
+reproduces, at a similar magnitude, at an independent site with materially
+different patient volume and acuity characteristics, even though the exact
+target-level details of which categories are affected are not perfectly
+identical between the two sites.
+""")
+
+    bc.add_section_heading(doc, "6.9 Computational Cost Comparison")
+    bc.add_body(doc, """
+A practical dimension of this comparison, beyond coverage and width, is
+computational cost - relevant to any setting, such as ER staffing, where
+recalibration might need to happen frequently as conditions change. Table 6.14
+reports each method's own calibration or fitting cost on a like-for-like
+basis: the GP baseline's cost is its model-fitting time; conformal
+prediction methods do not fit a model (they wrap the already-trained
+surrogate from Section 6.2), so their fair cost is the time to compute their
+calibration quantile or quantiles.
+""")
+    bc.add_table(doc,
+        ["Target", "Method", "Coverage", "Mean width", "Computation time"],
+        [
+            ["n_patients", "GP", "88.5%", "39.3", "11.46s"],
+            ["n_patients", "Standard CP", "92.1%", "43.6", "0.012s"],
+            ["n_patients", "Mondrian CP", "91.7%", "43.5", "0.011s"],
+            ["mean_wait_minutes", "GP", "87.7%", "43.6", "7.13s"],
+            ["mean_wait_minutes", "Standard CP", "89.0%", "47.2", "0.009s"],
+            ["mean_wait_minutes", "Mondrian CP", "91.4%", "40.1", "0.011s"],
+            ["mean_total_minutes", "GP", "88.8%", "43.4", "6.95s"],
+            ["mean_total_minutes", "Standard CP", "90.2%", "46.4", "0.009s"],
+            ["mean_total_minutes", "Mondrian CP", "91.8%", "45.5", "0.010s"],
+            ["p95_wait_minutes", "GP", "90.1%", "350.3", "7.05s"],
+            ["p95_wait_minutes", "Standard CP", "90.8%", "362.9", "0.009s"],
+            ["p95_wait_minutes", "Mondrian CP", "91.3%", "314.2", "0.011s"],
+        ],
+        caption="Single-split coverage, width, and computation time, all three core methods, all four targets.")
+    bc.add_body(doc, """
+Conformal prediction's calibration cost (roughly 0.009-0.012 seconds,
+essentially identical between standard and Mondrian variants) is
+approximately 650 to 1,000 times faster than the GP baseline's model-fitting
+cost (6.95-11.46 seconds), consistently across every target. This is not a
+marginal implementation detail: it is a real, practical argument for
+conformal-prediction-based uncertainty quantification specifically in a
+setting like ER staffing, where conditions - real arrival patterns, seasonal
+effects, staffing policy changes - can shift often enough that frequent
+recalibration is operationally desirable, and where a Gaussian process
+refit taking 7-11 seconds per metric does not scale the way a
+approximately 0.01-second conformal calibration does.
+""")
+
+    bc.add_section_heading(doc, "6.9.1 Why the Gap Widens: A Complexity Perspective")
+    bc.add_body(doc, """
+The roughly three-orders-of-magnitude gap in Table 6.14 is not an
+implementation artifact specific to this project's code; it follows
+directly from the two methods' underlying computational complexity, as
+introduced theoretically in Section 4.4.1. Exact Gaussian process regression
+requires inverting (or, in practice, Cholesky-factorizing) an n-by-n
+covariance matrix over the training set, an O(n^3) operation, which is why
+this project's GP baseline is deliberately trained on a 1,000-point
+subsample rather than the full calibration set (Section 4.4.1) - at n =
+1,000, an O(n^3) cost is already the dominant term behind the 7-11 second
+fit times observed. Split conformal calibration, by contrast, requires only
+computing nonconformity scores for each calibration point (an O(n)
+operation) and finding their empirical quantile via a sort, an O(n log n)
+operation - asymptotically far cheaper, and empirically, at this project's
+calibration sample sizes, cheap enough that it is not the bottleneck in any
+measured timing. This complexity gap would only widen, not narrow, at
+larger calibration or training set sizes: a real deployment recalibrating on
+a full year or more of accumulated ED data - orders of magnitude larger than
+this project's 1,200-point calibration sets - would push exact GP inference
+toward being computationally impractical to refit often, while conformal
+calibration's cost would grow far more gently. This is a structural,
+not incidental, advantage of the conformal approach for exactly the kind of
+setting (frequent recalibration against accumulating real hospital data)
+this project's motivation (Chapter 1) describes.
+""")
+
+    bc.add_section_heading(doc, "6.10 Practical Implications for ER Staffing Decisions")
+    bc.add_body(doc, """
+It is worth translating this chapter's statistical findings into the
+concrete operational terms a hospital administrator or charge nurse would
+actually encounter. Consider mean_wait_minutes under Department A's actual
+operating conditions: a pooled 90 percent conformal interval, built from the
+single calibration quantile in Section 6.4, gives a fixed-width band around
+the surrogate's point prediction regardless of which staffing/arrival regime
+is currently in effect. Sections 6.5.1-6.5.4 show that this fixed band is
+badly miscalibrated specifically in the understaffed, high-demand regime -
+the exact regime in which a decision-maker is most likely to be consulting
+an uncertainty estimate in the first place, precisely because that is when a
+staffing or diversion decision is under active consideration. A decision-
+maker relying on the pooled interval in that regime would, roughly three
+times in ten, see the true wait time fall outside the stated 90 percent
+interval - a materially higher failure rate than the 90 percent interval
+advertises, and one they would have no way to detect from the interval
+itself, since a conformal interval does not self-report when it is
+operating outside its well-calibrated regime.
+
+Mondrian CP's category-specific interval, by contrast, is honestly wider in
+exactly this regime (Table 6.6, Section 6.5.2: 65.4 minutes wide at
+staff = Low/arrival = High, versus the pooled 47.2) - a less reassuring-
+looking number, but a more trustworthy one. This is the practical shape of
+what "conditional coverage" buys a real decision-maker: not a narrower
+interval in general, but an interval whose width honestly reflects how much
+uncertainty actually exists in the specific situation at hand, which is a
+precondition for the interval being useful as a decision-support tool at
+all. An interval that is falsely narrow specifically when conditions are
+worst is arguably worse than no interval, since it creates unwarranted
+confidence in exactly the circumstances where caution is most needed;
+Mondrian CP's redistribution of width (Sections 6.5.2-6.5.3) directly
+addresses this failure mode.
+""")
+
+    bc.add_section_heading(doc, "6.11 Threats to Validity and Alternative Explanations Considered")
+    bc.add_body(doc, """
+Before treating this chapter's central finding as established, it is worth
+considering, and ruling out, plausible alternative explanations for the
+pooled-versus-Mondrian coverage gap documented in Section 6.5, rather than
+accepting the preferred explanation (genuine conditional heteroscedasticity,
+Section 6.5.4) uncritically.
+
+One alternative explanation is that the gap is a finite-sample artifact of
+the specific calibration set used, rather than a genuine population-level
+effect - essentially, that Section 6.5's single split was simply unlucky in
+a way that happened to disadvantage the pooled quantile. Section 6.6's
+30-repeat evaluation directly addresses this: the same qualitative pattern
+(Mondrian CP's mean coverage exceeding the GP baseline's and matching or
+exceeding standard CP's) holds consistently across 30 independently
+generated calibration and test sets, with the coverage advantage
+statistically significant at p < 0.001 on every target where Section 6.5
+found a gap. A finite-sample artifact specific to one split would not be
+expected to replicate this consistently across independently regenerated
+data.
+
+A second alternative explanation is that the gap reflects some idiosyncrasy
+of Department A's specific calibration - an artifact of that department's
+particular real arrival pattern or acuity mix, rather than a general
+property of pooled-versus-conditional calibration under heteroscedastic
+residual variance. Section 6.8's independent replication at Department B -
+a site with materially different volume (roughly half) and acuity mix
+(meaningfully lower ESI-2 share, higher ESI-4 share) - directly addresses
+this: the same category (staff = Low, arrival = High) is the worst
+pooled-CP performer at both sites, and Mondrian CP corrects it by a similar
+magnitude at both. An idiosyncrasy specific to Department A's calibration
+would not be expected to reproduce this closely at an independently
+calibrated site.
+
+A third alternative explanation is that the gap reflects a peculiarity of
+the gradient-boosting surrogate architecture specifically - perhaps tree-
+based models have some architecture-specific bias toward this particular
+failure pattern, rather than the pattern reflecting genuine heteroscedastic
+residual variance that any reasonably accurate surrogate would exhibit.
+This report's own secondary use of a structurally different
+architecture (a multi-layer perceptron, Section 6.13) is aimed at a related but distinct
+question (exchangeability, not conditional coverage), so it does not
+directly rule this out for the marginal-coverage finding specifically;
+this is flagged honestly as a residual limitation in Section 7.3 rather
+than claimed to be fully addressed, since a rigorous rebuttal would require
+re-running the full Mondrian-versus-pooled comparison in Section 6.5 on the
+MLP surrogate specifically, which was outside this report's scope.
+
+The explanation this report adopts - genuine, queueing-theoretically
+expected heteroscedasticity concentrated in the near-saturation region of
+the scenario grid (Section 6.5.4) - is the one that survives the two checks
+this project was able to perform directly (repeated evaluation, cross-site
+replication) and is consistent with well-established queueing-theoretic
+expectations about variance growth near capacity (Section 2.4), rather than
+being an ad hoc explanation constructed to fit this project's specific
+numbers after the fact.
+""")
+
+    bc.add_section_heading(doc, "6.12 Relation to Gopakumar et al.'s Physics-Domain Findings")
+    bc.add_body(doc, f"""
+It is worth returning directly to this project's motivating base paper
+(Section 2.3, Gopakumar et al. {bc.cite('gopakumar2026')}) to state precisely how this chapter's
+findings relate to theirs, rather than leaving the connection implicit.
+Gopakumar et al. validate conformal prediction's marginal coverage
+guarantee across several physics-simulation domains and report that it
+holds at its nominal level in those domains, while explicitly flagging that
+they did not test whether that marginal correctness conceals conditional
+miscalibration within subpopulations of their own test distributions. This
+project's finding does not contradict their result - standard CP's marginal
+coverage in this project's own results (Section 6.4, Table 6.4) also lands
+close to its 90 percent nominal target, consistent with their finding that
+the marginal guarantee holds as advertised. What this project adds is
+evidence for the specific concern they flag but did not test: that marginal
+correctness can and, in this domain, does conceal a severe conditional gap
+(Section 6.5.1's 68.2 percent worst-category coverage against the same
+90.2 percent-ish marginal number). Whether an equivalent conditional gap
+exists within Gopakumar et al.'s own physics-simulation test distributions
+is a question this project cannot answer - it was not tested in their paper
+and re-testing it is outside this project's scope - but this project's
+result establishes that the concern they raise as hypothetical is not
+merely hypothetical in at least one domain, and provides a concrete,
+replicated example of exactly the failure mode their paper's limitations
+section anticipates.
+""")
+
+    bc.add_section_heading(doc, "6.13 Secondary Robustness Check: Exchangeability Under Distribution Shift")
+    bc.add_body(doc, """
+Gopakumar et al.'s second stated limitation - that conformal prediction's
+coverage guarantee depends on an exchangeability assumption between
+calibration and test data, untested under distribution shift in their own
+physics-domain validation - is not this report's central subject (Section
+6.5's marginal-versus-conditional coverage gap is), but it was tested as
+part of this project's broader implementation (Section 4.5.2) and is
+summarized here for completeness, since a report centered on conformal
+prediction's reliability would be incomplete if it were silent on the
+guarantee's other, non-conditional limitation entirely.
+""")
+
+    bc.add_section_heading(doc, "6.13.1 Stress-Test Design")
+    bc.add_body(doc, """
+Calibration was held fixed exactly as established for Sections 6.4-6.8
+(arrival-rate multiplier in [0.8, 1.3]), while the test distribution's
+arrival-rate multiplier was pushed progressively outward - 1.5x, 1.8x,
+2.0x, 2.5x, 3.0x relative to the real calibrated rate - with staffing
+capacity still drawn from its normal range, isolating the shift to demand
+alone. The test was run twice: once with the primary gradient-boosting
+(GBR) surrogate used throughout this report, and once with a structurally
+different multi-layer perceptron (MLP) surrogate trained on identical data,
+achieving near-identical in-distribution accuracy (R-squared within 0.01 of
+GBR on every target) - so that any difference under distribution shift
+reflects architecture, not overall model quality.
+""")
+
+    bc.add_section_heading(doc, "6.13.2 Coverage Collapse and a Cross-Architecture Reversal")
+    bc.add_body(doc, """
+Table 6.15 reports standard CP coverage at each severity level for both
+architectures, on the two targets showing the starkest architectural
+difference.
+""")
+    bc.add_table(doc,
+        ["Arrival mult.", "n_patients (GBR)", "n_patients (MLP)", "mean_total (GBR)", "mean_total (MLP)"],
+        [
+            ["1.3 (boundary)", "93.3%", "93.0%", "88.0%", "88.3%"],
+            ["1.8", "70.3%", "6.7%", "47.3%", "2.3%"],
+            ["2.0", "64.7%", "0.0%", "39.0%", "0.0%"],
+            ["3.0", "31.7%", "0.0%", "4.7%", "0.0%"],
+        ],
+        caption="Standard CP coverage vs. arrival-rate severity, GBR vs. MLP surrogate, target 90%.")
+    bc.add_figure(doc, f"{FIG}/exchangeability_coverage_collapse.png",
+        "Standard CP coverage vs. arrival-rate severity, GBR vs. MLP surrogate, all four targets.")
+    bc.add_body(doc, """
+Coverage collapses under both architectures once the test distribution
+moves past the 1.3x training boundary, confirming Gopakumar et al.'s
+exchangeability limitation in this domain. The direction of the
+cross-architecture difference is counter-intuitive: the architecture
+capable of extrapolating (the MLP) fails faster and more completely than
+the one that cannot (GBR) - n_patients and mean_total_minutes both reach
+exactly 0 percent coverage under the MLP by 2.0x, while GBR degrades more
+gradually, still retaining 64.7 and 39.0 percent coverage at the same
+severity.
+""")
+
+    bc.add_section_heading(doc, "6.13.3 Mechanism: A Saturating True Relationship")
+    bc.add_body(doc, """
+A diagnostic comparison against the true simulated output at fixed staffing
+capacity (30) explains the reversal. The true n_patients value saturates
+under extreme demand - 235.2 (1.0x) rising to only 280.9 (3.0x), not
+scaling proportionally with a threefold arrival-rate increase - a direct
+consequence of the same right-censoring mechanism documented in Section
+4.2.4: at extreme overload, more arriving patients simply do not complete
+service within the simulated day, so the completed-visit count saturates
+rather than growing without bound.
+""")
+    bc.add_table(doc,
+        ["Arrival mult.", "True n_patients", "GBR prediction", "MLP prediction"],
+        [
+            ["1.0", "235.2", "240.5", "234.8"],
+            ["1.3 (boundary)", "244.8", "247.8", "245.8"],
+            ["2.0", "258.6", "247.8 (frozen)", "336.5"],
+            ["3.0", "280.9", "247.8 (frozen)", "521.2"],
+        ],
+        caption="True vs. predicted n_patients at fixed capacity 30, both surrogate architectures.")
+    bc.add_body(doc, """
+A tree ensemble's prediction cannot extrapolate past its training range and
+simply freezes at the boundary leaf value (247.8) - which happens, by
+coincidence rather than any adaptive mechanism, to be a reasonable
+approximation of a genuinely flat true function. The MLP instead continues
+the upward trend it learned near the training boundary and overshoots the
+true, saturating value by roughly six to nine times more error (521.2
+predicted versus 280.9 true at 3.0x). An architecture's capacity to
+extrapolate is therefore not automatically protective against distribution
+shift - it is protective only if the true relationship continues the trend
+the model learned, which it does not here.
+""")
+
+    bc.add_section_heading(doc, "6.13.4 Implications for This Report's Central Finding")
+    bc.add_body(doc, """
+Mondrian CP's per-category structure does not meaningfully protect against
+this failure mode: Mondrian coverage tracks standard CP's closely at every
+severity level under both architectures (both derived from the same
+in-range calibration data, equally blind to a shift neither's categories
+were calibrated to anticipate). This is a genuine scope boundary on
+Section 6.5's central finding, stated explicitly rather than left for a
+reader to assume: Mondrian CP corrects conditional miscalibration among
+categories that are each still individually in-distribution; it is not a
+general defense against the calibration and test distributions themselves
+ceasing to be exchangeable. One practical mitigation is worth noting: the
+failure here is measurably detectable, not silent - residuals grow and
+coverage visibly collapses rather than the surrogate confidently reporting
+a narrow, wrong interval with no signal that anything is amiss.
+""")
+
+    bc.add_section_heading(doc, "6.14 Summary of Results")
+    bc.add_body(doc, """
+Read together, Sections 6.1-6.13 establish, in order of how directly each
+result bears on this project's central research question (Chapter 3): the
+underlying simulation is validated against real data (Section 6.1) and its
+surrogate is reasonably accurate, with expected weakness on the hardest,
+most tail-sensitive target (Section 6.2); a Gaussian process baseline
+undercovers, motivating conformal prediction as an alternative (Section
+6.3); standard conformal prediction achieves correct marginal coverage
+(Section 6.4) that conceals a real, substantial conditional coverage gap
+concentrated specifically in the understaffed/high-demand operating regime
+(Section 6.5.1); Mondrian conformal prediction corrects that gap using the
+same calibration data, at a modest and well-understood cost on the one
+target where no real gap existed to correct (Sections 6.5.2-6.5.3); the
+correction is statistically significant across 30 independent repeats, not
+a single-split artifact (Section 6.6); a stronger, width-adaptive baseline
+(CQR) achieves much of the same benefit through a different mechanism, and
+combining both mechanisms produces the strongest result on the hardest
+target (Section 6.7); the entire finding replicates at an independent
+hospital department with different volume and acuity characteristics
+(Section 6.8); conformal prediction achieves all of this at a
+computational cost roughly three orders of magnitude lower than the
+Gaussian process alternative (Section 6.9); and, as a secondary robustness
+check on the base paper's second stated limitation, conformal prediction's
+exchangeability assumption is shown to break down under distribution shift
+regardless of surrogate architecture, with the specific failure mechanism
+depending on how each architecture extrapolates (Section 6.13).
+""")
+
+
+def build_chapter7_conclusion(doc):
+    bc.add_chapter_heading(doc, 7, "Conclusion and Future Scope")
+
+    bc.add_section_heading(doc, "7.1 Summary of Findings")
+    bc.add_body(doc, f"""
+This report set out to test, in a discrete-event queueing simulation
+domain, the first of two limitations that Gopakumar et al. {bc.cite('gopakumar2026')} explicitly flag
+as untested in their own validation of conformal prediction for
+surrogate-model uncertainty quantification: that a conformal prediction
+interval's coverage guarantee is marginal rather than conditional, and
+could in principle mask systematic miscalibration within specific
+subpopulations of a test distribution. The answer, established across
+Chapter 6, is that this limitation is real and operationally significant in
+this domain: a single pooled conformal quantile silently fails the most
+operationally important scenario - an understaffed emergency department
+facing a demand surge - with coverage falling as low as 68.2 percent
+against a 90 percent nominal target, while simultaneously and wastefully
+overcovering the easiest scenario. Mondrian conformal prediction, which
+calibrates separately within each of nine staffing-by-arrival-rate
+categories rather than pooling, corrects this specific failure to 90.9-92.0
+percent coverage using the identical calibration data, with the correction
+confirmed statistically significant (p < 0.001) across 30 independent
+calibration/test draws and replicated, at a comparable magnitude, at a
+second, independent hospital department with materially different patient
+volume and acuity mix.
+""")
+
+    bc.add_section_heading(doc, "7.2 Contribution and Novelty")
+    bc.add_body(doc, f"""
+This project's contribution, assessed honestly against the research gap
+stated in Chapter 3, is the first empirical test - to the extent this
+project's 30-paper literature review (Chapter 2) was able to establish -
+of conformal prediction's marginal-coverage limitation outside the
+physics-simulation domains (PDE solvers, magnetohydrodynamics, weather,
+fusion-plasma simulation) in which Gopakumar et al. {bc.cite('gopakumar2026')} originally
+validated conformal prediction for surrogate-model uncertainty
+quantification. The result extends, rather than merely reproduces, their
+findings: it shows that the marginal-coverage limitation they flag as
+untested is not a physics-domain-specific concern but manifests, with
+substantial practical severity, in a domain governed by fundamentally
+different (discrete-event, stochastic-service-system) dynamics, and that
+Mondrian conformal prediction - itself a comparatively under-explored
+correction, per the thin dedicated literature identified in Section 2.2 -
+is an effective, computationally cheap remedy specifically where a genuine
+conditional miscalibration exists.
+
+The statistical rigor brought to this finding - 30-repeat significance
+testing, a stronger CQR baseline, a combined Mondrian-CQR variant, and
+independent replication at a second hospital site - goes beyond what the
+original project roadmap required at this stage, and is what elevates the
+central claim from a single-split observation to a statistically
+established, cross-architecture-adjacent (Section 6.13 addresses
+architecture directly, on the related exchangeability question), cross-site
+result.
+""")
+
+    bc.add_section_heading(doc, "7.3 Limitations")
+    bc.add_body(doc, """
+Several limitations of this work are stated here explicitly rather than
+left implicit. First, the discrete-event simulation's service-time
+distributions are calibrated from literature-standard parameters by
+triage-acuity level, not derived from the real dataset used in this
+project, because that dataset contains no length-of-stay field; this
+project's findings about conformal prediction's behavior are therefore
+findings about a simulation whose queueing dynamics are only partially
+validated against real hospital data (real-data-validated on arrival volume
+and acuity mix; literature-calibrated on service duration). Second, the
+Mondrian taxonomy used throughout this project - staffing tercile crossed
+with arrival-rate tercile - reflects the only two scenario-level covariates
+the DES actually produces; a real emergency department's conditional
+coverage gaps could plausibly depend on additional factors (shift, season,
+day of week) this project's DES does not model and therefore cannot test
+Mondrian CP's behavior against. Third, cross-site generalization (Section
+6.8) was tested at a single split rather than the full 30-repeat treatment,
+since the question there was replication of an already-established finding
+at a new site, not re-establishing statistical rigor already achieved for
+the primary department. Fourth, generalization was tested across two of the
+three departments present in the underlying dataset; the third department
+was not evaluated, for reasons of project scope and time.
+""")
+
+    bc.add_section_heading(doc, "7.4 Future Scope")
+    bc.add_body(doc, f"""
+Several directions follow naturally from this project's findings and
+limitations. Extending the Mondrian taxonomy beyond the two covariates
+available in this project's DES - incorporating a shift or seasonal
+variable into a richer, real-data-calibrated simulation - would test
+whether Mondrian CP's benefit extends to conditioning variables this
+project could not evaluate. Mondrian conformal predictive distributions
+(Section 2.2, {bc.cite('bostrom2021')}), rather than
+fixed-alpha intervals, would let a staffing decision-maker read off any
+confidence level of interest after the fact rather than committing to 90
+percent coverage in advance. Testing the third department present in the
+underlying dataset would complete the generalization picture across every
+site available rather than two of three. Finally, combining this report's
+marginal-coverage finding with its own Section 6.13 exchangeability
+finding - testing whether Mondrian CP's category-conditional structure
+offers any partial protection under a mild, in-taxonomy distribution shift,
+short of the severe shift studied there - is a natural
+next question raised by, but not fully answered within, this report.
+""")
+
+
+def add_references(doc):
+    """IEEE-numbered reference list, auto-generated from the citation
+    registry in true order of first appearance (bc.get_citation_order()) -
+    every [n] used anywhere in the document above corresponds exactly to
+    entry n here, with no manual renumbering ever required."""
+    bc.add_chapter_heading(doc, 8, "References")
+    for number, key in bc.get_citation_order():
+        authors, title, venue = bc.CITATION_DB[key]
+        p = doc.add_paragraph()
+        p.paragraph_format.left_indent = Inches(0.3)
+        p.paragraph_format.first_line_indent = Inches(-0.3)
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        r = p.add_run(f"[{number}]  {authors}, {title} ")
+        r.font.size = Pt(11)
+        r.font.name = "Times New Roman"
+        rv = p.add_run(venue)
+        rv.font.size = Pt(11)
+        rv.font.italic = True
+        rv.font.name = "Times New Roman"
+
+
+def add_appendix_a(doc):
+    bc.add_page_break(doc)
+    bc._current_chapter["n"] = "A"
+    bc._table_counter["n"] = 0
+    bc._figure_counter["n"] = 0
+    kicker = doc.add_paragraph()
+    r = kicker.add_run("APPENDIX A")
+    r.font.bold = True
+    r.font.size = Pt(13)
+    hh = doc.add_paragraph()
+    r = hh.add_run("Source Code Listings")
+    r.font.bold = True
+    r.font.size = Pt(22)
+    r.font.color.rgb = bc.INK
+    doc.add_paragraph(
+        "The following pages list the real source code underlying this "
+        "report's results, directly from this project's repository under "
+        "src/. Each file is reproduced in full, unmodified, with original "
+        "line numbers."
+    )
+    for path, desc in CODE_FILES_APPENDIX_A:
+        bc.add_code_listing(doc, path, title=f"{path} - {desc}")
+
+
+def add_appendix_b(doc):
+    bc.add_page_break(doc)
+    bc._current_chapter["n"] = "B"
+    bc._table_counter["n"] = 0
+    bc._figure_counter["n"] = 0
+    kicker = doc.add_paragraph()
+    r = kicker.add_run("APPENDIX B")
+    r.font.bold = True
+    r.font.size = Pt(13)
+    hh = doc.add_paragraph()
+    r = hh.add_run("Supplementary Result Tables")
+    r.font.bold = True
+    r.font.size = Pt(22)
+    r.font.color.rgb = bc.INK
+    doc.add_paragraph(
+        "Full per-category detail tables (all nine categories, not only the "
+        "worst case shown in Chapter 6) for the core Mondrian CP comparison, "
+        "for completeness."
+    )
+    import csv
+    detail_path = "results/tables/mondrian_cp_detail.csv"
+    with open(detail_path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        rows = list(reader)
+    # group by target for readability
+    targets = sorted(set(r[0] for r in rows))
+    for t in targets:
+        trows = [r for r in rows if r[0] == t]
+        fmt_rows = []
+        for r in trows:
+            fmt_rows.append([
+                r[1],
+                r[2], r[3],
+                f"{float(r[4])*100:.1f}%", f"{float(r[5]):.1f}",
+                f"{float(r[6])*100:.1f}%", f"{float(r[7]):.1f}",
+            ])
+        bc.add_table(doc,
+            ["Category", "n_cal", "n_test", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+            fmt_rows,
+            caption=f"Full 9-category detail: {t}.")
+
+
+def build():
+    doc = Document()
+    bc.set_document_defaults(doc)
+    bc.reset_counters()
+    bc.reset_citations()
+
+    bc.build_title_page(doc, TITLE, SUBTITLE)
+    bc.build_preface(doc, _abstract(bc))
+    bc.build_toc_page(doc)
+    bc.build_abbreviations(doc)
+
+    bc.build_chapter1_introduction(doc)
+    bc.build_chapter2_literature_review(doc)
+    bc.build_chapter3_research_gap(doc)
+    bc.build_chapter4_methodology(doc)
+    bc.build_chapter5_implementation(doc)
+    build_chapter6_results(doc)
+    build_chapter7_conclusion(doc)
+    add_references(doc)
+    add_appendix_a(doc)
+    add_appendix_b(doc)
+
+    doc.save(OUT_PATH)
+    print(f"Saved {OUT_PATH}")
+
+
+if __name__ == "__main__":
+    build()

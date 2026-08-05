@@ -80,6 +80,34 @@ truncate page ranges or drop a middle author.
 
 ---
 
+## F. DES Service-Time / Arrival Calibration Cross-Check (10, added 2026-08-05)
+
+Separate from the 30-paper literature review above (which addresses the professor's
+review requirement) - this set was gathered specifically to replace the book report's
+previously vague, unverified "service-time parameters are literature-typical, e.g.
+Ahalt et al. (2018) and similar" attribution (`src/utils/extract_distributions.py`)
+with real, checkable numbers. Each entry below reports actual ED service-time,
+length-of-stay, or arrival-rate statistics from its own real hospital dataset, used in
+`reports/assignments/book_common.py` Section 4.2.3.1 to cross-check this project's
+literature-calibrated service-time parameters quantitatively (not just cite them as
+generically supportive). All ten verified against a primary source (journal page, DOI,
+or arXiv abstract) before inclusion, same practice as sections A-E above.
+
+| # | Citation | Real dataset | What it's used for |
+|---|---|---|---|
+| 31 | Hoot, N.R., LeBlanc, L.J., Jones, I., et al. (2008). Forecasting Emergency Department Crowding: A Discrete Event Simulation. *Annals of Emergency Medicine*, 52(2), 116-125. | 1 US academic ED, DES model | Closest structural match: log-normal per-ESI treatment duration, ESI mix, nonstationary Poisson arrivals. Direct numeric comparison table against this project's own ESI parameters. |
+| 32 | Otto, R., Blaschke, S., Schirrmeister, W., et al. (2022). Length of Stay as Quality Indicator in Emergency Departments: AKTIN Registry. *Internal and Emergency Medicine*, 17(4), 1199-1209. | AKTIN registry, 12 German EDs, n=304,606 | Mean +/- SD LOS by triage level - used to check this project's SD/mean ratio against real-world variability. |
+| 33 | Theiling, B.J., Kennedy, K.V., Limkakeng, A.T. Jr., et al. (2020). A Method for Grouping Emergency Department Visits by Severity and Complexity. *Western Journal of Emergency Medicine*, 21(5), 1147-1155. | US NHAMCS, ~805.7M weighted visits | Confirms duration-decreases-with-acuity shape at national scale. |
+| 34 | Karaca, Z., Wong, H.S., Mutter, R.L. (2012). Duration of Patients' Visits to the Hospital Emergency Department. *BMC Emergency Medicine*, 12, 15. | AZ/MA/UT state databases, n=4,955,590 | Confirms right-skewed duration distribution at very large scale. |
+| 35 | Kim, T.Y., Ohmart, C., Khan, Z., Lance, M., Kim, S. (2021). The Effect on Length of Stay After Implementation of Discharging Low Acuity Patients From Triage. *Cureus*, 13(9), e17640. | 1 US ED, n=2,107 | Independent ESI-4/5 mean LOS data point. |
+| 36 | Mahmoodian, F., Eqtesadi, R., Ghareghani, A. (2014). Waiting Times in Emergency Department After Using the Emergency Severity Index Triage Tool. *Archives of Trauma Research*, 3(4), e19507. | 2 hospitals, n=900 | Independent full-ESI-range time-to-physician data point. |
+| 37 | Laskowski, M., McLeod, R.D., Friesen, M.R., Podaima, B.W., Alfa, A.S. (2009). Models of Emergency Departments for Reducing Patient Waiting Times. *PLoS ONE*, 4(7), e6127. | 6 Winnipeg hospitals, n=185,659 | Cross-site support for priority-queue/simulation methodology calibrated on real CTAS data. |
+| 38 | Locker, T.E., Mason, S.M. (2005). Analysis of the Distribution of Time That Patients Spend in Emergency Departments. *BMJ*, 330(7501), 1188-1189. | UK NHS EDs | Confirms right-skewed ED duration shape outside the US-heavy sample of the other nine. |
+| 39 | De Santis, A., Giovannelli, T., Lucidi, S., Messedaglia, M., Roma, M. (2021). Determining the Optimal Piecewise Constant Approximation for the Nonhomogeneous Poisson Process Rate of ED Patient Arrivals. arXiv:2101.11138. | 1 large Italian ED | Validates this project's nonhomogeneous-Poisson hourly arrival-rate calibration as an established methodology. |
+| 40 | Kramer, A., Dosi, C., Iori, M., Vignoli, M. (2020). Successful Implementation of Discrete Event Simulation: The Case of an Italian Emergency Department. arXiv:2006.13062. | 1 Italian ED, ~7,000 visits/month | Cross-site precedent for DES-based ED modeling reaching real operational use. |
+
+---
+
 ## PDF status summary
 
 **16 of 30 already downloaded** to `literature/pdfs/` (arXiv/PMLR/NeurIPS preprints and a

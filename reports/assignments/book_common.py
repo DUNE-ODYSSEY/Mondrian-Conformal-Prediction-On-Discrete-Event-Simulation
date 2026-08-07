@@ -8,8 +8,10 @@ tables, bottom-captioned figures).
 
 Chapters 1-5 (Introduction, Literature Review, Research Gap, Methodology,
 Implementation) are written once here and imported by the single book build
-script. Chapter 6 (Results & Discussion), the Conclusion, References, and the
-code appendix are built in that script.
+script. Chapters 6-11 (Beyond Standard CP; Empirical Validation and
+Metamodel Benchmarking; When Exchangeability Fails; Cross-Site
+Generalization; Translational Health Operations; Synthesis and Uncharted
+Horizons), References, and the code appendix are built in that script.
 
 Formatting: Times New Roman 11pt body, 1.15 line spacing, 7in x 10in page
 with a 0.85in binding gutter - a standard bound technical-textbook layout.
@@ -452,6 +454,27 @@ CITATION_DB = {
     "kramer2020": ("A. Kramer, C. Dosi, M. Iori, and M. Vignoli",
                  '"Successful Implementation of Discrete Event Simulation: The Case of an Italian Emergency Department,"',
                  "arXiv:2006.13062, 2020."),
+    "kingman1962": ("J. F. C. Kingman",
+                 '"On Queues in Heavy Traffic,"',
+                 "Journal of the Royal Statistical Society, Series B, vol. 24, no. 2, pp. 383-392, 1962."),
+    "sakasegawa1977": ("H. Sakasegawa",
+                 '"An Approximation Formula Lq = alpha . rho^beta / (1 - rho),"',
+                 "Annals of the Institute of Statistical Mathematics, vol. 29, no. 1, pp. 67-75, 1977."),
+    "bates2021": ("S. Bates, A. Angelopoulos, L. Lei, J. Malik, and M. Jordan",
+                 '"Distribution-Free, Risk-Controlling Prediction Sets,"',
+                 "Journal of the ACM, vol. 68, no. 6, pp. 1-34, 2021."),
+    "gibbs2021": ("I. Gibbs and E. Candes",
+                 '"Adaptive Conformal Inference Under Distribution Shift,"',
+                 "Advances in Neural Information Processing Systems 34 (NeurIPS), 2021."),
+    "fda_aiml_2021": ("U.S. Food and Drug Administration",
+                 '"Artificial Intelligence/Machine Learning (AI/ML)-Based Software as a Medical Device (SaMD) Action Plan,"',
+                 "FDA, January 2021."),
+    "fda_gmlp_2021": ("U.S. FDA, Health Canada, and UK MHRA",
+                 '"Good Machine Learning Practice for Medical Device Development: Guiding Principles,"',
+                 "October 2021."),
+    "fda_pccp_2024": ("U.S. Food and Drug Administration",
+                 '"Marketing Submission Recommendations for a Predetermined Change Control Plan for Artificial Intelligence-Enabled Device Software Functions,"',
+                 "FDA Guidance, December 2024."),
 }
 
 _citation_order = []
@@ -910,7 +933,7 @@ computational cost, and the assumptions it requires about the underlying data
 or model.
 
 Gaussian process (GP) regression, used in this project as a UQ baseline (see
-Chapter 4 and Chapter 6), is a Bayesian nonparametric method that produces a
+Chapter 4 and Chapter 7), is a Bayesian nonparametric method that produces a
 full posterior predictive distribution - and therefore both a point estimate
 and a principled uncertainty estimate - for any query point, under the
 assumption that the underlying function is well described by a specified
@@ -1023,17 +1046,17 @@ repeated calibration/test draws (rather than trusting a single split), and a
 second, independent hospital department (with materially different patient
 volume and acuity mix) to check whether findings generalize beyond a single
 site - with a third axis, a second surrogate architecture, used specifically
-to test the exchangeability question summarized in Section 6.13 rather than
+to test the exchangeability question summarized in Chapter 8 rather than
 the report's central Mondrian CP finding.
 
 This report's central finding is a genuine marginal-versus-conditional
 coverage gap that Mondrian conformal prediction closes where it is real,
-established in Chapter 6 across a single representative split, 30 repeated
+established in Chapter 7 across a single representative split, 30 repeated
 draws with formal statistical significance testing, a stronger
 width-adaptive baseline (conformalized quantile regression), and independent
 replication at a second hospital department. Chapters 1 through 5 lay the
 theoretical, methodological, and implementation groundwork this finding rests
-on; Chapter 6 develops the result itself in full depth, and Chapter 7
+on; Chapter 7 develops the result itself in full depth, and Chapter 11
 concludes with its implications, limitations, and future scope.
 """)
 
@@ -1046,16 +1069,158 @@ quantification more broadly, queueing theory and ED operations research, and
 discrete-event simulation together with ED-specific machine learning
 applications. Chapter 3 sharpens this survey into an explicit statement of the
 research gap this project addresses and the problem statement that follows
-from it. Chapter 4 describes the system design and methodology in full
-technical detail: the DES's structure and calibration, the surrogate
-architectures used, and the mathematics of standard conformal prediction,
-Mondrian conformal prediction, and conformalized quantile regression. Chapter
-5 documents the implementation - the dataset, the software stack, and a
-module-by-module walkthrough of the codebase. Chapter 6 presents this report's
-results and discussion in depth, and Chapter 7 concludes with a summary of
-findings, an honest account of the project's limitations, and directions for
-future work. References and appendices (source code listings and
-supplementary result tables) follow.
+from it. Chapter 4 describes the DES's structure and calibration and the
+mathematics of standard and Mondrian conformal prediction in full technical
+detail. Chapter 5 documents the implementation and software architecture.
+Chapter 6 extends the conformal toolkit itself - conformalized quantile
+regression, conformal risk control, and adaptive conformal inference - as
+methodology, ahead of any results. Chapter 7 presents this project's central
+empirical results: DES and surrogate validation, the marginal-versus-
+conditional coverage gap Mondrian CP closes, and the full method comparison.
+Chapter 8 stress-tests every method in Chapter 7 against a genuine violation
+of the exchangeability assumption. Chapter 9 tests whether the Chapter 7
+finding generalizes to an independent hospital department. Chapter 10
+translates the preceding results into operational terms - a prototype
+decision-support dashboard, a capacity-planning optimization built directly
+on this project's own conformal intervals, and a grounded discussion of what
+regulatory deployment would actually require. Chapter 11 synthesizes all of
+it and closes with limitations and future scope. References and appendices
+(source code listings and supplementary result tables) follow.
+""")
+
+    add_section_heading(doc, "1.7 Extended Theoretical Foundations of Operational Uncertainty")
+    add_body(doc, """
+Before this report's specific methodology is introduced (Chapter 4), it is
+worth establishing, in general terms, why an emergency department's
+operational uncertainty resists the deterministic point-forecasting
+treatment it might otherwise receive, and what a decision-maker's actual
+risk exposure looks like once that uncertainty is acknowledged rather than
+averaged away. The three subsections below are deliberately general - they
+do not yet reference this project's own DES or its specific numbers - so
+that Chapters 6 through 10's specific results can be read as instances of
+these broader principles rather than as a self-contained numerical
+exercise.
+""")
+
+    add_section_heading(doc, "1.7.1 Taxonomy of Operational Volatility", level=3)
+    add_body(doc, """
+Emergency department operational volatility is not a single phenomenon,
+and treating it as one obscures which mitigation actually applies to which
+source. It is useful to distinguish three structurally different
+categories.
+""")
+    add_body(doc, """
+Short-term demand shocks are sudden, comparatively brief departures from
+the prevailing arrival rate - a multi-vehicle collision, a localized
+disease outbreak, an unplanned closure at a neighboring facility diverting
+its patients - that resolve within hours to a few days. Their defining
+statistical property is that they are, from the perspective of a model
+calibrated on historical data, genuinely unpredictable in timing, even
+though their general character (a temporary multiplicative surge in
+arrival rate) can be characterized in advance. This project's
+exchangeability stress test (Chapter 8) is a direct model of exactly this
+category - a test distribution whose arrival-rate multiplier is pushed
+well past anything seen during calibration.
+
+Structural seasonal shifts are slower, more predictable departures - the
+well-documented within-week and within-day arrival-rate cycles this
+project's own DES calibrates on directly (Section 4.2.3), and slower
+still, annual patterns (influenza season, holiday-period injury rates)
+this project's single-year-slice calibration does not attempt to capture.
+Unlike demand shocks, these are not exchangeability violations in the
+narrow sense used throughout this report - they are part of the same
+generating process a sufficiently long calibration window would already
+include - but a calibration window shorter than the relevant cycle will
+systematically mistake a seasonal shift for a shock, an important
+practical distinction a deployed system would need to resolve by tracking
+calibration-window length against known cyclical structure.
+
+Capacity degradation is different again: a reduction in the *supply* side
+of the queueing system - staff illness, equipment downtime, a temporarily
+closed treatment bay - rather than a change in demand. In this project's
+own scenario parameterization (Section 4.2), a capacity-degradation event
+is representable as a downward shift in n_capacity rather than an upward
+shift in arrival_rate_multiplier - formally a different axis of the same
+two-dimensional scenario space, but one this report's own exchangeability
+stress test (Chapter 8) does not directly test, since it isolates the
+shift to arrival rate specifically (Section 4.5.2) - a scope boundary
+stated explicitly here rather than left for a reader to assume the
+existing stress test already covers it.
+""")
+
+    add_section_heading(doc, "1.7.2 Mathematical Boundaries of Deterministic Metamodeling", level=3)
+    add_body(doc, """
+A point-predicting surrogate - the kind this project trains in Section 4.3
+before any uncertainty quantification is layered on top of it - targets
+the conditional expectation E[Y|X], the single value minimizing expected
+squared error. It is worth stating precisely why reporting only this
+value, without an accompanying interval, is not merely incomplete but can
+be actively misleading for a queueing system specifically, via a classical
+and easily-stated fact: Jensen's inequality.
+""")
+    add_equation(doc, "E[ f(X) ] != f( E[X] )  whenever f is (strictly) convex or concave and X is non-degenerate")
+    add_body(doc, """
+Queueing delay, as a function of offered load, is convex in exactly the
+regime this project's own Chapter 4 derivation (Section 4.2.1's Erlang-C
+result) makes precise: W_q(a) grows without bound as the offered load a
+approaches the server count c, so W_q(.) is a convex function of a on the
+relevant domain. Writing a_t for the (randomly varying, e.g. across
+simulated days) true offered load and a-hat for a point estimate of its
+typical value, Jensen's inequality gives
+""")
+    add_equation(doc, "E[ W_q(a_t) ] >= W_q( E[a_t] ) = W_q(a-hat)")
+    add_body(doc, """
+that is, the expected delay under the true, randomly varying load is at
+least as large as the delay predicted by plugging the expected load into
+the same formula - with equality only in the degenerate case of zero
+variance. A deterministic point forecast built by predicting a typical or
+expected scenario and evaluating the queueing system's behavior at that
+one point systematically *underestimates* expected delay whenever the
+underlying load is genuinely variable, and the gap between the two sides
+of the inequality grows with both the variance of a_t and the local
+curvature of W_q near the operating point - precisely the near-saturation
+regime Section 4.2.1's derivation identifies as where that curvature is
+steepest. This is not a statement about this project's specific surrogate
+being poorly trained; it is a structural property of applying a
+convex queueing-delay function to a point summary of a random load, and it
+is the general, distribution-free version of the specific empirical
+finding Chapter 7 reports for this project's own surrogate: interval
+width, not just point-prediction accuracy, carries real information a
+single number cannot.
+""")
+
+    add_section_heading(doc, "1.7.3 The Risk Topology of Healthcare Decision-Making", level=3)
+    add_body(doc, """
+An uncertainty-aware forecast is only useful insofar as it is actually
+used to make a decision, and ED operational decisions are rarely
+symmetric in their consequences - a fact worth making explicit via
+standard decision-theoretic language before Chapter 10 puts it into
+practice as an actual optimization problem. Consider a binary staffing
+decision framed against some safety threshold (Chapter 10 develops this
+concretely for wait-time ceilings): provision *enough* capacity, or not.
+Two distinct error types are possible, and conflating them - treating a
+generic "prediction error" as the object to minimize - hides that they
+are not equally costly.
+""")
+    add_body(doc, """
+A Type I error here - over-provisioning: staffing above what turns out to
+be necessary - wastes a bounded, known, comparatively modest resource
+(idle staff-hours, opportunity cost of clinicians not deployed elsewhere).
+A Type II error - under-provisioning: staffing below what is actually
+needed - risks a materially different, harder-to-bound cost: extended
+patient wait times with associated clinical risk, staff strain, and
+reputational and regulatory exposure at the tail. Formally, if L(under)
+and L(over) denote the loss functions associated with the two error
+directions, this asymmetry is the statement L(under) >> L(over) at
+comparable error magnitudes - and a decision rule that minimizes a
+symmetric loss (such as squared error, which is exactly what this
+project's point-predicting surrogate, Section 4.3, is trained to minimize)
+is not the decision rule an asymmetric-loss decision-maker should actually
+use. This is precisely the gap Chapter 10's capacity-optimization exercise
+closes concretely: rather than provisioning to a symmetric point forecast,
+it provisions to the *upper bound* of a calibrated conformal interval - a
+direct, worked instance of asymmetric-loss decision-making built on this
+project's own results rather than only argued for in the abstract here.
 """)
 
 
@@ -1126,7 +1291,7 @@ online prediction with expert advice.
         "This is the ultimate theoretical source for every coverage guarantee "
         "invoked in this project, from the standard CP implementation in "
         "src/uq/standard_cp.py through Mondrian CP. The exchangeability "
-        "assumption defined here is precisely the assumption Chapter 6's "
+        "assumption defined here is precisely the assumption Chapter 8's "
         "exchangeability stress test is designed to violate deliberately and "
         "study the consequences of.")
 
@@ -1216,7 +1381,7 @@ variance in the residual.
         "(the lower/upper quantile regressors) and src/uq/repeated_evaluation_cqr.py "
         "(the CQR and Mondrian-CQR nonconformity score, "
         "max(qlo(x) - y, y - qhi(x))). CQR is used in this report's "
-        "Section 6.7 as a stronger baseline that achieves much of "
+        "Section 6.1 as a stronger baseline that achieves much of "
         "Mondrian CP's benefit through width-adaptivity rather than "
         "category-adaptivity - the two methods sit at different points on "
         "the same coverage/width frontier rather than one strictly "
@@ -1264,7 +1429,7 @@ requiring that likelihood ratio.
         "likelihood-ratio correction this paper proposes (the shift is "
         "extreme enough, and the surrogate's own extrapolation failure "
         "severe enough, that the correction would not address the root "
-        "cause identified in Section 6.13), but the "
+        "cause identified in Chapter 8), but the "
         "paper's framing of covariate shift as a specific, structured "
         "violation of exchangeability - rather than an unstructured, "
         "unrecoverable one - is the correct lens for interpreting why the "
@@ -1353,7 +1518,7 @@ calibration.
         "same fundamental tradeoff this paper discusses - smaller "
         "per-category calibration sets in exchange for group-conditional "
         "rather than only marginal coverage. This project's own finding "
-        "that Mondrian CP does not help n_patients (Chapter 6) is a direct, "
+        "that Mondrian CP does not help n_patients (Chapter 7) is a direct, "
         "empirical instance of the finite-sample noise tradeoff this paper "
         "identifies as a known limitation of the method.")
 
@@ -1373,7 +1538,7 @@ interval to a distribution function.
         "produces intervals at a single, fixed alpha = 0.1, matching the "
         "GP baseline and standard CP for a clean comparison - but this "
         "paper is the natural next step flagged in this report's own "
-        "Chapter 7 (Future Scope): a full predictive distribution would let "
+        "Chapter 11 (Future Scope): a full predictive distribution would let "
         "an ER staffing decision-maker read off any confidence level of "
         "interest after the fact, rather than committing to 90% coverage in "
         "advance as this project does throughout.")
@@ -1433,8 +1598,8 @@ question the paper does not address.
 """,
         "This paper is this report's entire reason for existing. Its two "
         "explicitly flagged limitations frame this project's broader "
-        "empirical work: Chapter 6 examines the marginal coverage question "
-        "in depth as this report's central finding, and Section 6.13 "
+        "empirical work: Chapter 7 examines the marginal coverage question "
+        "in depth as this report's central finding, and Chapter 8 "
         "summarizes a second, secondary stress test of the exchangeability "
         "question run as part of the same project, in both cases in a "
         "domain - discrete-event queueing simulation of an ER - "
@@ -1506,7 +1671,7 @@ efficient relative to comparably accurate alternatives.
         "and, for the quantile variant used in CQR, "
         "src/surrogate/train_quantile_surrogates.py). The tree-based "
         "structure this paper describes is also the direct explanation for "
-        "this report's Section 6.13 finding that the "
+        "this report's Chapter 8 finding that the "
         "gradient-boosting surrogate's predictions freeze at a constant "
         "value once queried outside its training range - a well-known "
         "property of tree ensembles that this project traces empirically "
@@ -1871,7 +2036,7 @@ precisely but not directly tested from a finite sample - a calibration set
 and test set can look exchangeable in every measurable respect and still
 fail to be, if the true underlying shift is small enough to escape
 detection at the available sample size. This project's own exchangeability
-stress test (Section 4.5.2, summarized in Section 6.13)
+stress test (Section 4.5.2, summarized in Chapter 8)
 sidesteps this untestability problem by constructing a shift large and
 deliberate enough that its effect on coverage is unambiguous, rather than
 attempting to detect a subtle, naturally occurring shift - a pragmatic
@@ -1883,10 +2048,10 @@ The Mondrian and conditional-coverage literature (Section 2.2) is, as
 already noted in Section 2.2's introduction, comparatively thin - a
 consequence, plausibly, of Mondrian CP's own central limitation (smaller
 per-category calibration samples, directly observed in this project's own
-n_patients exception, Section 6.5.6) making it a
+n_patients exception, Section 7.5.6) making it a
 less immediately attractive default than pooled calibration for
 practitioners without a specific, known source of conditional
-miscalibration to target. This project's own results (Chapter 6) arguably
+miscalibration to target. This project's own results (Chapter 7) arguably
 strengthen the case for this literature's continued development: a
 practitioner without prior knowledge of where a pooled quantile might be
 conditionally miscalibrated (as would genuinely be the case in an
@@ -1936,11 +2101,133 @@ standard - the systematic review of DES validation methods (Section 2.5,
 entry 25) explicitly documents this heterogeneity as a field-wide issue,
 finding substantial variation in how rigorously published ED DES models are
 validated against real data. This project's own validation approach
-(Section 6.1: an explicit, quantified 91.0 percent match to real daily
+(Section 7.1: an explicit, quantified 91.0 percent match to real daily
 volume, with the specific mechanism behind the residual 9 percent gap
 identified and explained rather than left unexplained) was deliberately
 designed to sit at the more rigorous end of the range this systematic
 review documents, rather than assumed to be adequate by default.
+""")
+
+    add_section_heading(doc, "2.8 Epistemology of Simulation Metamodeling")
+    add_body(doc, """
+The preceding sections review specific papers within five bounded
+categories. This section steps back to place this project's own
+methodological choices - a discrete-event simulation, approximated by a
+point-predicting surrogate, wrapped in a distribution-free uncertainty
+quantification layer - within the broader history and current landscape
+of simulation metamodeling as a field, independent of the ED-specific
+application.
+""")
+
+    add_section_heading(doc, "2.8.1 Historical Progression of Simulation Emulators", level=3)
+    add_body(doc, """
+Simulation metamodeling - fitting a fast-to-evaluate statistical
+approximation to a slow, expensive simulator, so that downstream analysis
+(optimization, sensitivity analysis, or, as in this project, uncertainty
+quantification) can query the approximation rather than re-running the
+simulator - has passed through several dominant approaches, each
+addressing a limitation of the one before it. Polynomial response-surface
+methodology, the earliest widely used approach in operations research,
+fits a low-order polynomial (typically quadratic) to simulator outputs
+across a designed experiment - computationally trivial and highly
+interpretable, but structurally unable to represent the kind of sharp,
+localized nonlinearity (the near-saturation queueing behavior central to
+this project's own Section 4.2.1 derivation) that a global low-order
+polynomial cannot bend sharply enough to capture. Kriging, also known as
+Gaussian process regression - the approach this project uses as its own
+UQ baseline (Section 4.4.1) rather than only reviewing historically - is
+a substantial refinement that models the simulator output as a random
+field with a flexible, locally-adaptive covariance structure, at the cost
+of the O(n^3) scaling this project's own Section 4.4.1 derivation makes
+precise. Neural-network metamodels relaxed the smoothness assumptions
+kriging still carries, at the cost of requiring materially more training
+data and offering less interpretable uncertainty by default - part of the
+motivation, in this project's own Section 4.3.2, for treating a
+multi-layer perceptron as a robustness check on a tree-based primary
+architecture rather than the reverse. Tree-based ensembles - this
+project's own primary surrogate architecture, Section 4.3.1 - represent
+the current default for small-to-moderate tabular metamodeling problems
+specifically because they combine strong empirical accuracy with minimal
+hyperparameter tuning and fast fit/query times, at the cost of the
+extrapolation limitation Section 4.3.3's derivation makes precise and
+Chapter 8 tests directly. This project's own architecture choices, read
+against this progression, are not arbitrary defaults but specific,
+motivated points along a well-documented historical trajectory - each
+chosen for a stated reason tied to this project's own problem
+characteristics (Sections 4.3.1-4.3.2), not merely "what is popular."
+""")
+
+    add_section_heading(doc, "2.8.2 Comparative Analysis of Distribution-Free vs. Parametric UQ", level=3)
+    add_body(doc, """
+The uncertainty quantification methods this project compares (Chapter 7)
+and extends (Chapter 6) span a meaningful theoretical divide worth naming
+explicitly. Parametric UQ methods - the Gaussian process baseline
+(Section 4.4.1) foremost among them, but also Bayesian neural networks and
+bootstrap ensembles more broadly, reviewed in Section 2.3 - derive their
+uncertainty estimates from an explicit probabilistic model of the
+data-generating process (a GP prior and Gaussian observation noise, or a
+posterior over network weights, or a resampling approximation to the
+sampling distribution of an estimator). Their intervals are only as
+reliable as those modeling assumptions are correct, and carry no
+finite-sample guarantee independent of that correctness - precisely the
+property responsible for the GP baseline's empirically observed
+undercoverage (Chapter 7).
+
+Distribution-free UQ - conformal prediction in every variant this project
+implements (standard, Mondrian, CQR, and, in Chapter 6, CRC and ACI) -
+makes no assumption about the data-generating process beyond
+exchangeability (or, for ACI specifically, no distributional assumption at
+all), deriving its guarantee instead from a combinatorial rank argument
+(derived from first principles in Section 4.4.5) that holds for *any*
+underlying distribution and *any* point predictor, however inaccurate.
+This is a strictly weaker set of assumptions purchasing a strictly
+stronger and more honest guarantee - exact, finite-sample validity rather
+than validity contingent on an unverifiable modeling assumption - at the
+cost of the guarantee being marginal rather than automatically conditional
+(the gap Mondrian CP's category-conditional calibration exists to close,
+Chapter 7) and dependent on exchangeability actually holding (the
+assumption Chapter 8 tests to destruction). Table 2.1 summarizes this
+comparison structurally.
+""")
+    add_table(doc,
+        ["Property", "Parametric UQ (e.g. GP, BNN, bootstrap)", "Distribution-free UQ (conformal prediction)"],
+        [
+            ["Core assumption", "Correctly specified probabilistic model", "Exchangeability (or, for ACI, none)"],
+            ["Finite-sample guarantee", "No - asymptotic or model-contingent", "Yes - exact, any n"],
+            ["Guarantee scope by default", "Whatever the model implies", "Marginal (conditional requires Mondrian-style partitioning)"],
+            ["Behavior if assumption violated", "Silently miscalibrated", "Detectable, measurable coverage collapse (Chapter 8)"],
+            ["Computational cost", "Model-fitting cost (e.g. O(n^3) for exact GP)", "O(n log n) calibration, wraps any point predictor"],
+        ],
+        caption="Structural comparison of parametric and distribution-free uncertainty quantification, as implemented and compared throughout this report.")
+
+    add_section_heading(doc, "2.8.3 Unresolved Challenges in High-Dimensional Stochastics", level=3)
+    add_body(doc, """
+Three challenges recur across the literature reviewed in this chapter
+without a fully settled resolution, and this project's own scope
+(Chapter 3) is stated partly in relation to them. First, surrogate
+calibration under heavy-tailed output distributions - directly relevant to
+this project's own p95_wait_minutes target, the hardest to predict
+throughout this report (Chapter 7) precisely because a 95th-percentile
+statistic is far more sensitive to distributional tail behavior than a
+mean - remains an active area rather than a solved problem; this project's
+own use of an asymmetric nonconformity measure (Section 4.4.2) and CQR
+(Chapter 6) are both, in effect, partial, empirically validated responses
+to this challenge rather than a general theoretical resolution of it.
+Second, surrogate calibration under genuine non-stationarity - a
+data-generating process that itself drifts over time, as opposed to a
+single, fixed distribution shift - is the subject of active current
+research (Section 2.1's coverage of Gibbs and Candes' adaptive conformal
+inference work) that this project's own Chapter 6 extension engages with
+directly rather than only citing. Third, and most broadly, conditional
+coverage in genuinely high-dimensional covariate spaces - this project's
+own two-dimensional scenario space (Section 4.2) is low-dimensional enough
+that a 3x3 Mondrian partition is both interpretable and well-estimated
+(Section 4.4.3), but the same partitioning strategy scales poorly as
+dimensionality grows, since the number of cells needed to keep each cell's
+covariate range narrow grows combinatorially - is flagged in this
+project's own future-scope discussion (Chapter 11) as a genuine open
+problem this project's own low-dimensional setting was fortunate enough
+not to have to solve.
 """)
 
 
@@ -2018,7 +2305,7 @@ aleatoric stochasticity, in a proportion that is itself not constant across
 the input space (a lightly loaded, well-staffed scenario produces less
 variable outcomes than an overloaded, understaffed one). This
 heteroscedasticity - directly evidenced in this project by the systematic
-gap between pooled and Mondrian CP coverage documented in Chapter 6 - is
+gap between pooled and Mondrian CP coverage documented in Chapter 7 - is
 plausibly more severe and more structurally different in a queueing
 simulation than in the physics domains previously tested, which is precisely
 why the marginal-coverage limitation is worth testing here specifically
@@ -2035,7 +2322,7 @@ emergency - in ways that push real-world conditions outside whatever range a
 surrogate was trained and calibrated on, precisely when reliable uncertainty
 quantification matters most for triage and staffing decisions. Testing
 conformal prediction's exchangeability assumption under exactly this kind of
-demand-surge scenario (Section 6.13) is
+demand-surge scenario (Chapter 8) is
 therefore not an arbitrary stress test but a probe of the specific failure
 mode most operationally relevant to this project's own application domain.
 """)
@@ -2060,7 +2347,7 @@ statistical efficiency from smaller per-subgroup calibration samples?
     add_section_heading(doc, "3.4 Objectives")
     add_body(doc, """
 This project's objectives, carried through in the methodology (Chapter 4),
-implementation (Chapter 5), and results (Chapter 6) that follow, are to:
+implementation (Chapter 5), and results (Chapter 7) that follow, are to:
 
 1. Build and validate a discrete-event simulation of a hospital emergency
 department, calibrated on real arrival-pattern and triage-acuity data,
@@ -2113,13 +2400,130 @@ itself, rather than as a UQ baseline; graph neural networks; other
 tree-ensemble variants) are outside this project's scope. The uncertainty
 quantification methods compared are a Gaussian process baseline, standard
 conformal prediction, Mondrian conformal prediction, conformalized quantile
-regression, and Mondrian-CQR; Bayesian neural networks and deep ensembles are
-discussed in the literature review (Chapter 2) as points of comparison but
-are not implemented or evaluated empirically in this project. Generalization
+regression, Mondrian-CQR, conformal risk control, adaptive conformal
+inference, and likelihood-ratio weighted conformal prediction (the last
+three developed and evaluated in Chapter 6); Bayesian neural networks and
+deep ensembles are discussed in the literature review (Chapter 2) as
+points of comparison but are not implemented or evaluated empirically in
+this project. The surrogate architecture comparison (Chapter 7) covers
+gradient boosting, a multi-layer perceptron, random forests, XGBoost, and
+LightGBM - graph neural networks and Gaussian-process-as-point-predictor
+architectures remain outside this project's scope. Generalization
 testing covers two of the three emergency departments present in the
 underlying dataset; the third department is not evaluated, for reasons of
 project scope and time rather than any expectation that it would behave
 differently from the two that were tested.
+""")
+
+    add_section_heading(doc, "3.6 Formalization of Operational Risk Thresholds")
+    add_body(doc, """
+Chapters 1 through 5 motivate and specify this project's methodology
+largely in terms of coverage as an abstract statistical property. Before
+that methodology is developed in full technical detail (Chapter 4), it is
+worth stating precisely what property a conformal interval would need to
+have to be *safe to deploy* in a clinical operations setting, since
+"90 percent marginal coverage" and "safe for clinical decision support"
+are not the same claim, and conflating them is exactly the failure mode
+this project's central finding (Chapter 7) demonstrates empirically.
+""")
+
+    add_section_heading(doc, "3.6.1 Axiomatic Requirements for Safe Surrogate Deployment", level=3)
+    add_body(doc, """
+Three properties, stated as explicit requirements rather than left
+implicit, are necessary (though not sufficient on their own) for a
+surrogate-plus-interval system to be a defensible input to a clinical
+operations decision:
+""")
+    add_body(doc, """
+(i) Strict finite-sample validity: the coverage guarantee must hold
+exactly at the deployed calibration sample size, not merely in an
+asymptotic n -> infinity limit that a real, finite calibration set never
+reaches. This is precisely the property Section 4.4.5's derivation
+establishes for every conformal method in this report and precisely the
+property the Gaussian process baseline (Section 4.4.1) cannot offer,
+which is why it is retained throughout this report as a baseline to be
+improved upon rather than as a candidate for deployment itself.
+
+(ii) Local (conditional) coverage, not merely marginal coverage: a system
+that is well-calibrated *on average* across all operating conditions but
+badly miscalibrated in the specific, high-acuity conditions where a
+clinical decision is actually being made (Chapter 7's central finding)
+provides exactly the false reassurance a marginal guarantee alone cannot
+rule out. This is the formal target Section 3.6.2 states precisely below,
+and the property Mondrian conformal prediction (Section 4.4.3) is
+specifically constructed to deliver.
+
+(iii) Detectable failure under distribution shift: since no finite
+calibration set can anticipate every future operating regime, a
+deployed system's failure mode under shift matters as much as its
+in-distribution behavior. Chapter 8 establishes that this project's own
+methods fail in a *detectable* way (measurable coverage collapse) rather
+than a silent one (confidently narrow, wrong intervals) - a weaker but
+still operationally meaningful property when property (i) itself cannot
+be guaranteed to survive an unanticipated shift.
+""")
+
+    add_section_heading(doc, "3.6.2 Mathematical Formulation of the Conditional Coverage Gap", level=3)
+    add_body(doc, """
+Requirement (ii) above can be stated precisely. Standard conformal
+prediction (Section 4.4.2) guarantees the marginal statement
+""")
+    add_equation(doc, "P( Y in C(X) ) >= 1 - alpha")
+    add_body(doc, """
+where the probability is taken over the joint, unconditional distribution
+of (X, Y). This says nothing, on its own, about the conditional statement
+""")
+    add_equation(doc, "P( Y in C(X) | X in K_k ) >= 1 - alpha,   for a specific subpopulation K_k of interest")
+    add_body(doc, """
+where K_k denotes a specific operationally meaningful subpopulation - in
+this project's own case, one cell of the nine-category Mondrian taxonomy
+(Section 4.4.3), such as "understaffed, high-arrival-rate" scenarios. The
+marginal guarantee is, formally, a weighted average of the conditional
+statement across all such subpopulations:
+""")
+    add_equation(doc, "P( Y in C(X) ) = sum_k  P(X in K_k) . P( Y in C(X) | X in K_k )")
+    add_body(doc, """
+which makes explicit, algebraically, exactly how a marginal guarantee can
+hold exactly while a specific conditional term inside the sum is far
+below target: the sum can reach 1 - alpha overall via other categories'
+conditional coverage running above target, compensating for one
+category's shortfall, provided the shortfall category's population weight
+P(X in K_k) is not too large. This is precisely the mechanism Chapter 7's
+central result documents with real numbers rather than only stating
+algebraically - the specific weighted-average identity behind why a
+90 percent marginal number can coexist with a 68 percent conditional
+number in the one category that matters operationally most.
+""")
+
+    add_section_heading(doc, "3.6.3 Risk Topologies Across Acute Care Services", level=3)
+    add_body(doc, """
+The severity of a conditional coverage gap, in practice, is not uniform
+across an emergency department's own internal service lines, a point
+worth making explicit even though this project's own DES (Section 4.2)
+models a single, undifferentiated combined bed-and-provider resource
+rather than separately modeling trauma, fast-track, and pediatric
+service lines as distinct queueing subsystems. A trauma bay's operating
+regime is, by clinical design, closest to the near-saturation, high-
+variance region Section 4.2.1's derivation identifies as hardest to
+calibrate against - which is also the regime where a conditional coverage
+failure carries the most severe consequences, since trauma-bay decisions
+are the least tolerant of the L(under) >> L(over) asymmetry named in
+Section 1.7.3. A fast-track unit for low-acuity complaints, by contrast,
+typically operates in the low-utilization regime this project's own
+results (Chapter 7) show is both easiest to predict and least exposed to
+the conditional coverage gap in the first place - the "easy" corner of
+this project's own Mondrian taxonomy grid. A pediatric emergency service
+sits in between on the utilization dimension but introduces an additional
+source of heterogeneity (a materially different, often more variable
+triage-acuity mix, per general ED operations literature, Section 2.4) this
+project's own single-department, adult-inclusive calibration does not
+disaggregate. This project's own generalization check (Chapter 9) tests
+transferability across two *hospital departments* with different overall
+volume and acuity mix, which is a related but distinct question from
+transferability across *service lines within* a single department - a
+finer-grained generalization question named here as a scope boundary
+(and revisited in Chapter 11's future-scope discussion) rather than one
+this project's own two-department comparison directly answers.
 """)
 
 
@@ -2185,7 +2589,7 @@ it is the direct explanation for two findings elsewhere in this report:
 the DES's simulated daily patient count running slightly
 below the real calibrated rate even at matched capacity (Section 4.2.4), and
 the non-monotonic behavior of the 95th-percentile wait time under extreme
-demand surge documented in Section 6.13.
+demand surge documented in Chapter 8.
 
 Upon arrival, each patient is assigned an Emergency Severity Index (ESI)
 acuity level (1, most acute, through 5, least acute) drawn according to the
@@ -2239,7 +2643,7 @@ capacity of 30 was chosen as a value between these two figures, closer to
 the peak, deliberately neither under-provisioned relative to typical demand
 nor implausibly over-provisioned relative to any plausible real staffing
 level. For the second, independent department used in the generalization
-check (Chapter 6), the same method applied to that department's own real
+check (Chapter 9), the same method applied to that department's own real
 arrival rate and acuity mix yields approximately 10.4 erlangs average and
 16.1 erlangs peak load, giving a default capacity of 14 at the same relative
 position between average and peak as the first department's capacity of 30
@@ -2312,7 +2716,7 @@ being Poisson or service times being log-normal (Section 4.2.3).
 
     add_section_heading(doc, "Derivation: Why Wait Times Grow Sharply Near Saturation", level=3)
     add_body(doc, f"""
-Section 6.5.4 explains this project's central empirical finding - that
+Section 7.5.4 explains this project's central empirical finding - that
 conditional miscalibration concentrates specifically in the
 understaffed/high-demand category - by appeal to the qualitative,
 well-documented fact that queueing systems' wait-time variance grows
@@ -2360,7 +2764,7 @@ unconditional mean wait time is
 """)
     add_equation(doc, "W_q = C(c, a) / (cμ − λ)")
     add_body(doc, """
-The specific mechanism behind Section 6.5.4's claim is now visible directly
+The specific mechanism behind Section 7.5.4's claim is now visible directly
 in this last equation rather than only asserted: as offered load a
 approaches the server count c from below, ρ = a/c → 1, the denominator
 (cμ − λ) → 0⁺, and W_q → ∞ - not gradually, but as a term whose
@@ -2368,8 +2772,8 @@ denominator is heading to zero, so the rate of growth accelerates sharply
 in the vicinity of ρ = 1 rather than increasing at a roughly constant rate
 as utilization rises from, say, 50 to 70 percent. This is the precise,
 quantitative form of the "variance grows sharply near saturation" claim
-Section 6.5.4 relies on qualitatively: the staff = Low, arrival = High
-category (Section 6.5.1) is, by construction, the cell of this project's
+Section 7.5.4 relies on qualitatively: the staff = Low, arrival = High
+category (Section 7.5.1) is, by construction, the cell of this project's
 sampled scenario grid operating at the highest ρ = a/n_capacity of any
 category, placing it closest to the region where this derivation shows
 W_q's sensitivity to small changes in a or c is most extreme - exactly
@@ -2571,7 +2975,7 @@ arrival-process calibration in Section 4.2.3) rather than extended to wait
 times or service durations, which the real dataset cannot validate against
 at all, for the reasons given in Section 4.2.3. Results of this validation,
 for both departments studied in this project, are reported in full in
-Chapter 6.
+Chapter 7.
 """)
 
     add_section_heading(doc, "4.3 Surrogate Model Architectures")
@@ -2580,7 +2984,7 @@ A surrogate model is trained independently for each of the four DES output
 metrics (Section 4.2), taking the two scenario parameters (staffing
 capacity, arrival-rate multiplier) as input. Two architectures are used in
 this project. In-distribution point-prediction accuracy for both is reported
-throughout Chapter 6 using three standard regression metrics, computed over
+throughout Chapter 7 using three standard regression metrics, computed over
 a held-out test set of size m:
 """)
     add_equation(doc, "MAE = (1/m) Σᵢ₌₁ᵐ |yᵢ − ŷᵢ|")
@@ -2603,7 +3007,7 @@ that it does not become a computational bottleneck relative to the DES data
 generation step it approximates. Section 4.3.3 discusses a specific
 structural property of tree-based models - their inability to extrapolate
 predictions outside the range of their training data - that becomes directly
-relevant to the exchangeability stress test summarized in Section 6.13.
+relevant to the exchangeability stress test summarized in Chapter 8.
 """)
 
     add_section_heading(doc, "Derivation: Gradient Boosting as Functional Gradient Descent", level=3)
@@ -2673,14 +3077,14 @@ outside its training range - it will continue to extrapolate, in whichever
 direction its learned weights imply, rather than saturating at a boundary
 value. This structural difference is the reason this architecture is
 included as a specific, targeted robustness check on the exchangeability
-findings summarized in Section 6.13, rather than as a general
+findings summarized in Chapter 8, rather than as a general
 "try another model and see" exercise.
 """)
 
     add_section_heading(doc, "4.3.3 Tree-Based Extrapolation Limits")
     add_body(doc, """
 A specific property of tree-based ensembles, directly relevant to
-interpreting results in Chapter 6 and central to Section 6.13,
+interpreting results in Chapter 7 and central to Chapter 8,
 is worth stating precisely here. A regression tree partitions its
 input space into axis-aligned regions (leaves) during training and predicts
 a constant value - the mean of the training targets falling into that leaf -
@@ -2695,7 +3099,7 @@ range is frozen at the value implied by the boundary leaves of its
 constituent trees, however far outside that range the query point actually
 lies. This is a well-known, textbook property of tree ensembles, not a bug
 specific to this project's implementation, and it is verified directly
-(rather than merely asserted) in Section 6.13 by
+(rather than merely asserted) in Chapter 8 by
 observing gradient-boosting surrogate predictions that are numerically
 frozen across a wide range of out-of-distribution query points.
 """)
@@ -2800,7 +3204,7 @@ subsample (1,000 points) of the available calibration data rather than the
 full set - a choice that is also directly relevant to this project's own
 narrative, since the GP's comparatively poor computational scalability
 relative to conformal prediction's near-constant calibration cost is one of
-the quantities this project's results (Chapter 6) explicitly measure and
+the quantities this project's results (Chapter 7) explicitly measure and
 report, not simply an implementation convenience footnoted away.
 """)
 
@@ -2847,7 +3251,7 @@ by category (revealing where the pooled, marginal guarantee actually breaks
 down conditionally, even though it is not designed to be evaluated this
 way), and applying each category's own Mondrian quantile (showing whether
 per-category calibration corrects any breakdown found). Both a per-category
-view (Chapter 6, following the same structure as the core result) and a
+view (Chapter 7, following the same structure as the core result) and a
 marginal, whole-test-set view (obtained by re-aggregating the per-category
 predictions across the full test set, for a like-for-like comparison against
 the GP baseline and standard CP's own marginal coverage) are reported.
@@ -2929,7 +3333,7 @@ The guarantee stated above is not an approximation or an asymptotic result
 - it holds exactly, for every finite n, under nothing more than the
 exchangeability assumption. The full argument is given here rather than
 only cited, since it is short, and since understanding exactly what
-exchangeability buys makes the exchangeability stress test in Section 6.13
+exchangeability buys makes the exchangeability stress test in Chapter 8
 interpretable as a violation of a specific, named assumption rather than an
 unexplained empirical failure.
 """)
@@ -3002,13 +3406,13 @@ ties among the scores occur with probability zero (satisfied here since
 f̂'s residuals are continuous-valued),
 """)
     add_equation(doc, "P( Y ∈ C(X) ) ≤ 1 − α + 1 / (n + 1)",
-        note="obtained by the same rank argument applied to ⌈(n + 1)(1 − α)⌉ − 1 in place of ⌈(n + 1)(1 − α)⌉. Together, the two bounds sandwich the true coverage within 1/(n + 1) of the 1 − α target - at this project's calibration size (n = 1,200, Section 4.2.2), a band of well under 0.1 percentage points, negligible next to the several-percentage-point effects this report's results (Chapter 6) actually report.")
+        note="obtained by the same rank argument applied to ⌈(n + 1)(1 − α)⌉ − 1 in place of ⌈(n + 1)(1 − α)⌉. Together, the two bounds sandwich the true coverage within 1/(n + 1) of the 1 − α target - at this project's calibration size (n = 1,200, Section 4.2.2), a band of well under 0.1 percentage points, negligible next to the several-percentage-point effects this report's results (Chapter 7) actually report.")
     add_body(doc, """
 Exchangeability is the assumption doing all the work in Step 1, and
-nowhere else in the argument. Section 6.13's exchangeability stress test is
+nowhere else in the argument. Chapter 8's exchangeability stress test is
 therefore, precisely, a test of whether Step 1 continues to hold once the
 test distribution's arrival-rate multiplier is pushed outside the range the
-calibration data was drawn from - and Section 6.13's coverage collapse is
+calibration data was drawn from - and Chapter 8's coverage collapse is
 exactly what this proof predicts happens the moment that one assumption
 stops being true: no other step in the argument offers any fallback once
 exchangeability itself is violated.
@@ -3046,7 +3450,7 @@ This procedure, implemented in src/uq/mondrian_cp.py, is guaranteed to
 satisfy group-conditional coverage:
 """)
     add_equation(doc, "P( Y ∈ C(X) | c(X) = k ) ≥ 1 − α,  for every k = 1, …, K",
-        note="a strictly stronger guarantee than Algorithm 1's marginal one, at the cost of each q̂⁽ᵏ⁾ being estimated from only nₖ calibration points rather than the full n - the direct source of the finite-sample-noise tradeoff discussed at length in Sections 6.5.6 and 2.2.")
+        note="a strictly stronger guarantee than Algorithm 1's marginal one, at the cost of each q̂⁽ᵏ⁾ being estimated from only nₖ calibration points rather than the full n - the direct source of the finite-sample-noise tradeoff discussed at length in Sections 7.5.6 and 2.2.")
 
     add_section_heading(doc, "Proof of the Group-Conditional Guarantee", level=3)
     add_body(doc, """
@@ -3079,7 +3483,7 @@ K = 9 balanced categories), so the same finite-sample gap between the
 lower and upper coverage bounds derived for Algorithm 1
 (1/(n + 1) there becomes 1/(nₖ + 1) per category) widens roughly ninefold,
 the precise, quantifiable source of the added estimation noise documented
-empirically in Sections 6.5.6 and 6.6.1.
+empirically in Sections 7.5.6 and 6.6.1.
 """)
 
     add_section_heading(doc, "Algorithm 3: Conformalized Quantile Regression (CQR)")
@@ -3110,7 +3514,7 @@ and src/uq/repeated_evaluation_cqr.py, restores an exact marginal coverage
 guarantee, P(Y ∈ C(X)) ≥ 1 − α (by the same exchangeability argument as
 Algorithm 1, applied to the CQR score rather than the raw residual) even
 when the raw quantile regressors q̂lo and q̂hi do not themselves
-achieve nominal coverage - Section 6.7 of this report
+achieve nominal coverage - Section 6.1 of this report
 reports that this project's raw, uncalibrated quantile regressors achieve
 only 81-92 percent coverage before this calibration step, exactly the gap
 Step 3's conformalization closes. Mondrian-CQR combines Algorithm 3 with
@@ -3152,7 +3556,7 @@ guarantee: the argument never used any property of q̂lo or q̂hi beyond
 their being fixed functions of x, so it is entirely indifferent to whether
 the raw quantile band [q̂lo(x), q̂hi(x)] is itself well-calibrated. This is
 what makes q̂ in Step 3 a genuine correction rather than a redundant
-formality when the raw band under- or overshoots (Section 6.7's 81-92
+formality when the raw band under- or overshoots (Section 6.1's 81-92
 percent raw-coverage finding): a poorly calibrated raw band simply shows up
 as a q̂ systematically far from zero - large and positive when the band is
 too narrow, as observed here, or negative when it is wastefully wide - and
@@ -3263,7 +3667,7 @@ hypothetical repetitions of this entire 30-repeat procedure.
 
     add_section_heading(doc, "4.5.2 Exchangeability Stress Test")
     add_body(doc, """
-As a secondary robustness check (summarized in Section 6.13), this project
+As a secondary robustness check (summarized in Chapter 8), this project
 also develops a controlled violation of the
 exchangeability assumption: the calibration data is held fixed exactly as
 generated for the core comparison, while the test distribution's
@@ -3295,16 +3699,182 @@ volume and acuity characteristics.
     add_section_heading(doc, "4.6 Evaluation Metrics")
     add_body(doc, """
 Every uncertainty quantification method compared in this project is
-evaluated on the same three metrics wherever applicable: empirical coverage
-(the fraction of test points whose true value falls within the constructed
-interval, compared against the nominal 90 percent target), mean interval
-width (the average size of the constructed interval, where narrower is
-better at matched coverage), and computation time (measured as the method's
-own calibration or fitting cost - a GP's model-fitting time, or a conformal
-method's calibration-quantile computation time - on a like-for-like basis,
-with a deliberate warm-up prediction call performed before timing begins to
+evaluated on the same three metrics wherever applicable: empirical
+coverage, mean interval width, and computation time. The first two are
+given standard names in the wider interval-forecasting literature worth
+stating explicitly, since this report's own "coverage" and "width"
+terminology, used throughout for readability, refer to exactly these
+standard, formally named quantities and not to project-specific ad hoc
+statistics.
+""")
+    add_equation(doc, "PICP = (1/m) sum_(i=1)^m  1{ y_i in C(x_i) }",
+        note="Prediction Interval Coverage Probability: the fraction of m test points whose true value falls within the constructed interval - exactly this report's \"empirical coverage,\" compared throughout against the nominal 90 percent target (1 - alpha).")
+    add_equation(doc, "NMPIW = (1/m) sum_(i=1)^m  ( upper(x_i) - lower(x_i) ) / R",
+        note="Normalized Mean Prediction Interval Width: the average interval width, divided by a normalizing constant R (conventionally the target's own observed range) so that widths remain comparable across targets measured on very different numeric scales - the same reason this report generally compares width only within a target rather than across n_patients and p95_wait_minutes directly.")
+    add_body(doc, """
+Reporting PICP stratified by Mondrian category - exactly the per-category
+breakdown Section 7.5 reports - is what this report's own literature
+review (Section 2.2) identifies as the practical difference between a
+method that is merely marginally calibrated and one that is genuinely
+usable for a subgroup-specific operational decision; a single pooled PICP
+number, by construction, cannot distinguish the two. Computation time
+completes the three-metric set: measured as the method's own calibration
+or fitting cost - a GP's model-fitting time, or a conformal method's
+calibration-quantile computation time - on a like-for-like basis, with a
+deliberate warm-up prediction call performed before timing begins to
 exclude one-off process-startup costs such as thread-pool initialization
-from the measurement).
+from the measurement.
+""")
+
+    add_section_heading(doc, "4.7 Advanced Queueing Theory and Formal Proofs")
+    add_body(doc, """
+This section extends two results already established earlier in this
+chapter - the M/M/c Erlang-C derivation (Section 4.2.1) and the split
+conformal quantile (Section 4.4.5) - to strengthen exactly the two points
+where each was left deliberately narrow: the Erlang-C derivation assumed
+exponential interarrival and service times, which this project's own
+log-normal service-time model (Section 4.2.3) does not literally satisfy;
+and the conformal quantile's monotonicity in alpha was used implicitly
+(for instance, in Chapter 6's risk-control grid search) without being
+proven explicitly.
+""")
+
+    add_section_heading(doc, "4.7.1 Heavy-Traffic Approximations Beyond the Exponential Case", level=3)
+    add_body(doc, f"""
+Section 4.2.1's Erlang-C derivation is exact for the M/M/c queue, but
+rests on the exponential (memoryless) assumption for both interarrival and
+service times - an assumption this project's own DES does not literally
+satisfy, since its service times are log-normal by ESI level (Section
+4.2.3, cross-checked against real data in Section 4.2.3.1), a
+distribution with a different, generally higher, coefficient of variation
+than the exponential's. Kingman's formula {cite('kingman1962')} extends the
+heavy-traffic waiting-time approximation to the general single-server
+GI/G/1 queue - arbitrary interarrival and service-time distributions,
+characterized only by their means and variances - via
+""")
+    add_equation(doc, "W_q ~ ( rho / (1 - rho) ) . ( (c_a^2 + c_s^2) / 2 ) . E[S],   as rho -> 1",
+        note="c_a^2 and c_s^2 the squared coefficients of variation (variance divided by mean-squared) of the interarrival-time and service-time distributions respectively; rho = a/c the same utilization defined in Section 4.2.1. For exponential interarrival and service times, c_a^2 = c_s^2 = 1 and this reduces to the familiar M/M/1 heavy-traffic limit.")
+    add_body(doc, f"""
+The (c_a^2 + c_s^2)/2 term is the key structural addition Kingman's
+formula makes over the pure-exponential Erlang-C result: expected wait
+time under heavy traffic scales not only with utilization but *linearly*
+with the combined variability of the arrival and service processes. A
+service-time distribution with a higher coefficient of variation than the
+exponential's (c_s^2 = 1) - which a log-normal distribution with the
+mean/SD parameters this project actually uses (Table 4.1) generally has,
+since a log-normal's coefficient of variation depends on its shape
+parameter and is not fixed at 1 the way the exponential's is - implies
+heavier-than-M/M/c queueing delay at the *same* utilization rho. This
+gives a specific, quantitative reason, beyond the qualitative mechanism
+already stated in Section 7.5.4, that this project's use of an
+exponential-queue approximation (Section 4.2.1) as the explanatory model
+for wait-time variance growth is conservative in one identifiable
+direction: the true log-normal-service-time system likely experiences
+somewhat more severe near-saturation variance growth than the pure M/M/c
+approximation predicts, not less.
+
+Sakasegawa's approximation {cite('sakasegawa1977')} extends Kingman's single-server
+result to the multi-server GI/G/c case relevant to this project's own DES
+(Section 4.2, which models c = n_capacity parallel combined
+bed-and-provider resources), via the empirically validated closed-form
+generalization
+""")
+    add_equation(doc, "W_q ~ ( rho^( sqrt(2(c+1)) - 1 ) / ( c . (1 - rho) ) ) . ( (c_a^2 + c_s^2) / 2 ) . E[S]",
+        note="reduces to Kingman's GI/G/1 formula at c=1; unlike the M/M/c Erlang-C result (Section 4.2.1), this is a validated heavy-traffic approximation rather than an exact result, and is presented here for that reason as a further theoretical cross-check on this project's queueing-theoretic reasoning, not as a replacement for the exact M/M/c derivation used elsewhere in this report.")
+    add_body(doc, """
+Both formulas agree with the Erlang-C derivation's qualitative conclusion
+- delay grows without useful bound as rho approaches 1, driven by a term
+whose denominator vanishes at rho = 1 - while making explicit the
+additional, distinct role of service-time variability that the pure M/M/c
+model, by construction, holds fixed. This is presented as a genuine
+theoretical cross-check, not a replacement for the exact result: Section
+4.2.1's Erlang-C derivation remains the one used elsewhere in this report
+because it is exact for its stated assumptions, while Kingman's and
+Sakasegawa's formulas are validated approximations whose main value here
+is confirming that relaxing the exponential assumption does not overturn,
+and if anything strengthens, this report's central queueing-theoretic
+explanation for where conditional miscalibration concentrates.
+""")
+
+    add_section_heading(doc, "4.7.2 Formal Proof of Nonconformity Quantile Monotonicity", level=3)
+    add_body(doc, """
+This project's implementation relies, in several places (most explicitly
+Chapter 6's conformal risk control grid search, which requires its loss
+function to be monotone in its threshold parameter for a simple ascending
+grid search to correctly find the smallest feasible threshold), on the
+conformal quantile q-hat(alpha) being monotonically non-increasing in
+alpha. This is stated and used elsewhere in this report without a formal
+proof; the short proof is given here.
+""")
+    add_body(doc, """
+Let s_(1) <= s_(2) <= ... <= s_(n) denote the calibration nonconformity
+scores sorted in ascending order, and recall (Section 4.4.5) that
+""")
+    add_equation(doc, "q-hat(alpha) = s_( ceil( (n+1)(1-alpha) ) )",
+        note="the calibration score at the ceil((n+1)(1-alpha))-th ascending rank, with the convention s_(k) = s_(n) for any k > n (Section 4.4.5's Step 2).")
+    add_body(doc, """
+Consider two miscoverage levels alpha_1 < alpha_2 (so 1 - alpha_1 > 1 -
+alpha_2). Because (n+1) > 0, multiplying preserves the inequality:
+""")
+    add_equation(doc, "(n+1)(1 - alpha_1) > (n+1)(1 - alpha_2)")
+    add_body(doc, """
+The ceiling function is non-decreasing (a <= b implies ceil(a) <= ceil(b)
+for all real a, b), so this order carries through:
+""")
+    add_equation(doc, "ceil( (n+1)(1-alpha_1) ) >= ceil( (n+1)(1-alpha_2) )")
+    add_body(doc, """
+and because the sequence s_(1), ..., s_(n) is sorted in ascending order by
+construction, a weakly larger rank index selects a weakly larger score:
+""")
+    add_equation(doc, "q-hat(alpha_1) = s_( ceil((n+1)(1-alpha_1)) ) >= s_( ceil((n+1)(1-alpha_2)) ) = q-hat(alpha_2)",
+        note="since alpha_1 < alpha_2 was arbitrary, this establishes q-hat(alpha) is monotonically non-increasing in alpha for every finite n - not merely asymptotically - which is exactly the property Chapter 6's risk-control search (and, implicitly, the intuitive idea that a looser miscoverage target should never require a wider interval) relies on.")
+
+    add_section_heading(doc, "4.7.3 Mondrian Taxonomy Binning Strategy", level=3)
+    add_body(doc, """
+Section 4.4.3 specifies that this project's nine-category Mondrian
+taxonomy uses tercile boundaries computed from the calibration set's own
+empirical distribution of staffing capacity and arrival-rate multiplier.
+This choice - empirical-quantile-based binning - is one of at least two
+defensible strategies, and the tradeoff between them is worth stating
+explicitly rather than treating the choice as arbitrary.
+""")
+    add_body(doc, """
+Empirical-quantile binning, used throughout this report, guarantees
+approximately equal calibration-set occupancy per category by
+construction (each tercile contains, by definition, close to one-third of
+the calibration data along that axis), which directly controls the
+finite-sample-noise cost identified in Sections 4.4.5 and 6.5.6 - no
+category is left with a severely undersized calibration subset purely
+because of where an arbitrary fixed threshold happened to fall relative
+to the sampled data's actual distribution. Its cost is that category
+boundaries are themselves sample-dependent and shift slightly if the
+calibration set were redrawn, and the resulting categories (Low/Med/High
+staffing, Low/Med/High arrival rate) do not correspond to any
+operationally pre-defined threshold a hospital administrator would
+recognize in advance.
+
+Domain-knowledge threshold binning - categorizing by a fixed, pre-specified
+operational threshold (for instance, "understaffed" defined as capacity
+below a specific number the hospital's own staffing policy already uses,
+rather than below whatever the calibration data's own 33rd percentile
+happens to be) - has the reverse tradeoff: categories are stable,
+interpretable, and directly actionable to a domain expert, but calibration
+occupancy per category is no longer guaranteed to be balanced, and a
+category that happens to be rare in the calibration data (an extreme
+understaffing threshold few sampled scenarios reach) would inherit exactly
+the small-n, noisy-quantile problem Sections 4.4.5 and 6.5.6 identify,
+potentially more severely than empirical binning's roughly-equal-occupancy
+categories do.
+
+This project uses empirical-quantile binning specifically because its
+scenario-sampling ranges (Section 4.2.2) were themselves chosen for
+UQ-methodology purposes (covering a scenario space wide enough to exercise
+every method being compared) rather than to mirror any one hospital's
+actual staffing policy - domain-threshold binning would be the more
+appropriate choice in a deployment setting calibrated against one
+specific, real institution's own operational thresholds, a distinction
+worth naming explicitly as a scope boundary between this project's
+methodological validation setting and an actual deployment (Chapter 10).
 """)
 
 
@@ -3372,12 +3942,18 @@ environment, but a direct implementation was chosen for this reason.
 Data handling uses pandas, numpy, and pyarrow/pyreadr (the latter for
 converting the dataset's original .rdata format to parquet for faster
 loading). Statistical significance testing uses scipy. Result visualization
-uses matplotlib and seaborn. Reports and presentations are generated
-programmatically: slide decks via python-pptx, and both the original short
-written assignments and this book-format expansion via python-docx, in both
-cases with Microsoft Word or PowerPoint COM automation used to render the
-generated file and visually verify it before considering the work complete
-(Section 5.4).
+uses matplotlib and seaborn, plus plotly (with the kaleido rendering
+backend for static image export) for Chapter 10's interactive dashboard.
+The multi-architecture surrogate benchmark (Chapter 7) adds xgboost and
+lightgbm alongside scikit-learn's own RandomForestRegressor, trained and
+evaluated with the same interface (fit/predict, scikit-learn-compatible
+metrics) as the primary surrogate, so no separate evaluation code path was
+needed for the additional architectures. Reports and presentations are
+generated programmatically: slide decks via python-pptx, and both the
+original short written assignments and this book-format expansion via
+python-docx, in both cases with Microsoft Word or PowerPoint COM
+automation used to render the generated file and visually verify it before
+considering the work complete (Section 5.4).
 """)
 
     add_section_heading(doc, "5.3 Module-by-Module Walkthrough")
@@ -3413,7 +3989,7 @@ and producing the four scenario-level output metrics per simulated day.
 validate.py runs the calibrated simulation across a large number of
 simulated days at its default configuration and compares mean simulated
 daily patient volume against the real calibrated rate, producing the
-validation result reported in Section 6.1.
+validation result reported in Section 7.1.
 """)
 
     add_section_heading(doc, "5.3.3 src/surrogate/ - Surrogate Training")
@@ -3449,7 +4025,7 @@ exchangeability_stress_test_mlp.py implement the exchangeability stress test
 (Section 4.5.2) for the gradient-boosting and MLP surrogates respectively.
 full_comparison.py and publication_comparison_chart.py assemble
 already-computed results from the scripts above into the summary tables and
-comparison figures presented in Chapter 6.
+comparison figures presented in Chapter 7.
 """)
 
     add_section_heading(doc, "5.3.5 src/generalization/ - Cross-Site Generalization")
@@ -3490,12 +4066,145 @@ multi-line table cell rendering only its first line at the correct font size
 because only the first paragraph of a multi-paragraph cell was styled) -
 none of which raised any error and all of which would have shipped silently
 otherwise. The same verification discipline was applied while building this
-report itself: an early draft of the front matter placed a single line of
-text alone on an otherwise blank page due to excess spacing, and the initial
-table/figure-numbering implementation used plain styled text rather than
-Word's native caption mechanism, silently breaking the automatic List of
-Figures and List of Tables pages; both were caught by rendering the document
-and inspecting it page by page before treating this chapter as complete,
+report itself: a figure-overflow bug (a default width exceeding this
+report's own page geometry, silently pushing every figure past the right
+margin) was caught the same way, and, during an early attempt at automatic
+List of Figures / List of Tables pages, rendering revealed that this
+project's table/figure captions - built as plain, chapter-scoped computed
+text rather than Word's native SEQ-field caption mechanism, specifically so
+that numbering stayed correct under Python's own control rather than
+Word's - left Word's own list-building feature with nothing to find; those
+two pages were removed rather than patched, once it was established that
+the reference book this report's format follows does not include them
+either. Each of these was caught by rendering the document and inspecting
+it page by page before treating the relevant chapter as complete,
 consistent with the practice established across every earlier deliverable
 in this project.
+""")
+
+    add_section_heading(doc, "5.5 Software Architecture and System Engineering")
+    add_body(doc, """
+This section documents the codebase's own architecture directly, and
+extends it with the additional infrastructure built specifically for
+Chapter 6's risk-control, adaptive-inference, and covariate-shift methods,
+Chapter 7's five-architecture surrogate benchmark, and Chapter 10's
+dashboard and optimization prototypes.
+""")
+
+    add_section_heading(doc, "5.5.1 Pipeline Architecture and Dataflow", level=3)
+    add_body(doc, """
+The codebase is organized as a linear, file-mediated pipeline rather than
+an in-memory object-oriented framework - a deliberate simplicity choice
+appropriate to a research pipeline whose stages (distribution extraction,
+DES simulation, surrogate training, UQ calibration) are each run
+independently, at different times, and whose intermediate outputs
+(calibration distributions, simulated scenario tables, trained models,
+result tables) are each valuable to inspect on their own rather than only
+as internal state inside a larger running program. Each stage reads its
+inputs from, and writes its outputs to, results/tables/, data/processed/,
+or models/ as plain files (CSV, parquet, or joblib-serialized models) -
+the dataflow graph is therefore the directory structure itself:
+""")
+    add_body(doc, """
+src/utils/extract_distributions.py (reads the raw dataset, writes
+calibration distribution tables) feeds src/des/er_simulation.py (reads
+those tables, is called by every downstream data-generation script) and
+src/des/validate.py (reads the same simulation module, writes validation
+statistics). src/surrogate/generate_training_data.py (calls the DES
+across sampled scenarios, writes labeled training data) feeds every
+surrogate trainer - src/surrogate/train_surrogate.py,
+train_mlp_surrogate.py, train_quantile_surrogates.py, and this report's
+own new src/surrogate/train_rf_xgb_lgb_surrogates.py - each of which reads
+the same training parquet and writes its own trained model files plus a
+metrics CSV, independently and without depending on each other's output.
+src/uq/generate_calibration_data.py (an independent DES call with disjoint
+seeds, Section 4.2.2) feeds every UQ method: gp_baseline.py, standard_cp.py,
+mondrian_cp.py, repeated_evaluation.py, repeated_evaluation_cqr.py,
+exchangeability_stress_test.py and its MLP variant, and this report's own
+three new modules - src/uq/conformal_risk_control.py,
+adaptive_conformal_inference.py, and weighted_conformal_prediction.py -
+each reading the trained surrogate models and the calibration data, and
+each writing its own results CSV under results/tables/, independently
+runnable and independently inspectable. src/deployment/build_ops_dashboard.py
+and capacity_optimization.py (Chapter 10) sit at the end of this graph,
+reading trained models and calibration data like the UQ scripts above but
+producing a rendered artifact (an interactive HTML dashboard, a decision
+table) rather than a results CSV. No stage holds another stage's state in
+memory; every arrow in this dataflow is a file on disk, which is what
+makes every number in this report traceable to a specific script
+(Section 5.4) - there is no hidden intermediate computation a number could
+have come from instead.
+""")
+
+    add_section_heading(doc, "5.5.2 Computational Cost and Scaling Characteristics", level=3)
+    add_body(doc, """
+Real timing measurements, not estimates, are available for the
+computational comparisons this report makes elsewhere (Chapter 7's GP-
+versus-conformal-prediction comparison already reports fit/predict timing
+for the original five methods; Chapter 7 extends this with the same
+measurement for the three new tree-ensemble architectures added in this
+report's own benchmark). Table 5.1 reports fit and predict time for all
+eight surrogate/UQ combinations measured on this project's own hardware
+(single-machine, CPU-only - no GPU or distributed compute is used anywhere
+in this pipeline, consistent with the problem's small size: five thousand
+training rows and two input features do not warrant it), so that the
+relative-cost claims made throughout this report (for instance, "conformal
+calibration is roughly three orders of magnitude cheaper than exact GP
+fitting," Chapter 7) rest on measurements taken under one consistent
+timing methodology rather than being compared across incommensurable
+conditions.
+""")
+    add_table(doc,
+        ["Architecture", "Typical fit time (s, per target)", "Typical predict time (s, per target)"],
+        [
+            ["GBR (primary, HistGradientBoosting)", "~0.1-0.2", "< 0.01"],
+            ["MLP (StandardScaler + MLPRegressor)", "~1-3", "< 0.01"],
+            ["Gaussian process (1,000-point subsample)", "~7-11", "~0.05-0.1"],
+            ["RandomForest", "~0.2", "< 0.02"],
+            ["XGBoost", "~0.1-1.1", "< 0.01"],
+            ["LightGBM", "~0.15-0.2", "< 0.01"],
+        ],
+        caption="Approximate fit/predict timing by surrogate architecture, single-machine CPU, as measured by this project's own training scripts (exact per-target values in results/tables/surrogate_metrics.csv, mlp_surrogate_metrics.csv, and rf_xgb_lgb_surrogate_metrics.csv).")
+    add_body(doc, """
+This project's problem size (five thousand training rows, two input
+features, four independently modeled targets) sits comfortably within
+what a single consumer-grade machine handles in well under a minute end
+to end for any of the six surrogate architectures compared - parallel or
+distributed training infrastructure would be justified at a substantially
+larger data or feature scale than this project's own scenario-level
+DES-generated data reaches, not at this project's actual scale, and
+building such infrastructure here would have added engineering complexity
+without a corresponding benefit, the same reasoning already applied to
+this project's choice not to build a multi-resource DES model (Section
+4.2).
+""")
+
+    add_section_heading(doc, "5.5.3 Recalibration Design for Streaming Deployment", level=3)
+    add_body(doc, """
+Chapter 6's adaptive conformal inference implementation
+(src/uq/adaptive_conformal_inference.py) already processes its input as an
+explicitly ordered stream rather than an i.i.d. batch, specifically so
+that it demonstrates the mechanism a continuously operating deployment
+would actually need: a running miscoverage target alpha_t updated after
+each new outcome is observed, rather than a calibration quantile fixed
+once and never revisited. Promoting this from a batch script (as
+implemented and evaluated in Chapter 6) to a genuinely continuously
+running service is a real engineering step beyond this report's own
+implementation, and the design that step would take is described here
+concretely rather than left unstated: a scheduled job re-reading newly
+arrived real ED outcomes (were this deployed against a live data feed
+rather than DES-simulated data), applying the same alpha_t update rule
+this project already implements and evaluates, and persisting the updated
+alpha_t alongside a timestamp, with the existing static calibration
+quantile (Section 4.4.2) retained as a fallback value if the streaming
+update job fails to run - since a stale but valid static quantile is
+preferable to no interval at all. Every component this design requires
+already exists in this project's own codebase in batch form
+(src/uq/adaptive_conformal_inference.py's update rule, and the
+model-loading and quantile-lookup logic shared with standard_cp.py); what
+remains is orchestration (a scheduler and a persistence layer for alpha_t)
+rather than new algorithmic work, which is why it is scoped here as a
+concrete design rather than implemented as a running service in a project
+whose data source (Section 5.1) is a static, already-collected dataset
+with no live feed to actually schedule against.
 """)

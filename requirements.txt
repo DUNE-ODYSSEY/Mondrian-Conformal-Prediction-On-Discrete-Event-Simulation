@@ -13,3 +13,7 @@ python-docx
 kaggle
 pyreadr
 pyarrow
+xgboost
+lightgbm
+plotly
+kaleido

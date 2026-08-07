@@ -1141,3 +1141,110 @@ Page count: 118 (session start) → 135 (IEEE reformat) → 147 (derivations) �
 entry. Still short of 200; further content expansion (more theory from the
 10 new papers into Chapter 2, deeper Chapter 6 discussion) is the open
 next step, paused mid-session per user's instruction.
+
+## 2026-08-06/07 — Restructured into 11 chapters with real new UQ methods, surrogate benchmark, and deployment prototypes; crossed 200 pages (203)
+
+User supplied a full 11-chapter book outline with polished chapter titles
+(a common LLM-generated "textbook outline" style) covering material well
+beyond what this project had built - Conformal Risk Control (CRC),
+Adaptive Conformal Inference (ACI), likelihood-ratio weighted CP, a
+5-architecture surrogate benchmark (RF/XGBoost/LightGBM added to
+GBR/MLP), a clinical decision-support dashboard, a capacity-planning
+optimization, and a regulatory/FDA SaMD discussion. Given this project's
+standing practice against fabricating unimplemented work, first asked the
+user how to handle the sections describing systems that didn't exist yet;
+user chose **implement all of it for real** rather than reframe as future
+work. This was a genuinely large scope expansion (real new algorithms,
+real new experiments, not a documentation pass) - executed as follows.
+
+**New UQ methods, each a real script with real results, not proofs
+without implementation:**
+- `src/uq/conformal_risk_control.py` - Bates et al. (2021) CRC via
+  Hoeffding-UCB calibration, two losses per target (0/1 validation check
+  + a genuinely new clipped-overshoot-severity loss). Held-out test risk
+  confirmed ≤ target (0.10) on all 4 targets, 0.055-0.066.
+- `src/uq/adaptive_conformal_inference.py` - Gibbs & Candès (2021) ACI on
+  a real, genuinely time-ordered 480-scenario demand-surge stream
+  (concatenated severity levels, not i.i.d. batches). Large, real effect:
+  out-of-range coverage recovers from 58.0% (static CP) to 84-89% (ACI)
+  across targets, visualized in a rolling-coverage figure showing static
+  CP's steady collapse vs. ACI's oscillation around the 90% target.
+- `src/uq/weighted_conformal_prediction.py` - Tibshirani et al. (2019)
+  likelihood-ratio weighted CP under a moderate, deliberately
+  partial-overlap shift (calibration Uniform[0.8,1.3] vs. test
+  Uniform[0.9,1.6]). Real, modest improvement in the overlap region;
+  correctly returns infinite-width (not falsely narrow) intervals in the
+  out-of-support tail - reported with that honest caveat attached, not
+  presented as free coverage.
+
+**5-architecture surrogate benchmark**
+(`src/surrogate/train_rf_xgb_lgb_surrogates.py`): RandomForest, XGBoost,
+LightGBM added alongside the existing GBR/MLP, identical train/test
+split. LightGBM matches the primary GBR closely (both histogram-based
+gradient boosting); RandomForest and XGBoost measurably trail on the
+hardest target (p95_wait_minutes R² 0.569/0.572 vs. 0.646-0.647) -
+plausibly explained via the functional-gradient-descent derivation
+already in Chapter 4 (bagging vs. boosting-to-residual).
+
+**Deployment prototypes**
+(`src/deployment/build_ops_dashboard.py`, `capacity_optimization.py`):
+a real interactive Plotly dashboard (self-contained HTML, no server) with
+a live prediction heatmap and per-category interval-width chart, plus a
+static snapshot for the PDF; and a real capacity-planning optimization
+using the Mondrian conformal *upper bound* (not the point prediction) as
+an explicit constraint - found a genuinely interesting result along the
+way: the point-prediction-only plan is sometimes non-monotonic (recommends
+*less* capacity at higher demand) due to surrogate noise at sparse input
+corners, which the CP-constrained plan avoids by construction.
+
+**Regulatory research**: verified real FDA documents (2021 AI/ML SaMD
+Action Plan, 2021 GMLP guiding principles, 2023/2024 PCCP guidance, and
+the Section 520(o)(1)(E) Clinical Decision Support exemption's
+transparency criteria) - connected honestly to this project's own
+properties (calibrated per-category intervals are structurally aligned
+with the exemption's "reviewable basis" requirement) without overclaiming
+deployment-readiness.
+
+**Restructured into 11 chapters**, splitting and promoting content from
+the old single results chapter: Ch6 "Beyond Standard CP" (CQR +
+Mondrian-CQR, promoted from old 6.7, plus the three new methods above),
+Ch7 "Empirical Validation and Metamodel Benchmarking" (the old core
+results chapter, renumbered, plus the 5-architecture benchmark and new
+PICP/NMPIW terminology in Chapter 4's metrics section), Ch8 "When
+Exchangeability Fails" (promoted from old 6.13 into its own chapter, plus
+a new 8.5 connecting weighted CP's bounded benefit back to this chapter's
+severe shift), Ch9 "Cross-Site Generalization" (promoted from old 6.8),
+Ch10 "Translational Health Operations" (entirely new), Ch11 "Synthesis
+and Uncharted Horizons" (expanded from the old conclusion chapter, with
+real open-theoretical-questions and a roadmap tying every new method's
+loose end together). Chapters 1-4 also gained genuine new theoretical
+subsections: 1.7 (Jensen's inequality applied to convex queueing delay,
+decision-theoretic Type I/II framing), 2.8 (metamodeling history,
+parametric-vs-distribution-free UQ taxonomy), 3.6 (formal
+P(Y∈C(X)|X∈K_k) notation for the conditional coverage gap), 4.7
+(Kingman's formula and Sakasegawa's approximation extending the existing
+Erlang-C derivation to non-exponential service times, a formal proof of
+conformal quantile monotonicity in alpha, Mondrian binning-strategy
+tradeoffs).
+
+**Verification and bugs caught**, all via the project's standing
+practice of rendering and reading the actual output rather than trusting
+generation code: a **duplicate citation** (added Tibshirani et al. 2019
+"Conformal Prediction Under Covariate Shift" a second time under a new
+key, not noticing it was already in the 30-paper literature review DB -
+caught by reading the rendered References page and seeing the same
+paper's title pattern twice; fixed by reusing the existing key). A large
+**table/figure/section renumbering cascade** from splitting one chapter
+into four and inserting two new ones - handled by extracting each old
+section's text programmatically, applying an explicit old-number →
+new-number mapping (not a blind chapter-prefix shift, which would have
+left numbering gaps where content moved to other chapters), then a
+dedicated grep-based audit pass across both files for every remaining
+"Chapter 6"/"Chapter 7"/"Table 6.N" mention - found and fixed roughly 25
+stale cross-references this way, including several inside `book_common.py`'s
+shared Chapters 1-5 that predated this restructuring and referred to the
+old "Chapter 6 = results" meaning.
+
+Page count: 145 → **203**, crossing the 200-page target for the first
+time. All 11 chapter openers, new tables, new figures, and the fixed
+cross-references spot-checked by rendering actual PDF pages via PyMuPDF.

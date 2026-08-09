@@ -119,11 +119,14 @@ def add_page_break(doc):
     doc.add_page_break()
 
 
-def add_chapter_heading(doc, chapter_no, title, new_page=True):
-    """IEEE/textbook Level-1 heading: 'N. TITLE', bold, all caps, 14pt.
-    Also resets this chapter's table/figure/equation counters and records
-    the current chapter number, so add_table/add_figure/add_equation can
-    number captions 'N.M' without the caller passing the chapter in."""
+def add_chapter_heading(doc, chapter_no, title, new_page=True, subtitle=None):
+    """IEEE/textbook Level-1 heading: 'N. TITLE', bold, all caps, 14pt,
+    with an optional italic descriptive subtitle line beneath it (matching
+    the reference book's two-line chapter-opener style: a short, evocative
+    title plus a longer, literal subtitle stating what the chapter actually
+    covers). Also resets this chapter's table/figure/equation counters and
+    records the current chapter number, so add_table/add_figure/add_equation
+    can number captions 'N.M' without the caller passing the chapter in."""
     if new_page:
         add_page_break(doc)
     _current_chapter["n"] = chapter_no
@@ -138,6 +141,14 @@ def add_chapter_heading(doc, chapter_no, title, new_page=True):
     r.font.bold = True
     r.font.color.rgb = INK
     r.font.name = "Times New Roman"
+    if subtitle:
+        sp = doc.add_paragraph()
+        sp.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        sr = sp.add_run(subtitle)
+        sr.font.size = Pt(12)
+        sr.font.italic = True
+        sr.font.color.rgb = GREY
+        sr.font.name = "Times New Roman"
     doc.add_paragraph()
     return h
 
@@ -834,7 +845,8 @@ def add_paper_review(doc, number, citation, summary, relevance):
 # --------------------------------------------------------------------------
 
 def build_chapter1_introduction(doc):
-    add_chapter_heading(doc, 1, "Introduction")
+    add_chapter_heading(doc, 1, "The ER Uncertainty Dilemma",
+        subtitle="Surrogate Metamodeling and Operational Volatility in Emergency Healthcare")
 
     add_section_heading(doc, "1.1 Background and Motivation")
     add_body(doc, """
@@ -1135,7 +1147,7 @@ systematically mistake a seasonal shift for a shock, an important
 practical distinction a deployed system would need to resolve by tracking
 calibration-window length against known cyclical structure.
 
-Capacity degradation is different again: a reduction in the *supply* side
+Capacity degradation is different again: a reduction in the supply side
 of the queueing system - staff illness, equipment downtime, a temporarily
 closed treatment bay - rather than a change in demand. In this project's
 own scenario parameterization (Section 4.2), a capacity-degradation event
@@ -1175,7 +1187,7 @@ least as large as the delay predicted by plugging the expected load into
 the same formula - with equality only in the degenerate case of zero
 variance. A deterministic point forecast built by predicting a typical or
 expected scenario and evaluating the queueing system's behavior at that
-one point systematically *underestimates* expected delay whenever the
+one point systematically underestimates expected delay whenever the
 underlying load is genuinely variable, and the gap between the two sides
 of the inequality grows with both the variance of a_t and the local
 curvature of W_q near the operating point - precisely the near-saturation
@@ -1197,7 +1209,7 @@ symmetric in their consequences - a fact worth making explicit via
 standard decision-theoretic language before Chapter 10 puts it into
 practice as an actual optimization problem. Consider a binary staffing
 decision framed against some safety threshold (Chapter 10 develops this
-concretely for wait-time ceilings): provision *enough* capacity, or not.
+concretely for wait-time ceilings): provision enough capacity, or not.
 Two distinct error types are possible, and conflating them - treating a
 generic "prediction error" as the object to minimize - hides that they
 are not equally costly.
@@ -1218,7 +1230,7 @@ project's point-predicting surrogate, Section 4.3, is trained to minimize)
 is not the decision rule an asymmetric-loss decision-maker should actually
 use. This is precisely the gap Chapter 10's capacity-optimization exercise
 closes concretely: rather than provisioning to a symmetric point forecast,
-it provisions to the *upper bound* of a calibrated conformal interval - a
+it provisions to the upper bound of a calibrated conformal interval - a
 direct, worked instance of asymmetric-loss decision-making built on this
 project's own results rather than only argued for in the abstract here.
 """)
@@ -1229,7 +1241,8 @@ project's own results rather than only argued for in the abstract here.
 # --------------------------------------------------------------------------
 
 def build_chapter2_literature_review(doc):
-    add_chapter_heading(doc, 2, "Literature Review")
+    add_chapter_heading(doc, 2, "Foundations and Shadows",
+        subtitle="A Literature Synthesis of Queueing Theory, Metamodeling, and Conformal Inference")
 
     add_section_heading(doc, "2.0 Scope and Method of This Review")
     add_body(doc, f"""
@@ -2178,8 +2191,8 @@ implements (standard, Mondrian, CQR, and, in Chapter 6, CRC and ACI) -
 makes no assumption about the data-generating process beyond
 exchangeability (or, for ACI specifically, no distributional assumption at
 all), deriving its guarantee instead from a combinatorial rank argument
-(derived from first principles in Section 4.4.5) that holds for *any*
-underlying distribution and *any* point predictor, however inaccurate.
+(derived from first principles in Section 4.4.5) that holds for any
+underlying distribution and any point predictor, however inaccurate.
 This is a strictly weaker set of assumptions purchasing a strictly
 stronger and more honest guarantee - exact, finite-sample validity rather
 than validity contingent on an unverifiable modeling assumption - at the
@@ -2236,7 +2249,8 @@ not to have to solve.
 # --------------------------------------------------------------------------
 
 def build_chapter3_research_gap(doc):
-    add_chapter_heading(doc, 3, "Research Gap and Problem Statement")
+    add_chapter_heading(doc, 3, "The Marginal Trap",
+        subtitle="Formalizing the Conditional Coverage Gap in High-Variance Queueing Regimes")
 
     add_section_heading(doc, "3.1 Summary of the Research Gap")
     add_body(doc, f"""
@@ -2421,7 +2435,7 @@ Chapters 1 through 5 motivate and specify this project's methodology
 largely in terms of coverage as an abstract statistical property. Before
 that methodology is developed in full technical detail (Chapter 4), it is
 worth stating precisely what property a conformal interval would need to
-have to be *safe to deploy* in a clinical operations setting, since
+have to be safe to deploy in a clinical operations setting, since
 "90 percent marginal coverage" and "safe for clinical decision support"
 are not the same claim, and conflating them is exactly the failure mode
 this project's central finding (Chapter 7) demonstrates empirically.
@@ -2445,7 +2459,7 @@ which is why it is retained throughout this report as a baseline to be
 improved upon rather than as a candidate for deployment itself.
 
 (ii) Local (conditional) coverage, not merely marginal coverage: a system
-that is well-calibrated *on average* across all operating conditions but
+that is well-calibrated on average across all operating conditions but
 badly miscalibrated in the specific, high-acuity conditions where a
 clinical decision is actually being made (Chapter 7's central finding)
 provides exactly the false reassurance a marginal guarantee alone cannot
@@ -2457,7 +2471,7 @@ specifically constructed to deliver.
 calibration set can anticipate every future operating regime, a
 deployed system's failure mode under shift matters as much as its
 in-distribution behavior. Chapter 8 establishes that this project's own
-methods fail in a *detectable* way (measurable coverage collapse) rather
+methods fail in a detectable way (measurable coverage collapse) rather
 than a silent one (confidently narrow, wrong intervals) - a weaker but
 still operationally meaningful property when property (i) itself cannot
 be guaranteed to survive an unanticipated shift.
@@ -2518,9 +2532,9 @@ source of heterogeneity (a materially different, often more variable
 triage-acuity mix, per general ED operations literature, Section 2.4) this
 project's own single-department, adult-inclusive calibration does not
 disaggregate. This project's own generalization check (Chapter 9) tests
-transferability across two *hospital departments* with different overall
+transferability across two hospital departments with different overall
 volume and acuity mix, which is a related but distinct question from
-transferability across *service lines within* a single department - a
+transferability across service lines within a single department - a
 finer-grained generalization question named here as a scope boundary
 (and revisited in Chapter 11's future-scope discussion) rather than one
 this project's own two-department comparison directly answers.
@@ -2532,7 +2546,8 @@ this project's own two-department comparison directly answers.
 # --------------------------------------------------------------------------
 
 def build_chapter4_methodology(doc):
-    add_chapter_heading(doc, 4, "System Design and Methodology")
+    add_chapter_heading(doc, 4, "Architecture of Conformal Simulation",
+        subtitle="Queueing Dynamics, Nonconformity Mechanics, and Mondrian Taxonomy Design")
 
     add_section_heading(doc, "4.1 Pipeline Overview")
     add_body(doc, """
@@ -3757,14 +3772,14 @@ characterized only by their means and variances - via
     add_body(doc, f"""
 The (c_a^2 + c_s^2)/2 term is the key structural addition Kingman's
 formula makes over the pure-exponential Erlang-C result: expected wait
-time under heavy traffic scales not only with utilization but *linearly*
+time under heavy traffic scales not only with utilization but linearly
 with the combined variability of the arrival and service processes. A
 service-time distribution with a higher coefficient of variation than the
 exponential's (c_s^2 = 1) - which a log-normal distribution with the
 mean/SD parameters this project actually uses (Table 4.1) generally has,
 since a log-normal's coefficient of variation depends on its shape
 parameter and is not fixed at 1 the way the exponential's is - implies
-heavier-than-M/M/c queueing delay at the *same* utilization rho. This
+heavier-than-M/M/c queueing delay at the same utilization rho. This
 gives a specific, quantitative reason, beyond the qualitative mechanism
 already stated in Section 7.5.4, that this project's use of an
 exponential-queue approximation (Section 4.2.1) as the explanatory model
@@ -3883,7 +3898,8 @@ methodological validation setting and an actual deployment (Chapter 10).
 # --------------------------------------------------------------------------
 
 def build_chapter5_implementation(doc):
-    add_chapter_heading(doc, 5, "Implementation")
+    add_chapter_heading(doc, 5, "Software Engineering and Reproducibility",
+        subtitle="Building High-Performance Metamodeling Pipelines for Stochastic Systems")
 
     add_section_heading(doc, "5.1 Dataset")
     add_body(doc, f"""

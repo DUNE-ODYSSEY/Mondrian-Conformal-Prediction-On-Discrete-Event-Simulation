@@ -149,7 +149,8 @@ CODE_FILES_APPENDIX_A = [
 
 
 def build_chapter6_beyond_standard_cp(doc):
-    bc.add_chapter_heading(doc, 6, "Beyond Standard CP")
+    bc.add_chapter_heading(doc, 6, "Beyond Standard CP",
+        subtitle="Conformalized Quantile Regression, Risk Control, and Adaptive Inference")
     bc.add_body(doc, """
 Chapter 4 develops standard and Mondrian conformal prediction in full,
 including formal proofs of their coverage guarantees (Section 4.4.5).
@@ -240,7 +241,7 @@ loss, included as a direct validation check against standard CP's own
 asymmetric upper quantile, and a clipped relative-overshoot severity loss
 - ell_lambda(x,y) = clip((y - (yhat(x)+lambda)) / W_max, 0, 1), with W_max
 set to that target's own standard-CP symmetric interval width - which
-bounds the *expected severity* of an overflow event rather than merely its
+bounds the expected severity of an overflow event rather than merely its
 probability, a genuinely new capability standard CP's binary coverage
 guarantee cannot offer.
 """)
@@ -351,7 +352,7 @@ turns out not to hold at all.
     bc.add_body(doc, f"""
 A third route to handling distribution shift, distinct from both ACI's
 online adaptation and Mondrian CP's category partitioning, is available
-when the shift itself is *known* rather than merely detected after the
+when the shift itself is known rather than merely detected after the
 fact: likelihood-ratio weighted conformal prediction {bc.cite('tibshirani2019')}, proven by
 an extension of the same rank argument used throughout Section 4.4.5 to
 weighted resampling. If the test covariate density q(x) is absolutely
@@ -401,7 +402,7 @@ attached directly rather than presented as an unqualified win. For a test
 point whose arrival-rate multiplier falls outside calibration's own
 support, its likelihood-ratio weight is enormous relative to the total
 calibration weight, and the weighted-quantile calculation correctly
-returns an *infinite*-width interval for such a point rather than a
+returns an infinite-width interval for such a point rather than a
 finite one - which trivially achieves 100 percent coverage because an
 infinite interval cannot fail to contain the true value. This is the
 theoretically correct behavior, not a loophole: it is weighted CP's own
@@ -419,7 +420,8 @@ directly, on the same severe shift the rest of that chapter studies.
 
 
 def build_chapter7_empirical_validation(doc):
-    bc.add_chapter_heading(doc, 7, "Empirical Validation and Metamodel Benchmarking")
+    bc.add_chapter_heading(doc, 7, "Empirical Validation and Metamodel Benchmarking",
+        subtitle="Comparative Interval Performance Across Surrogate Architectures")
     bc.add_body(doc, """
 This chapter presents this report's central empirical results: validation
 of the simulation and its surrogate, a five-architecture surrogate
@@ -1335,7 +1337,8 @@ department.
 
 
 def build_chapter8_exchangeability(doc):
-    bc.add_chapter_heading(doc, 8, "When Exchangeability Fails")
+    bc.add_chapter_heading(doc, 8, "When Exchangeability Fails",
+        subtitle="Stress-Testing Surrogate Boundaries Under Demand Surges and Covariate Shift")
     bc.add_body(doc, """
 Chapter 7 establishes this report's central finding against Gopakumar et
 al.'s first stated limitation - that conformal prediction's coverage
@@ -1360,7 +1363,16 @@ Calibration was held fixed exactly as established for Chapter 7
 arrival-rate multiplier was pushed progressively outward - 1.5x, 1.8x,
 2.0x, 2.5x, 3.0x relative to the real calibrated rate - with staffing
 capacity still drawn from its normal range, isolating the shift to demand
-alone. The test was run twice: once with the primary gradient-boosting
+alone. Figure 8.1 makes the design concrete: every in-range test severity
+(0.8x-1.3x) falls inside calibration's own support, while every severity
+past the training boundary is sampled from a region calibration never
+observed at all - the exact condition Section 4.4.5's coverage-guarantee
+proof identifies as the one place the argument has no fallback.
+""")
+    bc.add_figure(doc, f"{FIG}/exchangeability_support_diagram.png",
+        "Calibration support vs. test severities: in-range points (green) fall inside calibration's own coverage; out-of-range points (red) are sampled from a region calibration never observed.")
+    bc.add_body(doc, """
+The test was run twice: once with the primary gradient-boosting
 (GBR) surrogate used throughout this report, and once with a structurally
 different multi-layer perceptron (MLP) surrogate trained on identical data,
 achieving near-identical in-distribution accuracy (R-squared within 0.01 of
@@ -1395,6 +1407,36 @@ the one that cannot (GBR) - n_patients and mean_total_minutes both reach
 exactly 0 percent coverage under the MLP by 2.0x, while GBR degrades more
 gradually, still retaining 64.7 and 39.0 percent coverage at the same
 severity.
+""")
+
+    bc.add_section_heading(doc, "8.2.1 The Remaining Two Targets", level=3)
+    bc.add_body(doc, """
+Table 8.1 showed only the two targets with the starkest cross-architecture
+reversal. The remaining two targets - mean_wait_minutes and
+p95_wait_minutes - are reported here for completeness, since they show a
+related but distinct pattern worth documenting rather than omitting.
+""")
+    bc.add_table(doc,
+        ["Arrival mult.", "mean_wait (GBR)", "mean_wait (MLP)", "p95_wait (GBR)", "p95_wait (MLP)"],
+        [
+            ["1.3 (boundary)", "83.0%", "86.7%", "82.0%", "83.3%"],
+            ["1.8", "42.7%", "55.0%", "43.0%", "65.0%"],
+            ["2.0", "34.3%", "43.3%", "33.0%", "58.3%"],
+            ["3.0", "12.3%", "11.0%", "78.3%*", "10.0%"],
+        ],
+        caption="Standard CP coverage vs. arrival-rate severity, remaining two targets, GBR vs. MLP surrogate, target 90%. *p95_wait_minutes' GBR recovery at 3.0x is explained in Section 8.3, not genuine reliability.")
+    bc.add_body(doc, """
+Unlike n_patients and mean_total_minutes, mean_wait_minutes and
+p95_wait_minutes do not show the MLP collapsing to exactly zero - both
+architectures degrade substantially, with the MLP still somewhat worse at
+most severities (for instance, p95_wait_minutes at 2.0x: 33.0 percent GBR
+versus 58.3 percent MLP - here the MLP is briefly better, a genuine
+exception to the general pattern worth flagging rather than glossing
+over). The single asterisked cell - GBR's p95_wait_minutes coverage
+recovering to 78.3 percent at the most extreme severity - is addressed
+directly in Section 8.3: it is a data-generating-process artifact, not
+evidence the interval becomes more reliable at greater distances from the
+training distribution.
 """)
 
     bc.add_section_heading(doc, "8.3 Mechanism: A Saturating True Relationship")
@@ -1433,18 +1475,31 @@ the model learned, which it does not here.
     bc.add_section_heading(doc, "8.4 Implications for This Report's Central Finding")
     bc.add_body(doc, """
 Mondrian CP's per-category structure does not meaningfully protect against
-this failure mode: Mondrian coverage tracks standard CP's closely at every
-severity level under both architectures (both derived from the same
-in-range calibration data, equally blind to a shift neither's categories
-were calibrated to anticipate). This is a genuine scope boundary on
-Section 7.5's central finding, stated explicitly rather than left for a
-reader to assume: Mondrian CP corrects conditional miscalibration among
-categories that are each still individually in-distribution; it is not a
-general defense against the calibration and test distributions themselves
-ceasing to be exchangeable. One practical mitigation is worth noting: the
-failure here is measurably detectable, not silent - residuals grow and
-coverage visibly collapses rather than the surrogate confidently reporting
-a narrow, wrong interval with no signal that anything is amiss.
+this failure mode. Figure 8.3 shows this directly rather than only
+asserting it: Mondrian coverage (green) tracks standard CP's (blue)
+closely at every severity level, for every target, both derived from the
+same in-range calibration data and equally blind to a shift neither's
+categories were calibrated to anticipate.
+""")
+    bc.add_figure(doc, f"{FIG}/mondrian_vs_standard_under_shift.png",
+        "Mondrian CP vs. standard CP coverage under the demand-surge severity sweep, GBR surrogate, all four targets.")
+    bc.add_body(doc, """
+The two lines in Figure 8.3 remain within a few percentage points of each
+other at every severity and every target - including in the collapse
+itself: at 3.0x, n_patients coverage is 31.7 percent under standard CP and
+31.3 percent under Mondrian CP, a negligible difference against a shared
+collapse of nearly 60 percentage points below target. This is a genuine
+scope boundary on Section 7.5's central finding, stated explicitly rather
+than left for a reader to assume: Mondrian CP corrects conditional
+miscalibration among categories that are each still individually
+in-distribution; it is not a general defense against the calibration and
+test distributions themselves ceasing to be exchangeable, and Figure 8.3
+shows this holds uniformly across every target this report evaluates, not
+only the two most severely affected ones. One practical mitigation is
+worth noting: the failure here is measurably detectable, not silent -
+residuals grow and coverage visibly collapses rather than the surrogate
+confidently reporting a narrow, wrong interval with no signal that
+anything is amiss.
 """)
 
     bc.add_section_heading(doc, "8.5 How Much Does a Principled Correction Actually Help?")
@@ -1458,6 +1513,15 @@ overlap region. The honest answer this chapter's own severity range
 supplies is that weighted CP's real benefit is real but bounded, and
 bounded in a specific, theoretically predictable way.
 """)
+    bc.add_table(doc,
+        ["Target", "Region", "Unweighted coverage", "Weighted coverage"],
+        [
+            ["mean_wait_minutes", "Overlap [0.9, 1.3]", "87.7%", "88.5%"],
+            ["mean_wait_minutes", "Out-of-support (1.3, 1.6]", "68.6%", "100.0%*"],
+            ["p95_wait_minutes", "Overlap [0.9, 1.3]", "85.5%", "86.3%"],
+            ["p95_wait_minutes", "Out-of-support (1.3, 1.6]", "71.1%", "100.0%*"],
+        ],
+        caption="Recap from Section 6.4: weighted CP's real but bounded benefit under a moderate shift. *Trivial/uninformative - see Section 6.4's discussion.")
     bc.add_body(doc, """
 Section 6.4's moderate-shift experiment already shows the shape of the
 answer: weighted CP delivers a small, genuine coverage improvement exactly
@@ -1491,10 +1555,44 @@ falling outside where that finite-sample guarantee was ever claimed to
 hold.
 """)
 
+    bc.add_section_heading(doc, "8.6 Summary: What Survives Exchangeability Violation")
+    bc.add_body(doc, """
+Table 8.5 draws together every method this report evaluates under this
+chapter's shift, in one place, as an honest scorecard rather than leaving
+the reader to reconstruct it from Sections 8.1-8.5 individually.
+""")
+    bc.add_table(doc,
+        ["Method", "Behavior once test severity leaves calibration support"],
+        [
+            ["Standard CP (Section 4.4.2)", "Coverage collapses; no mechanism to detect or respond to the shift."],
+            ["Mondrian CP (Section 4.4.3)", "Collapses in lockstep with standard CP (Section 8.4, Figure 8.3); category structure is blind to a shift outside its own calibrated categories."],
+            ["Conformalized quantile regression (Section 6.1)", "Not evaluated under this chapter's shift directly; its width-adaptivity is a within-distribution mechanism (Chapter 6) with no stated shift-robustness guarantee."],
+            ["Conformal risk control (Section 6.2)", "Inherits the same calibration-quantile machinery as standard CP; not expected to survive this chapter's shift for the same reason."],
+            ["Adaptive conformal inference (Section 6.3)", "Best-performing method under shift (Chapter 6): recovers most lost coverage via online adaptation, at the cost of a weaker long-run-average guarantee rather than a finite-sample one."],
+            ["Weighted CP (Section 6.4, Section 8.5)", "Genuinely helps within calibration support; correctly returns uninformative (infinite-width) rather than falsely narrow intervals once support is exceeded - detectable, not silently wrong."],
+        ],
+        caption="Summary: how every uncertainty quantification method evaluated in this report behaves once the exchangeability assumption is violated.")
+    bc.add_body(doc, """
+Read as a whole, this chapter's answer to Gopakumar et al.'s second stated
+limitation is more nuanced than a single pass/fail verdict. Every method
+that assumes a fixed relationship between calibration and test data -
+standard CP, Mondrian CP, CRC - fails together and for the same underlying
+reason (Section 4.4.5's exchangeability requirement). The two methods that
+relax that assumption do so in structurally different ways with
+structurally different costs: ACI trades guarantee strength for
+robustness, while weighted CP trades unconditional applicability for a
+correction that is exact within its own, honestly-bounded domain. Neither
+fully restores this report's central, finite-sample guarantee outside
+calibration support - and this chapter treats that as the honest finding
+it is, rather than searching for a method that would let it claim
+otherwise.
+""")
+
 
 
 def build_chapter9_cross_site(doc):
-    bc.add_chapter_heading(doc, 9, "Cross-Site Generalization")
+    bc.add_chapter_heading(doc, 9, "Cross-Site Generalization",
+        subtitle="Transferability, Recalibration, and the Sim-to-Real Multi-Facility Gap")
     bc.add_body(doc, """
 Chapter 7 establishes this report's central finding at Department A, this
 project's primary site. A finding that held at only one site would leave
@@ -1523,6 +1621,70 @@ same right-censoring mechanism and expected given Department B's own,
 independently Erlang-derived capacity of 14 leaves it running somewhat more
 relatively congested than Department A at its capacity of 30) before any
 uncertainty quantification comparison was run on it.
+""")
+
+    bc.add_section_heading(doc, "9.2 Structural and Surrogate Differences Between the Two Sites")
+    bc.add_body(doc, """
+Before comparing conformal prediction results, it is worth confirming just
+how different these two sites actually are, since the strength of a
+generalization claim depends directly on that difference: replicating a
+finding at a site nearly identical to the first proves much less than
+replicating it at a genuinely different one.
+""")
+    bc.add_figure(doc, f"{FIG}/dept_a_vs_b_structure.png",
+        "Department A vs. Department B: real triage-acuity mix, real daily volume, and independently Erlang-derived staffing capacity (Section 4.2.1).")
+    bc.add_body(doc, """
+Figure 9.1 makes the comparison concrete. Department B's real acuity mix
+is meaningfully shifted toward lower-severity presentations relative to
+Department A - ESI-3 (the modal category at both sites) is a larger share
+of Department B's volume (45.7 percent versus 38.7 percent), while
+Department A's ESI-2 share is materially larger (37.9 versus 23.1
+percent) - consistent with Department A being the academic, more
+acuity-skewed site and Department B the community site (Section 5.1).
+Department B's real daily volume is roughly half of Department A's (133.4
+versus 258.2 visits per day), and its independently Erlang-derived
+staffing capacity (Section 4.2.1) scales down accordingly but not
+identically (14 versus 30 servers) - the two sites were calibrated to
+their own real offered load, not to a fixed ratio of Department A's
+numbers.
+""")
+    bc.add_body(doc, """
+This structural difference propagates to a measurable difference in
+surrogate accuracy, reported here for the first time rather than assumed
+identical to Department A's.
+""")
+    bc.add_table(doc,
+        ["Target", "Dept. A R-squared", "Dept. B R-squared", "Difference"],
+        [
+            ["n_patients", "0.929", "0.883", "-0.046"],
+            ["mean_wait_minutes", "0.787", "0.755", "-0.032"],
+            ["mean_total_minutes", "0.762", "0.724", "-0.038"],
+            ["p95_wait_minutes", "0.647", "0.629", "-0.018"],
+        ],
+        caption="Surrogate accuracy (R-squared, held-out test set), Department A vs. Department B, identical model architecture and training procedure.")
+    bc.add_body(doc, """
+Every target's R-squared is lower at Department B, by 0.02-0.05 depending
+on target - a modest but consistent gap, plausibly explained rather than
+left unremarked: Department B's smaller real daily volume (roughly half of
+Department A's) means its own scenario-level DES outputs are generated
+from proportionally fewer simulated patients per day, and since
+statistical noise in an aggregate statistic scales with 1/sqrt(N), a
+smaller per-day patient count makes the regression target itself
+noisier - a data-generating property of the smaller site, not a modeling
+weakness specific to Department B's surrogate. This is worth stating
+explicitly because it sets the correct expectation for the coverage
+comparison that follows: a noisier surrogate does not by itself predict
+whether pooled or Mondrian calibration would fare better - both methods
+wrap the same surrogate and inherit the same underlying noise - but it is
+part of the honest baseline against which Department B's coverage results
+should be read.
+""")
+
+    bc.add_section_heading(doc, "9.3 Core Replication Result")
+    bc.add_body(doc, """
+With both sites' structural differences established, this section
+presents the actual replication: does the same worst-category coverage
+failure, and the same Mondrian correction, appear at Department B?
 """)
     bc.add_table(doc,
         ["Target", "Dept. B pooled coverage (worst category)", "Dept. B Mondrian coverage (same category)", "Dept. A (for comparison)"],
@@ -1556,21 +1718,108 @@ benefits from Mondrian calibration, not an error, and a generalization claim
 that acknowledges a detail that did not replicate identically is more
 credible than one that reports uniform replication across every single
 target at every single site.
+""")
 
+    bc.add_section_heading(doc, "9.4 Full Per-Category Detail at Department B")
+    bc.add_body(doc, """
+Table 9.2 showed only the single worst category per target. As in Chapter
+7's own treatment of Department A (Section 7.5.2), the full nine-category
+breakdown for Department B's own hardest-hit target,
+mean_wait_minutes, is reported in full here rather than only the
+worst-case summary, because the pattern across all nine cells is again
+more informative than any single number.
+""")
+    bc.add_figure(doc, f"{FIG}/dept_b_coverage_heatmap.png",
+        "Department B per-category coverage for mean_wait_minutes: pooled (left) vs. Mondrian (right) calibration, across the 3x3 staffing x arrival-rate grid.")
+    bc.add_table(doc,
+        ["Category", "n_cal", "n_test", "Pooled cov.", "Pooled width", "Mondrian cov.", "Mondrian width"],
+        [
+            ["staff=High/arrival=High", "138", "148", "95.9%", "69.9", "92.6%", "60.7"],
+            ["staff=High/arrival=Low", "147", "123", "100.0%", "69.9", "93.5%", "6.2"],
+            ["staff=High/arrival=Med", "163", "115", "98.3%", "69.9", "92.2%", "23.6"],
+            ["staff=Low/arrival=High", "129", "84", "76.2%", "69.9", "89.3%", "93.8"],
+            ["staff=Low/arrival=Low", "121", "112", "87.5%", "69.9", "90.2%", "75.1"],
+            ["staff=Low/arrival=Med", "118", "96", "82.3%", "69.9", "96.9%", "116.4"],
+            ["staff=Med/arrival=High", "133", "112", "92.9%", "69.9", "94.6%", "74.1"],
+            ["staff=Med/arrival=Low", "132", "109", "94.5%", "69.9", "94.5%", "69.3"],
+            ["staff=Med/arrival=Med", "119", "101", "96.0%", "69.9", "96.0%", "79.2"],
+        ],
+        caption="Full 9-category breakdown, mean_wait_minutes, Department B, pooled vs. Mondrian calibration.")
+    bc.add_body(doc, """
+The pattern is a close structural match to Department A's own full
+breakdown (Section 7.5.2, Table 7.6): pooled coverage is weakest
+specifically in the staff = Low row (76.2, 87.5, 82.3 percent across the
+three arrival levels) while every staff = Med and staff = High cell sits
+at or above 92.9 percent, several reaching 95-100 percent - the same
+understaffed-row-specific weakness, not a generically noisy pattern.
+Mondrian's correction is again a genuine redistribution rather than a
+uniform inflation: width collapses to 6.2 at the easy staff =
+High/arrival = Low cell (from a pooled 69.9) while expanding to 116.4 at
+staff = Low/arrival = Med to lift that cell's coverage from 82.3 to 96.9
+percent. That this same qualitative mechanism - width contracting where
+the surrogate is already reliable, expanding specifically where it is
+not - reproduces at a site with a materially different real volume,
+acuity mix, and even a different absolute pooled width (69.9 minutes at
+Department B versus 47.2 at Department A, reflecting Department B's own
+noisier surrogate, Section 9.2) is stronger evidence for this project's
+central mechanism than matching coverage numbers alone would be: it is
+the same underlying phenomenon expressing itself at a different numeric
+scale, not a coincidence of similar numbers.
+""")
+
+    bc.add_section_heading(doc, "9.5 Coverage Spread: Does Mondrian Help More or Less at a Different Site?")
+    bc.add_body(doc, """
+A different way to ask whether Mondrian CP's benefit generalizes is to
+compare, at each site, how much coverage varies across the nine categories
+under pooled calibration versus under Mondrian calibration - a large
+pooled spread with a small Mondrian spread is exactly the signature of a
+real conditional miscalibration that Mondrian corrects.
+""")
+    bc.add_figure(doc, f"{FIG}/dept_b_coverage_range.png",
+        "Department B: per-category coverage range (max minus min across the 9 categories), pooled vs. Mondrian, all four targets.")
+    bc.add_body(doc, """
+Three of four targets at Department B show the expected pattern - pooled
+coverage range exceeds Mondrian's, meaning Mondrian genuinely tightens the
+spread of per-category reliability rather than merely relocating it:
+mean_wait_minutes' pooled range (23.8 percentage points) shrinks to 7.6
+points under Mondrian; mean_total_minutes' 19.0-point pooled range shrinks
+to 9.7; p95_wait_minutes' 19.0-point pooled range shrinks to 8.5. This is
+the same qualitative finding as Department A's own 30-repeat spread
+results (Section 7.6), now confirmed at a single-split level for an
+independent site. n_patients is again the partial exception, consistent
+with Section 9.3's finding that it behaves differently at this site: its
+pooled range (16.8 points) is already the narrowest of any target-site
+combination in this comparison, leaving comparatively little conditional
+miscalibration for Mondrian calibration to correct, and Mondrian's own
+range (9.9 points) - while still an improvement over pooled - reflects a
+smaller absolute correction than the other three targets show, precisely
+because there was less to correct in the first place.
+""")
+
+    bc.add_section_heading(doc, "9.6 Implications for Generalizability")
+    bc.add_body(doc, """
 Taken together, Department B confirms the answer to this project's
 generalizability question on the dimension that matters most for its
 central claim: the marginal-versus-conditional coverage gap that Mondrian
 CP closes is not an artifact of one specific department's calibration. It
 reproduces, at a similar magnitude, at an independent site with materially
-different patient volume and acuity characteristics, even though the exact
-target-level details of which categories are affected are not perfectly
-identical between the two sites.
+different patient volume, acuity mix, surrogate accuracy, and absolute
+interval width, even though the exact target-level details of which
+categories are affected are not perfectly identical between the two sites.
+The two disclosed differences - n_patients showing a real conditional gap
+at Department B but not Department A (Section 9.3), and the two sites'
+different absolute pooled widths (Section 9.4) - are reported as genuine
+findings in their own right rather than smoothed over, because a
+generalization claim that survives disclosing real site-to-site
+differences is more credible than one that reports suspiciously uniform
+replication across every single target at every single site.
 """)
 
 
 
 def build_chapter10_translational(doc):
-    bc.add_chapter_heading(doc, 10, "Translational Health Operations")
+    bc.add_chapter_heading(doc, 10, "Translational Health Operations",
+        subtitle="Deploying Uncertainty-Quantified Surrogates into Clinical Decision Support Systems")
     bc.add_body(doc, """
 Chapters 6 through 9 establish, evaluate, and stress-test this report's
 conformal prediction methods on their own statistical terms - coverage,
@@ -1579,6 +1828,16 @@ would it actually take to put any of this in front of a person making a
 staffing decision? Each section below is a real, working artifact built
 directly on this project's own trained models and calibrated intervals,
 not a mockup describing what such an artifact might look like.
+""")
+    bc.add_figure(doc, f"{FIG}/deployment_architecture.png",
+        "This chapter's deployment dataflow: real data through the calibrated DES and Mondrian CP (Chapters 4-7) into the two prototypes evaluated below.")
+    bc.add_body(doc, """
+Figure 10.1 previews the rest of this chapter: both prototypes (Sections
+10.1-10.2) branch from the identical trained surrogate and calibrated
+Mondrian quantiles this report evaluates throughout Chapters 6-9, not from
+a separately estimated or simplified copy of them - a decision-maker using
+either prototype is, by construction, looking at this report's own actual
+results.
 """)
 
     bc.add_section_heading(doc, "10.1 Integrating UQ Metamodels into Clinical Dashboards")
@@ -1637,7 +1896,7 @@ point prediction, as an explicit constraint.
     bc.add_body(doc, """
 The problem, for a given arrival-rate scenario and a policy wait-time
 ceiling W_max, is to choose the cheapest staffing level whose Mondrian
-conformal *upper bound* - not its point prediction - stays under the
+conformal upper bound - not its point prediction - stays under the
 ceiling:
 """)
     bc.add_equation(doc, "minimize n_capacity   subject to   yhat(n_capacity, a) + q_cat(n_capacity, a) <= W_max",
@@ -1676,7 +1935,7 @@ scenarios this project's scenario grid samples). Second, and more
 striking, the point-prediction-only plan is not merely less conservative
 but at points genuinely unsafe in a way a real decision-maker would have
 no way to detect from the point prediction alone: at the 180-minute
-ceiling, the point-prediction plan recommends *dropping* to as few as 15-16
+ceiling, the point-prediction plan recommends dropping to as few as 15-16
 servers at the highest arrival multipliers (1.2-1.3) - fewer servers at
 higher demand - because the surrogate's raw prediction is noisy enough at
 that sparsely-sampled corner of the input space (p95_wait_minutes,
@@ -1691,6 +1950,37 @@ on this project's own real optimization rather than only argued for in
 principle.
 """)
 
+    bc.add_section_heading(doc, "10.2.1 Full Sensitivity Sweep and an Honest Infeasibility Result", level=3)
+    bc.add_body(doc, """
+Table 10.1 showed two representative policy ceilings. The full sweep -
+all five W_max values this project evaluated, all six arrival multipliers
+- is reported in Figure 10.4, because the pattern at the edge of the
+sweep is more consequential than the two representative rows alone
+suggest.
+""")
+    bc.add_figure(doc, f"{FIG}/capacity_sensitivity_heatmap.png",
+        "Full sensitivity sweep: extra capacity required by the CP-constrained plan vs. the point-prediction-only plan, across every policy ceiling and arrival multiplier tested. Dark cells mark ceilings the CP-constrained plan cannot honestly guarantee within this project's own capacity domain [15,45].")
+    bc.add_body(doc, """
+At the tightest ceilings (W_max = 60-120 minutes) and the highest demand
+multipliers (1.2-1.3), the CP-constrained plan reports the ceiling as
+infeasible - no capacity within this project's own domain of 15 to 45
+servers can honestly guarantee that wait-time ceiling under that much
+demand, given the calibrated interval's own honestly-estimated width in
+that operating regime. The point-prediction-only plan does not share this
+honesty: at exactly these same (W_max, arrival multiplier) combinations,
+it confidently reports a specific capacity (40 or 41 servers) as
+sufficient, because a raw point prediction has no mechanism for
+expressing "I cannot guarantee this" - it always returns a single number,
+whether or not that number is actually achievable with any real
+confidence. This is the single clearest illustration in this entire
+report of why an uncertainty-aware plan is not simply a more conservative
+version of a point-prediction plan: at these specific operating points, it
+is not more conservative at all - it is the only one of the two plans
+capable of reporting that the requested ceiling is not achievably safe
+under the demand being planned for, information a decision-maker relying
+on the point-prediction plan alone would have no way to obtain.
+""")
+
     bc.add_section_heading(doc, "10.3 Regulatory, Ethical, and Governance Frameworks")
     bc.add_body(doc, f"""
 A system of the kind Sections 10.1-10.2 prototype - a machine-learned
@@ -1702,6 +1992,15 @@ United States, and this section grounds that claim in the actual current
 regulatory framework rather than a generic gesture toward "regulatory
 considerations."
 """)
+    bc.add_table(doc,
+        ["Date", "Document", "Relevance to this project's methodology"],
+        [
+            ["Jan 2021", "AI/ML SaMD Action Plan", "Establishes the overall framework this section situates this project's methods within."],
+            ["Oct 2021", "Good Machine Learning Practice (GMLP) guiding principles", "Motivates this project's standing practice of disclosing failure modes (Chapter 8) rather than reporting only favorable results."],
+            ["Oct 2023 / Dec 2024", "Predetermined Change Control Plan (PCCP) guiding principles / final guidance", "Directly relevant to Section 5.5.3's streaming-recalibration design - a real mechanism for pre-authorized periodic updates."],
+            ["Ongoing", "Section 520(o)(1)(E) Clinical Decision Support exemption", "Its transparency criterion is structurally favorable to this project's interval-based (vs. black-box point) output, discussed below."],
+        ],
+        caption="Timeline of the FDA guidance documents most relevant to this project's own methodological choices.")
     bc.add_body(doc, f"""
 The FDA's Artificial Intelligence/Machine Learning-Based Software as a
 Medical Device (AI/ML SaMD) Action Plan {bc.cite('fda_aiml_2021')} is the foundational
@@ -1761,7 +2060,8 @@ claim than asserting this project's prototype is itself deployment-ready.
 
 
 def build_chapter11_synthesis(doc):
-    bc.add_chapter_heading(doc, 11, "Synthesis and Uncharted Horizons")
+    bc.add_chapter_heading(doc, 11, "Synthesis and Uncharted Horizons",
+        subtitle="Conformal Metamodeling and the Future of Stochastic System Emulation")
 
     bc.add_section_heading(doc, "11.1 Summary of Methodological Contributions")
     bc.add_body(doc, f"""
@@ -1842,7 +2142,7 @@ merely a property of the specific step-size rule (Section 6.3) this
 report implements. Gibbs and Candes' own theoretical analysis bounds ACI's
 regret under adversarial sequences but does not, to this report's own
 literature review's knowledge, characterize the tradeoff between recovery
-speed and interval width under the specific *structured* (monotonically
+speed and interval width under the specific structured (monotonically
 escalating, not adversarial) shift this report's own demand-surge stream
 represents - a gap between general adversarial theory and the specific,
 structured shift pattern real operational settings like this one actually

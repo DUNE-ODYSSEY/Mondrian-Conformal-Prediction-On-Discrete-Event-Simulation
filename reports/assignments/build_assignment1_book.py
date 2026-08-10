@@ -37,7 +37,7 @@ OUT_PATH = "reports/assignments/assignment1_mondrian_cp_coverage_gap_book.docx"
 FIG = "reports/assignments/figures"
 PROJFIG = "results/figures"
 
-TITLE = "Closing the Marginal-to-Conditional Coverage Gap"
+TITLE = "When Averages Fail"
 SUBTITLE = "Mondrian Conformal Prediction in ER Discrete-Event Simulation"
 
 

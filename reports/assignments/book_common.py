@@ -120,13 +120,15 @@ def add_page_break(doc):
 
 
 def add_chapter_heading(doc, chapter_no, title, new_page=True, subtitle=None):
-    """IEEE/textbook Level-1 heading: 'N. TITLE', bold, all caps, 14pt,
-    with an optional italic descriptive subtitle line beneath it (matching
-    the reference book's two-line chapter-opener style: a short, evocative
+    """Book-style Level-1 heading: centered 'Chapter N: Title', 20pt bold,
+    with an optional italic centered subtitle line beneath it (matching the
+    reference book's two-line chapter-opener style: a short, evocative
     title plus a longer, literal subtitle stating what the chapter actually
-    covers). Also resets this chapter's table/figure/equation counters and
-    records the current chapter number, so add_table/add_figure/add_equation
-    can number captions 'N.M' without the caller passing the chapter in."""
+    covers). Uses Word's Heading 1 style so the chapter appears as a
+    top-level entry in the Table of Contents field. Also resets this
+    chapter's table/figure/equation counters and records the current
+    chapter number, so add_table/add_figure/add_equation can number
+    captions 'N.M' without the caller passing the chapter in."""
     if new_page:
         add_page_break(doc)
     _current_chapter["n"] = chapter_no
@@ -134,18 +136,21 @@ def add_chapter_heading(doc, chapter_no, title, new_page=True, subtitle=None):
     _figure_counter["n"] = 0
     _equation_counter["n"] = 0
 
-    h = doc.add_paragraph()
-    h.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    r = h.add_run(f"{chapter_no}. {title.upper()}")
-    r.font.size = Pt(14)
-    r.font.bold = True
-    r.font.color.rgb = INK
-    r.font.name = "Times New Roman"
+    for _ in range(2):
+        doc.add_paragraph()
+
+    h = doc.add_heading(f"Chapter {chapter_no}: {title}", level=1)
+    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for r in h.runs:
+        r.font.size = Pt(20)
+        r.font.bold = True
+        r.font.color.rgb = INK
+        r.font.name = "Times New Roman"
     if subtitle:
         sp = doc.add_paragraph()
-        sp.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        sp.alignment = WD_ALIGN_PARAGRAPH.CENTER
         sr = sp.add_run(subtitle)
-        sr.font.size = Pt(12)
+        sr.font.size = Pt(13)
         sr.font.italic = True
         sr.font.color.rgb = GREY
         sr.font.name = "Times New Roman"
@@ -175,6 +180,27 @@ def add_section_heading(doc, text, level=None):
             run.font.size = Pt(12)
             run.font.italic = False
     return h
+
+
+def add_pseudo_heading(doc, text, level=2):
+    """Visually matches add_section_heading (bold, sized, Times New Roman)
+    but uses a plain paragraph rather than a Word Heading style, so labels
+    like 'Algorithm N:' or 'Proof of ...' - which aren't real numbered book
+    sections - don't clutter the Table of Contents field."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(10)
+    p.paragraph_format.space_after = Pt(4)
+    r = p.add_run(text)
+    r.font.name = "Times New Roman"
+    r.font.color.rgb = INK
+    r.font.bold = True
+    if level >= 3:
+        r.font.size = Pt(11)
+        r.font.italic = True
+    else:
+        r.font.size = Pt(12)
+        r.font.italic = False
+    return p
 
 
 def add_body(doc, text_block, justify=True):
@@ -573,38 +599,13 @@ def build_title_page(doc, title, subtitle):
     r.font.color.rgb = GREY
     r.font.name = "Times New Roman"
 
-    for _ in range(2):
+    for _ in range(6):
         doc.add_paragraph()
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("A project-based report submitted in partial fulfilment of the "
-                   f"requirements of course {COURSE_CODE}")
-    r.font.size = Pt(12)
-    r.font.name = "Times New Roman"
-
-    doc.add_paragraph()
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(f"Submitted by\nGroup {GROUP_NUMBER}")
+    r = p.add_run(" · ".join(name for name, _ in TEAM))
     r.font.size = Pt(13)
-    r.font.bold = True
-    r.font.name = "Times New Roman"
-
-    doc.add_paragraph()
-    for name, roll in TEAM:
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = p.add_run(f"{name}  ({roll})")
-        r.font.size = Pt(12)
-        r.font.name = "Times New Roman"
-
-    doc.add_paragraph()
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("Department of Artificial Intelligence")
-    r.font.size = Pt(12)
     r.font.name = "Times New Roman"
 
 
@@ -2666,7 +2667,7 @@ position between average and peak as the first department's capacity of 30
 copied or linearly rescaled from the first department's absolute numbers.
 """)
 
-    add_section_heading(doc, "Derivation: Offered Load as an Instance of Little's Law", level=3)
+    add_pseudo_heading(doc, "Derivation: Offered Load as an Instance of Little's Law", level=3)
     add_body(doc, """
 The offered-load formula a = λ·E[S] used above is not an independent
 queueing-theoretic assumption; it is a direct consequence of Little's Law,
@@ -2729,7 +2730,7 @@ staffing capacity independent of any assumption about the arrival process
 being Poisson or service times being log-normal (Section 4.2.3).
 """)
 
-    add_section_heading(doc, "Derivation: Why Wait Times Grow Sharply Near Saturation", level=3)
+    add_pseudo_heading(doc, "Derivation: Why Wait Times Grow Sharply Near Saturation", level=3)
     add_body(doc, f"""
 Section 7.5.4 explains this project's central empirical finding - that
 conditional miscalibration concentrates specifically in the
@@ -3025,7 +3026,7 @@ predictions outside the range of their training data - that becomes directly
 relevant to the exchangeability stress test summarized in Chapter 8.
 """)
 
-    add_section_heading(doc, "Derivation: Gradient Boosting as Functional Gradient Descent", level=3)
+    add_pseudo_heading(doc, "Derivation: Gradient Boosting as Functional Gradient Descent", level=3)
     add_body(doc, f"""
 The claim that "each new tree is fit to the negative gradient, equivalently
 the residual" is stated above as a fact about how this project's surrogate
@@ -3155,7 +3156,7 @@ Gaussian posterior predictive distribution at any query point x*:
     add_equation(doc, "σ²(x*) = k(x*, x*) − k*ᵀ (K + σₙ²I)⁻¹ k*",
         note="K the training-set kernel matrix, k* the vector of kernel values between x* and each training point, and σₙ² the observation-noise variance.")
 
-    add_section_heading(doc, "Derivation of the Posterior Predictive Distribution", level=3)
+    add_pseudo_heading(doc, "Derivation of the Posterior Predictive Distribution", level=3)
     add_body(doc, f"""
 The three equations above are stated as the standard result throughout the
 Gaussian process literature (Section 2.3, {cite('rasmussen2006')}); the derivation is
@@ -3307,7 +3308,7 @@ and α the target miscoverage rate (α = 0.1 throughout this project, Section
 4.4), so that the target coverage level is 1 − α = 0.9.
 """)
 
-    add_section_heading(doc, "Algorithm 1: Standard Split Conformal Prediction")
+    add_pseudo_heading(doc, "Algorithm 1: Standard Split Conformal Prediction")
     add_body(doc, """
 Step 1. For each calibration point (xᵢ, yᵢ) in Dcal, compute the symmetric
 nonconformity score:
@@ -3342,7 +3343,7 @@ exchangeable - to satisfy the marginal coverage guarantee:
     add_equation(doc, "P( Y ∈ C(X) ) ≥ 1 − α",
         note="regardless of f̂'s accuracy, because the rank-based correction in Step 2 accounts exactly for the probability that a genuinely exchangeable test score ranks among the top ⌈(n + 1)α⌉ scores out of n + 1 total (the n calibration scores plus the test score itself).")
 
-    add_section_heading(doc, "Proof of the Coverage Guarantee", level=3)
+    add_pseudo_heading(doc, "Proof of the Coverage Guarantee", level=3)
     add_body(doc, """
 The guarantee stated above is not an approximation or an asymptotic result
 - it holds exactly, for every finite n, under nothing more than the
@@ -3352,7 +3353,7 @@ exchangeability buys makes the exchangeability stress test in Chapter 8
 interpretable as a violation of a specific, named assumption rather than an
 unexplained empirical failure.
 """)
-    add_section_heading(doc, "Setup", level=3)
+    add_pseudo_heading(doc, "Setup", level=3)
     add_body(doc, """
 Let Z₁ = (x₁, y₁), …, Zₙ = (xₙ, yₙ) denote the n calibration points and
 Zₙ₊₁ = (x, y) the test point. f̂ is trained on a data set disjoint from
@@ -3369,7 +3370,7 @@ invariant under any permutation of the n + 1 indices) and each sᵢ is
 computed from Zᵢ by the same fixed function, the scores s₁, …, sₙ₊₁ are
 themselves exchangeable random variables.
 """)
-    add_section_heading(doc, "Step 1: The Rank of an Exchangeable Score Is Uniform", level=3)
+    add_pseudo_heading(doc, "Step 1: The Rank of an Exchangeable Score Is Uniform", level=3)
     add_body(doc, """
 This is the single fact the whole guarantee rests on. For n + 1
 exchangeable real-valued random variables with no ties (ties are broken by
@@ -3384,7 +3385,7 @@ on {1, …, n + 1}:
 """)
     add_equation(doc, "P( Rank(sₙ₊₁) = k ) = 1 / (n + 1),  for every k = 1, …, n + 1",
         note="Rank(sₙ₊₁) counts how many of s₁, …, sₙ₊₁ (including sₙ₊₁ itself) are ≤ sₙ₊₁.")
-    add_section_heading(doc, "Step 2: Relating the Rank to the Calibration Quantile", level=3)
+    add_pseudo_heading(doc, "Step 2: Relating the Rank to the Calibration Quantile", level=3)
     add_body(doc, """
 q̂ (Step 2 of Algorithm 1) is defined purely from the n calibration
 scores, as their ⌈(n + 1)(1 − α)⌉-th smallest value. The test score sₙ₊₁
@@ -3433,7 +3434,7 @@ stops being true: no other step in the argument offers any fallback once
 exchangeability itself is violated.
 """)
 
-    add_section_heading(doc, "Algorithm 2: Mondrian Conformal Prediction")
+    add_pseudo_heading(doc, "Algorithm 2: Mondrian Conformal Prediction")
     add_body(doc, """
 Step 1. Define a partition function c(x) mapping each scenario x to one of
 K categories (K = 9 in this project: the cross of staffing tercile and
@@ -3467,7 +3468,7 @@ satisfy group-conditional coverage:
     add_equation(doc, "P( Y ∈ C(X) | c(X) = k ) ≥ 1 − α,  for every k = 1, …, K",
         note="a strictly stronger guarantee than Algorithm 1's marginal one, at the cost of each q̂⁽ᵏ⁾ being estimated from only nₖ calibration points rather than the full n - the direct source of the finite-sample-noise tradeoff discussed at length in Sections 7.5.6 and 2.2.")
 
-    add_section_heading(doc, "Proof of the Group-Conditional Guarantee", level=3)
+    add_pseudo_heading(doc, "Proof of the Group-Conditional Guarantee", level=3)
     add_body(doc, """
 The category partition c(x) is computed once, from Dcal's own marginal
 covariate distribution (Step 1), before any label information is used and
@@ -3501,7 +3502,7 @@ the precise, quantifiable source of the added estimation noise documented
 empirically in Sections 7.5.6 and 6.6.1.
 """)
 
-    add_section_heading(doc, "Algorithm 3: Conformalized Quantile Regression (CQR)")
+    add_pseudo_heading(doc, "Algorithm 3: Conformalized Quantile Regression (CQR)")
     add_body(doc, """
 Step 1. Train two auxiliary quantile regression models on the same training
 data as the primary surrogate f̂ (but using a pinball/quantile, rather than
@@ -3539,7 +3540,7 @@ produce a category-specific q̂⁽ᵏ⁾ applied to that category's test points 
 Step 4.
 """)
 
-    add_section_heading(doc, "Proof That CQR Restores the Guarantee", level=3)
+    add_pseudo_heading(doc, "Proof That CQR Restores the Guarantee", level=3)
     add_body(doc, """
 The claim that Step 3's conformalization restores exact coverage
 regardless of how poorly q̂lo and q̂hi themselves perform is the single
@@ -3611,7 +3612,7 @@ coverage and width, computed as:
     add_equation(doc, "x̄ ± t₀.₀₂₅,ᵣ₋₁ · (s / √R)",
         note="x̄ and s the sample mean and standard deviation of the quantity (coverage or width) across the R repeats, and t₀.₀₂₅,ᵣ₋₁ the two-sided 97.5th-percentile critical value of the t-distribution with R − 1 degrees of freedom.")
 
-    add_section_heading(doc, "Derivation: Why the Test Statistic Follows a t-Distribution", level=3)
+    add_pseudo_heading(doc, "Derivation: Why the Test Statistic Follows a t-Distribution", level=3)
     add_body(doc, """
 The paired differences d₁, …, d_R (one per independent calibration/test
 draw, Section 4.5.1 above) are modeled as independent and identically

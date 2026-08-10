@@ -37,8 +37,8 @@ OUT_PATH = "reports/assignments/assignment1_mondrian_cp_coverage_gap_book.docx"
 FIG = "reports/assignments/figures"
 PROJFIG = "results/figures"
 
-TITLE = "When Averages Fail"
-SUBTITLE = "Mondrian Conformal Prediction in ER Discrete-Event Simulation"
+TITLE = "Emergency Department Analytics"
+SUBTITLE = "Conformal Prediction, Discrete-Event Simulation, Queueing Theory and Intelligent Capacity Systems"
 
 
 def _abstract(bc):

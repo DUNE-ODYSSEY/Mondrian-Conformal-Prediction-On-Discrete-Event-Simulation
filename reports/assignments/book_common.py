@@ -43,6 +43,7 @@ TEAM = [
 ]
 COURSE_CODE = "23AID201"
 GROUP_NUMBER = "B9"
+FACULTY_GUIDE = "Akhil VM"
 
 NAVY = RGBColor(0x1E, 0x3A, 0x5F)
 GREY = RGBColor(0x40, 0x40, 0x40)
@@ -606,6 +607,16 @@ def build_title_page(doc, title, subtitle):
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run(" · ".join(name for name, _ in TEAM))
     r.font.size = Pt(13)
+    r.font.name = "Times New Roman"
+
+    doc.add_paragraph()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(f"Faculty Guide: {FACULTY_GUIDE}")
+    r.font.size = Pt(12)
+    r.font.italic = True
+    r.font.color.rgb = GREY
     r.font.name = "Times New Roman"
 
 

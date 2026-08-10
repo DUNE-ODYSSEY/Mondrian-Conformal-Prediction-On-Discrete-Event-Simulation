@@ -27,11 +27,12 @@ literature/       # bibliography, paper notes
 reports/
   mid_sem/
   end_sem/
+  assignments/    # final 200+ page book-format report (docx/pdf) and its build scripts
 slides/           # PPT source/assets
 results/
   figures/
   tables/
-tests/
+tests/            # unit tests for the CP calibration math and the DES core
 ```
 
 ## Setup
@@ -42,38 +43,46 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Roadmap
+## Status: complete
+
+Both phases below are done, plus a substantial extension beyond the
+original scope. See `PROJECT_LOG.md` for the full session-by-session
+history and `reports/assignments/` for the final 200+ page book-format
+report.
 
 ### Phase 1 — Mid-Sem
 
-- [ ] Week 1-2: Literature review (30 papers), 3 core papers in depth, environment setup
-- [ ] Week 3: Explore Hospital Triage and Patient History Data (Kaggle) — extract arrival
+- [x] Literature review (30 papers across 5 categories, critically assessed)
+- [x] Explored Hospital Triage and Patient History Data (Kaggle) — extracted arrival
       patterns, service/treatment time, patient volume by hour/day
-- [ ] Week 4-5: Build ER DES in SimPy calibrated on extracted distributions; validate
-      against real aggregated stats
-- [ ] Week 6-7: Run calibrated DES across staffing/arrival scenarios to generate surrogate
-      training data; train surrogate (NN or gradient boosting); evaluate MAE/RMSE/R²
-- [ ] Week 8: Implement GP baseline UQ; measure coverage and interval width
-- [ ] Week 8 (parallel): Mid-sem PPT (title, problem statement, research gap, bridging
-      approach, methodology diagram, dataset used, work completed, lit review snapshot,
-      future scope)
-
-**Mid-sem deliverable:** DES + surrogate + GP baseline + literature review draft + PPT.
+- [x] Built ER DES in SimPy calibrated on extracted distributions; validated
+      against real aggregated stats (91.0% match, department A)
+- [x] Ran calibrated DES across staffing/arrival scenarios to generate surrogate
+      training data; trained surrogate (gradient boosting + MLP); evaluated MAE/RMSE/R²
+- [x] Implemented GP baseline UQ; measured coverage and interval width
+- [x] Mid-sem PPT
 
 ### Phase 2 — End-Sem
 
-- [ ] Week 9-10: Standard conformal prediction on surrogate residuals; multiple
-      nonconformity measures
-- [ ] Week 11-12: Mondrian CP — partition by staffing level/shift/arrival-rate category;
+- [x] Standard conformal prediction on surrogate residuals
+- [x] Mondrian CP — partitioned by staffing tercile x arrival-rate tercile (9 cells);
       per-category coverage
-- [ ] Week 13: Stress-test exchangeability — out-of-distribution surge-day scenario
-- [ ] Week 14-15: Full comparison (GP vs. standard CP vs. Mondrian CP) — coverage, width,
+- [x] Stress-tested exchangeability — out-of-distribution demand-surge sweep, both
+      GBR and MLP surrogates
+- [x] Full comparison (GP vs. standard CP vs. Mondrian CP) — coverage, width,
       computation time, plots
-- [ ] Week 16: End-sem PPT (recap, pipeline results, UQ comparison, per-category coverage,
-      exchangeability stress test, key finding, contribution summary, limitations/future
-      scope, references)
+- [x] End-sem PPT
 
-**End-sem deliverable:** Full comparative results, final report, PPT.
+### Beyond the original scope
+
+- [x] Conformalized quantile regression (CQR) and Mondrian-CQR
+- [x] Conformal risk control (CRC), adaptive conformal inference (ACI), and
+      likelihood-ratio weighted CP under covariate shift
+- [x] 5-architecture surrogate benchmark (GBR, MLP, RandomForest, XGBoost, LightGBM)
+- [x] Independent cross-site replication at a second real department (Dept B)
+- [x] Interactive ops dashboard and CP-constrained capacity-planning optimization
+- [x] FDA AI/ML SaMD regulatory framing
+- [x] Single 200+ page book-format report, restructured into 11 chapters
 
 ## Reference paper
 

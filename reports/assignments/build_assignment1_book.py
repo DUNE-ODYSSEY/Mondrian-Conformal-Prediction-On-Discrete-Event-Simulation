@@ -37,8 +37,8 @@ OUT_PATH = "reports/assignments/assignment1_mondrian_cp_coverage_gap_book.docx"
 FIG = "reports/assignments/figures"
 PROJFIG = "results/figures"
 
-TITLE = "Predicting Emergency Room Wait Times with Reliable AI"
-SUBTITLE = "Machine Learning and Conformal Prediction for Trustworthy Hospital Capacity Forecasts"
+TITLE = "Beyond Marginal Guarantees"
+SUBTITLE = "Mondrian Conformal Prediction for High-Variance Discrete-Event Queueing Systems"
 
 
 def _abstract(bc):

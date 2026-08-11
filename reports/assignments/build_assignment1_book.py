@@ -37,8 +37,8 @@ OUT_PATH = "reports/assignments/assignment1_mondrian_cp_coverage_gap_book.docx"
 FIG = "reports/assignments/figures"
 PROJFIG = "results/figures"
 
-TITLE = "Emergency Department Intelligence"
-SUBTITLE = "Machine Learning, Conformal Prediction, Discrete-Event Simulation and Uncertainty-Aware Capacity Systems"
+TITLE = "Predicting Emergency Room Wait Times with Reliable AI"
+SUBTITLE = "Machine Learning and Conformal Prediction for Trustworthy Hospital Capacity Forecasts"
 
 
 def _abstract(bc):

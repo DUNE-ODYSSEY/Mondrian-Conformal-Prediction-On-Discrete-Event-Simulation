@@ -6,9 +6,13 @@ Uses PowerPoint's default theme and native placeholders/bullets rather than
 custom-drawn boxes for every slide - a hand-built student deck, not a
 templated pitch deck.
 
-Slide 8 (literature review snapshot) is a placeholder - the literature
-review is being done separately and isn't finished, so faking category or
-citation counts here would misrepresent progress.
+Updated post-completion: the literature review (originally a placeholder
+here) is finished (30 papers, see literature/candidate_papers.md), and
+Phase 2 - originally a forward-looking "Future Scope" slide - is done,
+with real Mondrian CP results plus a substantial extension beyond the
+original roadmap (CRC, ACI, weighted CP, a 5-architecture surrogate
+benchmark, cross-site replication, and deployment prototypes). Slides 8-9
+now report what was actually found rather than what was planned.
 """
 
 from pptx import Presentation
@@ -285,7 +289,8 @@ def build():
     ], size=16)
 
     # ---------------- Slide 7: Work Completed ----------------
-    s = add_title_only_slide(prs, "Work Completed (~50%)")
+    s = prs.slides.add_slide(prs.slide_layouts[5])
+    set_title(s, "Phase 1 Results: DES, Surrogate, GP Baseline", size=30)
     make_table(s, MARGIN, Inches(1.4), Inches(4.3), Inches(1.1),
                ["DES validation (200 sim. days)", ""],
                [
@@ -323,32 +328,70 @@ def build():
     note.text_frame.paragraphs[0].runs[0].font.size = Pt(14)
     note.text_frame.paragraphs[0].runs[0].font.italic = True
 
-    # ---------------- Slide 8: Literature review snapshot (placeholder) ----------------
+    # ---------------- Slide 8: Literature review snapshot (completed) ----------------
     s = add_bulleted_slide(prs, "Literature Review Snapshot", [
-        "Still in progress - counts below to be filled in before the actual presentation.",
-        ("Conformal prediction foundations: [ ] papers", 1),
-        ("Surrogate modeling: [ ] papers", 1),
-        ("Queueing theory / ED simulation: [ ] papers", 1),
-        "Target: 30 papers total, with 3 core papers (including Gopakumar et al. 2026) reviewed in depth.",
-    ], size=17)
+        "Completed: 30 papers across 5 categories, 3 reviewed in depth (including Gopakumar et al. 2026).",
+        ("Conformal prediction foundations: 8 papers", 1),
+        ("Mondrian / conditional-coverage CP: 4 papers", 1),
+        ("Surrogate modeling & uncertainty quantification: 6 papers", 1),
+        ("Queueing theory & ED operations research: 5 papers", 1),
+        ("Discrete-event simulation & ED-specific ML: 7 papers", 1),
+        "Plus 10 additional papers cross-checking the DES's real vs. literature-calibrated service-time "
+        "parameters against published ED length-of-stay datasets, added after the initial 30-paper review.",
+        "Includes a critical assessment section (not just a summary): where the reviewed literature's own "
+        "assumptions do or don't transfer to a discrete-event queueing domain.",
+    ], size=15)
 
-    # ---------------- Slide 9: Future scope ----------------
-    s = add_title_only_slide(prs, "Future Scope - End-Sem")
-    make_table(s, MARGIN, Inches(1.5), CONTENT_W, Inches(4.7),
-               ["Weeks", "Plan"],
+    # ---------------- Slide 9: Final results (Phase 2, completed) ----------------
+    s = prs.slides.add_slide(prs.slide_layouts[5])
+    set_title(s, "Final Results: Closing the Coverage Gap", size=32)
+    make_table(s, MARGIN, Inches(1.4), CONTENT_W, Inches(2.0),
+               ["Method (30-repeat mean)", "n_patients", "mean_wait_min", "mean_total_min", "p95_wait_min"],
                [
-                   ["9-10", "Standard conformal prediction on surrogate residuals; try a few different "
-                             "nonconformity measures."],
-                   ["11-12", "Mondrian CP - partition by staffing level / shift / arrival-rate category; "
-                              "measure per-category coverage."],
-                   ["13", "Stress-test exchangeability with an out-of-distribution \"surge day\" scenario; "
-                           "see where standard CP and Mondrian CP hold or break."],
-                   ["14-15", "Full comparison - GP vs. standard CP vs. Mondrian CP on coverage, interval "
-                              "width, and computation time."],
-                   ["16", "End-sem PPT and report: a quantified answer on whether Mondrian CP closes the "
-                           "marginal-vs-conditional coverage gap in this domain."],
+                   ["GP baseline", "89.6%", "88.3%", "89.1%", "89.0%"],
+                   ["Standard CP", "90.1%", "90.1%", "89.8%", "90.1%"],
+                   ["Mondrian CP", "91.0%", "91.1%", "90.8%", "91.4%"],
                ],
-               col_widths=[Inches(1.1), Inches(7.9)], font_size=13)
+               col_widths=[Inches(2.6), Inches(1.6), Inches(1.7), Inches(1.7), Inches(1.4)], font_size=12)
+
+    note = s.shapes.add_textbox(MARGIN, Inches(3.55), CONTENT_W, Inches(0.6))
+    note.text_frame.word_wrap = True
+    note.text_frame.text = ("Marginal coverage: all three methods land close to the 90% target on average - "
+                              "the real gap only shows up when coverage is checked within each operating category.")
+    note.text_frame.paragraphs[0].runs[0].font.size = Pt(13)
+    note.text_frame.paragraphs[0].runs[0].font.italic = True
+
+    make_table(s, MARGIN, Inches(4.25), CONTENT_W, Inches(1.15),
+               ["Worst operating category (mean_wait_minutes)", "Pooled (standard) CP coverage", "Mondrian CP coverage"],
+               [["Understaffed + high arrival-rate", "68.2%", "90.9%"]],
+               col_widths=[Inches(4.5), Inches(2.5), Inches(2.0)], font_size=13)
+
+    note2 = s.shapes.add_textbox(MARGIN, Inches(5.55), CONTENT_W, Inches(1.3))
+    note2.text_frame.word_wrap = True
+    note2.text_frame.text = ("This is the project's central finding: standard CP's marginal guarantee hides a "
+                              "severe undercoverage failure in exactly the highest-stakes operating regime. "
+                              "Mondrian CP - calibrating separately per staffing x arrival-rate category - "
+                              "closes that gap without sacrificing the marginal guarantee. Confirmed significant "
+                              "(30 repeats, paired t-test, p < 0.001) and replicated at an independent second "
+                              "hospital department (Dept. B).")
+    note2.text_frame.paragraphs[0].runs[0].font.size = Pt(13)
+
+    # ---------------- Slide 10: Beyond the original roadmap ----------------
+    s = add_bulleted_slide(prs, "Beyond the Original Roadmap", [
+        "The end-sem plan (standard CP, Mondrian CP, exchangeability stress test, full comparison) is done - "
+        "the project then went substantially further:",
+        ("Conformalized Quantile Regression (CQR) and Mondrian-CQR, a stronger width-adaptive baseline", 1),
+        ("Conformal Risk Control (CRC) and Adaptive Conformal Inference (ACI) - ACI recovers out-of-range "
+         "coverage from ~58% (static CP) to 84-89% under a real, time-ordered demand-surge stream", 1),
+        ("Likelihood-ratio weighted CP under covariate shift, with an honest infinite-width caveat outside "
+         "calibration support", 1),
+        ("5-architecture surrogate benchmark: gradient boosting, MLP, Random Forest, XGBoost, LightGBM", 1),
+        ("Independent replication at a second real hospital department (Dept. B) - same coverage-gap finding, "
+         "different volume and acuity mix", 1),
+        ("An interactive ops dashboard and a CP-constrained capacity-planning optimization, plus an FDA AI/ML "
+         "SaMD regulatory framing", 1),
+        "All of it written up in a single 200+ page book-format report, not just this deck.",
+    ], size=14)
 
     prs.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

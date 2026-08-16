@@ -37,11 +37,16 @@ ABSTRACT = (
     "replicated at an independent second hospital department. We further show the coverage advantage "
     "collapses under severe exchangeability violation, quantify it against three extensions (conformalized "
     "quantile regression, conformal risk control, adaptive conformal inference under distribution shift), "
-    "and benchmark five surrogate architectures. Code and data tables are publicly available."
+    "and benchmark five surrogate architectures. We additionally propose queueing-theoretic normalized CP "
+    "(QT-CP), a continuous, bin-free alternative that derives its per-point scale directly from Kingman's "
+    "heavy-traffic approximation: it achieves narrower average intervals than standard CP on three of four "
+    "targets, but - reported honestly rather than omitted - does not match Mondrian CP's conditional-coverage "
+    "repair. Code and data tables are publicly available."
 )
 
-INDEX_TERMS = ("Conformal prediction, Mondrian conformal prediction, uncertainty quantification, "
-               "discrete-event simulation, queueing theory, surrogate modeling, emergency department operations.")
+INDEX_TERMS = ("Conformal prediction, Mondrian conformal prediction, normalized nonconformity measures, "
+               "uncertainty quantification, discrete-event simulation, queueing theory, surrogate modeling, "
+               "emergency department operations.")
 
 
 def build():
@@ -58,6 +63,7 @@ def build():
     build_methodology(doc)
     build_experimental_setup(doc)
     build_results(doc)
+    build_qtcp_method(doc)
     build_discussion(doc)
     build_limitations(doc)
     build_conclusion(doc)
@@ -103,7 +109,11 @@ at an independent second department.
 much three principled corrections (conformalized quantile regression, conformal risk control, adaptive
 conformal inference) recover under shift.
 
-3) We release the surrogate, calibration data, and all evaluation code publicly, benchmarking five surrogate
+3) We propose queueing-theoretic normalized CP (QT-CP), a new, bin-free nonconformity score derived from
+Kingman's heavy-traffic approximation, and report its results honestly against both baselines - a genuine
+efficiency gain over standard CP, but not a match for Mondrian CP's conditional-coverage repair.
+
+4) We release the surrogate, calibration data, and all evaluation code publicly, benchmarking five surrogate
 architectures for reproducibility.
 """.format(mondrian_cite=ic.cite("vovk2003", "bostrom2020")))
 
@@ -167,7 +177,7 @@ def build_methodology(doc):
     ic.add_body(doc, """
 The ED is a queueing system in the classical sense: patient count in system L, mean sojourn time W, and
 effective arrival rate λ are linked by Little's Law,""", first_line_indent=False)
-    ic.add_equation(doc, "L = λ · W", "1")
+    ic.add_equation(doc, "L = λ · W")
     ic.add_body(doc, "which motivates modeling it as a discrete-event queueing simulation rather than a "
                        "generic regression task with no structural assumptions.", first_line_indent=False)
     ic.add_body(doc, f"""
@@ -198,9 +208,9 @@ XGBoost, LightGBM) on the identical split.
     ic.add_subsection_heading(doc, "C", "Standard Split Conformal Prediction")
     ic.add_body(doc, "For a calibration set of n held-out (x, y) pairs disjoint from surrogate training, the "
                        "symmetric nonconformity score is:")
-    ic.add_equation(doc, "sᵢ = |yᵢ − f̂(xᵢ)|,  i = 1, …, n", "2")
+    ic.add_equation(doc, "sᵢ = |yᵢ − f̂(xᵢ)|,  i = 1, …, n")
     ic.add_body(doc, "The finite-sample-corrected empirical quantile at miscoverage level α is:", first_line_indent=False)
-    ic.add_equation(doc, "q̂ = Quantile( {s₁,…,sₙ}, ⌈(n+1)(1−α)⌉ / n )", "3")
+    ic.add_equation(doc, "q̂ = Quantile( {s₁,…,sₙ}, ⌈(n+1)(1−α)⌉ / n )")
     ic.add_body(doc, "yielding the marginal coverage guarantee P(Y ∈ [f̂(X) − q̂, f̂(X) + q̂]) ≥ 1 − α, which "
                        "holds only on average over the full test distribution, not conditional on any "
                        "specific X.", first_line_indent=False)
@@ -209,9 +219,9 @@ XGBoost, LightGBM) on the identical split.
     ic.add_body(doc, f"""
 Mondrian CP {ic.cite('vovk2003')} partitions the input space into disjoint categories K₁,…,K_m and calibrates
 a separate quantile q̂_k per category using only that category's calibration scores:""", first_line_indent=False)
-    ic.add_equation(doc, "q̂_k = Quantile( {sᵢ : xᵢ ∈ K_k}, ⌈(n_k+1)(1−α)⌉ / n_k )", "4")
+    ic.add_equation(doc, "q̂_k = Quantile( {sᵢ : xᵢ ∈ K_k}, ⌈(n_k+1)(1−α)⌉ / n_k )")
     ic.add_body(doc, "giving the strictly stronger, per-category guarantee", first_line_indent=False)
-    ic.add_equation(doc, "P(Y ∈ C(X) | X ∈ K_k) ≥ 1 − α  for every category k,", "5")
+    ic.add_equation(doc, "P(Y ∈ C(X) | X ∈ K_k) ≥ 1 − α  for every category k,")
     ic.add_body(doc, """
 not only on average across all categories, at the cost of a smaller effective calibration-set size n_k per
 category. Because this project's scenario space has exactly two real covariates - staffing capacity and
@@ -332,7 +342,7 @@ Section V-B, not a variant of it.
 Adaptive conformal inference (ACI) {gibbs} drops the exchangeability requirement by updating the working
 miscoverage level online in response to observed errors:""".format(gibbs=ic.cite("gibbs2021")),
                 first_line_indent=False)
-    ic.add_equation(doc, "α_{t+1} = α_t + γ (α − errₜ),   errₜ = 1[Yₜ ∉ Cₜ(Xₜ)]", "6")
+    ic.add_equation(doc, "α_{t+1} = α_t + γ (α − errₜ),   errₜ = 1[Yₜ ∉ Cₜ(Xₜ)]")
     ic.add_body(doc, "at the cost of only an asymptotic, rather than finite-sample, guarantee.",
                 first_line_indent=False)
     ic.add_full_width_figure(doc, f"{FIG_DIR}/aci_rolling_coverage.png",
@@ -344,7 +354,7 @@ miscoverage level online in response to observed errors:""".format(gibbs=ic.cite
 Conformal risk control (CRC) {bates} generalizes the coverage guarantee to any bounded loss ℓ_λ, selecting the
 smallest λ whose empirical risk, corrected by a finite-sample upper confidence bound, stays at or below the
 target:""".format(bates=ic.cite("bates2021")), first_line_indent=False)
-    ic.add_equation(doc, "λ̂ = inf{ λ ∈ Λ : R̂(λ) + B̂(λ) / n ≤ α }", "7")
+    ic.add_equation(doc, "λ̂ = inf{ λ ∈ Λ : R̂(λ) + B̂(λ) / n ≤ α }")
     ic.add_body(doc, """
 evaluated here with a clipped-overshoot-severity loss (bounding how far an undercovered interval misses, not
 only whether it misses):""", first_line_indent=False)
@@ -355,9 +365,9 @@ only whether it misses):""", first_line_indent=False)
     ic.add_body(doc, """
 Likelihood-ratio weighted CP {tibs} re-weights each calibration point by the covariate density ratio between
 test and calibration distributions,""".format(tibs=ic.cite("tibshirani2019")), first_line_indent=False)
-    ic.add_equation(doc, "w(x) = dQ_X(x) / dP_X(x)", "8")
+    ic.add_equation(doc, "w(x) = dQ_X(x) / dP_X(x)")
     ic.add_body(doc, "and takes the weighted empirical quantile", first_line_indent=False)
-    ic.add_equation(doc, "q̂(x) = inf{ q : Σᵢ pᵢ(x) 1[sᵢ ≤ q] ≥ 1 − α },   pᵢ(x) = w(xᵢ) / (Σⱼw(xⱼ) + w(x))", "9")
+    ic.add_equation(doc, "q̂(x) = inf{ q : Σᵢ pᵢ(x) 1[sᵢ ≤ q] ≥ 1 − α },   pᵢ(x) = w(xᵢ) / (Σⱼw(xⱼ) + w(x))")
     ic.add_body(doc, """
 under a moderate, deliberately partial-overlap shift. It restores coverage inside the region of residual
 calibration/test overlap but correctly returns infinite-width intervals in the region entirely outside
@@ -397,27 +407,98 @@ qualitatively across all five (not reported in full here for space).
                   "split.", width=Inches(3.3))
 
 
+def build_qtcp_method(doc):
+    ic.add_section_heading(doc, "A Queueing-Theoretic Nonconformity Score")
+    ic.add_body(doc, """
+Mondrian CP's discrete staffing x arrival-rate bins are one way to condition calibration on operating
+regime, but they require choosing bin edges and cells lose calibration-set size as the partition gets finer.
+We propose an alternative that requires no discrete partition at all: normalize each nonconformity score by a
+continuous, theoretically-motivated difficulty estimate derived directly from queueing theory, rather than a
+generic machine-learned difficulty estimator (the usual choice in the normalized-conformal-prediction
+literature). We call this queueing-theoretic normalized CP (QT-CP) and report its results honestly against
+both baselines - including where it does not win.
+""")
+
+    ic.add_subsection_heading(doc, "A", "Formulation")
+    ic.add_body(doc, f"""
+Kingman's heavy-traffic approximation {ic.cite('kingman1962')} for the mean queueing delay Wq of a G/G/1
+queue at utilization ρ,""", first_line_indent=False)
+    ic.add_equation(doc, "Wq ≈ ( (Cₐ² + C_s²) / 2 ) · ( ρ / (1 − ρ) ) · E[S]")
+    ic.add_body(doc, """
+(Cₐ², C_s² the squared coefficients of variation of the interarrival and service-time distributions) implies
+queueing delay - and its variance - scale sharply with ρ/(1−ρ) as utilization ρ approaches 1. Using the real
+arrival-rate and Emergency Severity Index (ESI) calibration constants already computed for the DES (Section
+III-A), the offered load at any (staffing, arrival-rate multiplier) scenario gives a closed-form utilization
+estimate with no extra simulation runs:""", first_line_indent=False)
+    ic.add_equation(doc, "ρ̂(c, m) = m · ( λ̄ · E[S] ) / c")
+    ic.add_body(doc, """
+(c = staffing capacity, m = arrival-rate multiplier, λ̄ the real mean daily arrival rate, E[S] the mean
+service time under the real ESI mix). The per-point scale estimate and normalized nonconformity score are""",
+                first_line_indent=False)
+    ic.add_equation(doc, "σ̂(x) = 1 / (1 − min(ρ̂(x), ρ_cap)),      s̃ᵢ = sᵢ / σ̂(xᵢ)")
+    ic.add_body(doc, """
+calibrated exactly as in Eq. 3 but on {s̃ᵢ}, and the test-time interval half-width is q̃ · σ̂(x) - continuously
+scenario-dependent, unlike standard CP's constant width, and requiring no bin edges, unlike Mondrian CP. The
+cap ρ_cap prevents a divide-by-near-zero blowup; note that 35% of calibration scenarios in this project's own
+scenario sweep have ρ̂ ≥ 0.9, and some exceed 1 (a deliberately oversaturated regime, Section III-A), where
+Kingman's steady-state approximation is not strictly valid - ρ_cap is a necessary, not cosmetic, correction.
+""")
+
+    ic.add_subsection_heading(doc, "B", "Selecting ρ_cap Without Touching the Test Set")
+    ic.add_body(doc, """
+ρ_cap is itself selected using only calibration data, never the test set: the calibration set is split 70/30,
+candidate caps are each calibrated on the 70% split and evaluated for coverage and mean width on the held-out
+30%, and the cap with the smallest mean width among those meeting target coverage is kept - then the final
+quantile is refit on the full calibration set at that cap. This mirrors this project's standing practice of
+never letting a design choice see the test set (Section III-D's bin edges are chosen the same way).
+""")
+
+    ic.add_subsection_heading(doc, "C", "Results: A Genuine Trade-Off, Not a Clean Win")
+    ic.add_table(doc, "Standard vs. Mondrian vs. QT-CP",
+                 ["Target", "Std width", "QT-CP width", "Mondrian worst", "QT-CP worst"],
+                 [
+                     ["n_patients", "43.6", "51.2 (1.17x)", "83.3%", "70.3%"],
+                     ["mean_wait", "47.2", "38.9 (0.83x)", "85.5%", "76.1%"],
+                     ["mean_total", "46.4", "40.0 (0.86x)", "86.8%", "83.0%"],
+                     ["p95_wait", "362.9", "295.2 (0.81x)", "86.3%", "76.1%"],
+                 ], col_widths=[Inches(0.85), Inches(0.6), Inches(0.8), Inches(0.65), Inches(0.6)], font_size=6.8)
+    ic.add_figure(doc, "reports/paper/figures/qtcp_comparison.png",
+                  "QT-CP vs. standard and Mondrian CP: worst-category coverage (left) and marginal width "
+                  "relative to standard CP (right), all four targets.", width=Inches(3.3))
+    ic.add_body(doc, """
+QT-CP retains valid marginal coverage by construction (89.3-91.3%, not tabulated for space) and achieves
+narrower mean interval width than standard CP on three of four targets (0.81-0.86x) - a genuine efficiency
+gain from continuous, scenario-dependent width. It also partially closes the conditional gap relative to
+standard CP on the two targets with the largest real conditional gap (mean_wait_minutes, p95_wait_minutes),
+consistent with this paper's own mechanism account (Section VII): utilization-based reweighting helps exactly
+where wait-time variance is utilization-driven. However, QT-CP does not match Mondrian CP's worst-category
+coverage on any of the four targets, and on n_patients - the one target Section V-B already showed has no
+real conditional gap to correct - QT-CP's worst-category coverage is worse than even standard CP's, plausibly
+because a single scalar utilization proxy is a coarser correction than Mondrian's fully nonparametric,
+per-category empirical quantile, which can absorb structure (ESI-mix effects, surrogate-specific residual
+patterns) a one-dimensional ρ̂ cannot. We report this as an honest, mixed result rather than omitting the
+comparison: QT-CP is a genuine methodological alternative - bin-free, theoretically grounded, and more
+width-efficient - but Mondrian CP's discrete empirical binning remains the stronger correction for this
+paper's central conditional-coverage question.
+""")
+
+
 def build_discussion(doc):
     ic.add_section_heading(doc, "Discussion")
-    ic.add_body(doc, f"""
-The mechanism behind Section V-B's gap is a heteroscedastic, queueing-theoretic one, not an artifact of the
-surrogate or the CP procedure. Kingman's heavy-traffic approximation {ic.cite('kingman1962')} for the mean
-queueing delay Wq of a G/G/1 queue at utilization ρ,""", first_line_indent=False)
-    ic.add_equation(doc, "Wq ≈ ( (Cₐ² + C_s²) / 2 ) · ( ρ / (1 − ρ) ) · E[S]", "10")
     ic.add_body(doc, """
-(Cₐ², C_s² the squared coefficients of variation of the interarrival and service-time distributions, E[S] the
-mean service time) shows delay - and its variance - diverging as ρ → 1, non-linearly and without bound. A
-single pooled nonconformity quantile - fit mostly to the many low-utilization scenarios in the calibration
-set - systematically undercovers the few high-utilization scenarios where this variance is largest. Mondrian
-CP's per-category quantile is exactly the
-correction this mechanism calls for: a separate quantile fit only to that category's own (larger) variance.
-This also explains why the gap is asymmetric across targets - n_patients, whose variance is comparatively
-flat across the staffing/arrival grid, shows no significant conditional gap to correct, while wait-time
-targets, whose variance is sharply regime-dependent, show the largest gap. The practical implication for a
-staffing decision-maker is direct: a marginal coverage number, however statistically valid, is the wrong
-number to trust when the decision at hand is specifically about the high-utilization regime where marginal
-coverage is least informative about that regime's own reliability.
-""")
+The mechanism behind Section V-B's gap is a heteroscedastic, queueing-theoretic one, not an artifact of the
+surrogate or the CP procedure. Kingman's heavy-traffic approximation (Section VI-A) shows queueing delay -
+and its variance - diverging as utilization ρ → 1, non-linearly and without bound. A single pooled
+nonconformity quantile - fit mostly to the many low-utilization scenarios in the calibration set -
+systematically undercovers the few high-utilization scenarios where this variance is largest. Mondrian
+CP's per-category quantile is exactly the correction this mechanism calls for: a separate quantile fit only
+to that category's own (larger) variance. This also explains why the gap is asymmetric across targets -
+n_patients, whose variance is comparatively flat across the staffing/arrival grid, shows no significant
+conditional gap to correct, while wait-time targets, whose variance is sharply regime-dependent, show the
+largest gap. The practical implication for a staffing decision-maker is direct: a marginal coverage number,
+however statistically valid, is the wrong number to trust when the decision at hand is specifically about the
+high-utilization regime where marginal coverage is least informative about that regime's own reliability.
+""", first_line_indent=False)
 
 
 def build_limitations(doc):
@@ -432,7 +513,7 @@ extensions (CRC, ACI, weighted CP) are each evaluated on a single stress-test de
 30-repeat significance testing applied to the core Mondrian result in Section V-A - appropriate given this
 paper's scope, but a narrower evidentiary standard than the paper's central finding, and 5 of the
 architecture-benchmark results in Section V-F are summarized rather than reported in full for space. Finally,
-the operational conclusion drawn (Section VI) - that marginal coverage is the wrong number for a
+the operational conclusion drawn (Section VII) - that marginal coverage is the wrong number for a
 high-utilization staffing decision - is drawn from a simulated environment; production deployment against
 live patient data was intentionally out of scope.
 """)
@@ -447,7 +528,11 @@ outside the physics simulations they study. Standard CP's marginal guarantee con
 conditional coverage failure in exactly the highest-stakes operating regime; Mondrian CP restores coverage
 there without sacrificing the marginal guarantee, a result confirmed significant across repeated trials and
 replicated at an independent site. Under severe exchangeability violation, both methods' advantage collapses
-together, and we quantify how much three principled corrections recover. These results argue that, in
+together, and we quantify how much three principled corrections recover. We also propose QT-CP, a new
+bin-free nonconformity score grounded in Kingman's heavy-traffic approximation, and report it honestly: a
+genuine width-efficiency gain over standard CP, but not a replacement for Mondrian CP's conditional-coverage
+repair - evidence that Mondrian's nonparametric, per-category empirical fit captures structure a single
+theory-derived scalar cannot, and a concrete direction for combining the two. These results argue that, in
 queueing-driven operational domains specifically, conditional - not only marginal - coverage should be the
 reported and trusted quantity wherever the decision itself is conditional on the operating regime.
 """.format(gopakumar=ic.cite("gopakumar2026")))

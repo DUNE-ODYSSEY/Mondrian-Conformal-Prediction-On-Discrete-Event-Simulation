@@ -22,6 +22,7 @@ GREY = RGBColor(0x40, 0x40, 0x40)
 _section_counter = {"n": 0}
 _figure_counter = {"n": 0}
 _table_counter = {"n": 0}
+_equation_counter = {"n": 0}
 _ref_order = []  # citation keys in first-cited order
 REF_DB = {}  # key -> formatted IEEE reference string, populated by caller
 
@@ -180,6 +181,12 @@ def add_body(doc, text, justify=True, first_line_indent=True):
 
 
 def add_equation(doc, text, number=None):
+    """number=None auto-increments a document-wide counter (recommended -
+    avoids stale numbers when equations are inserted later); pass an
+    explicit int/str only to deliberately override."""
+    if number is None:
+        _equation_counter["n"] += 1
+        number = _equation_counter["n"]
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_before = Pt(4)
@@ -188,10 +195,9 @@ def add_equation(doc, text, number=None):
     r.font.italic = True
     r.font.size = Pt(10)
     r.font.name = "Times New Roman"
-    if number:
-        r2 = p.add_run(f"\t\t({number})")
-        r2.font.size = Pt(10)
-        r2.font.name = "Times New Roman"
+    r2 = p.add_run(f"\t\t({number})")
+    r2.font.size = Pt(10)
+    r2.font.name = "Times New Roman"
     return p
 
 

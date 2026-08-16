@@ -216,6 +216,16 @@ def add_figure(doc, path, caption, width=Inches(3.3)):
     return n
 
 
+def add_full_width_figure(doc, path, caption, width=Inches(6.8)):
+    """Wide multi-panel figures need the full text width, not one ~3.3in
+    column - switches to a single-column continuous section for this figure
+    only, then back to two columns."""
+    new_continuous_section(doc, columns=1)
+    n = add_figure(doc, path, caption, width=width)
+    new_continuous_section(doc, columns=2)
+    return n
+
+
 def set_cell_shading(cell, hex_color):
     shd = OxmlElement("w:shd")
     shd.set(qn("w:fill"), hex_color)

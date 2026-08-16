@@ -159,8 +159,17 @@ independent-site replication) applied here.
 
 def build_methodology(doc):
     ic.add_section_heading(doc, "Methodology")
+    ic.add_full_width_figure(doc, "reports/paper/figures/methodology_pipeline.png",
+                              "End-to-end pipeline: real data calibrates the DES, which generates surrogate "
+                              "training data, evaluated under both standard and Mondrian CP.", width=Inches(6.0))
 
     ic.add_subsection_heading(doc, "A", "Calibrated Discrete-Event Simulation")
+    ic.add_body(doc, """
+The ED is a queueing system in the classical sense: patient count in system L, mean sojourn time W, and
+effective arrival rate λ are linked by Little's Law,""", first_line_indent=False)
+    ic.add_equation(doc, "L = λ · W", "1")
+    ic.add_body(doc, "which motivates modeling it as a discrete-event queueing simulation rather than a "
+                       "generic regression task with no structural assumptions.", first_line_indent=False)
     ic.add_body(doc, f"""
 We build a SimPy discrete-event simulation of a single-department ED, calibrated on the Hospital Triage and
 Patient History Data {ic.cite('kaggle_dataset')} (560,486 visits, 3 departments, Yale New Haven Health
@@ -189,9 +198,9 @@ XGBoost, LightGBM) on the identical split.
     ic.add_subsection_heading(doc, "C", "Standard Split Conformal Prediction")
     ic.add_body(doc, "For a calibration set of n held-out (x, y) pairs disjoint from surrogate training, the "
                        "symmetric nonconformity score is:")
-    ic.add_equation(doc, "sᵢ = |yᵢ − f̂(xᵢ)|,  i = 1, …, n", "1")
+    ic.add_equation(doc, "sᵢ = |yᵢ − f̂(xᵢ)|,  i = 1, …, n", "2")
     ic.add_body(doc, "The finite-sample-corrected empirical quantile at miscoverage level α is:", first_line_indent=False)
-    ic.add_equation(doc, "q̂ = Quantile( {s₁,…,sₙ}, ⌈(n+1)(1−α)⌉ / n )", "2")
+    ic.add_equation(doc, "q̂ = Quantile( {s₁,…,sₙ}, ⌈(n+1)(1−α)⌉ / n )", "3")
     ic.add_body(doc, "yielding the marginal coverage guarantee P(Y ∈ [f̂(X) − q̂, f̂(X) + q̂]) ≥ 1 − α, which "
                        "holds only on average over the full test distribution, not conditional on any "
                        "specific X.", first_line_indent=False)
@@ -199,14 +208,18 @@ XGBoost, LightGBM) on the identical split.
     ic.add_subsection_heading(doc, "D", "Mondrian Conformal Prediction")
     ic.add_body(doc, f"""
 Mondrian CP {ic.cite('vovk2003')} partitions the input space into disjoint categories K₁,…,K_m and calibrates
-a separate quantile q̂_k per category using only that category's calibration scores, giving the strictly
-stronger guarantee P(Y ∈ C(X) | X ∈ K_k) ≥ 1 − α for every category k, not only on average. Because this
-project's scenario space has exactly two real covariates - staffing capacity and arrival-rate multiplier -
-categories are the cross of staffing tercile x arrival-rate tercile (Low/Med/High x Low/Med/High, 9 cells),
-with bin edges derived from the calibration set's own quantiles only, never the test set. Both methods use
-identical calibration/test splits, α = 0.1, and the same symmetric nonconformity score, isolating the effect
-of per-category versus pooled calibration as the only difference between them.
-""")
+a separate quantile q̂_k per category using only that category's calibration scores:""", first_line_indent=False)
+    ic.add_equation(doc, "q̂_k = Quantile( {sᵢ : xᵢ ∈ K_k}, ⌈(n_k+1)(1−α)⌉ / n_k )", "4")
+    ic.add_body(doc, "giving the strictly stronger, per-category guarantee", first_line_indent=False)
+    ic.add_equation(doc, "P(Y ∈ C(X) | X ∈ K_k) ≥ 1 − α  for every category k,", "5")
+    ic.add_body(doc, """
+not only on average across all categories, at the cost of a smaller effective calibration-set size n_k per
+category. Because this project's scenario space has exactly two real covariates - staffing capacity and
+arrival-rate multiplier - categories are the cross of staffing tercile x arrival-rate tercile (Low/Med/High x
+Low/Med/High, 9 cells), with bin edges derived from the calibration set's own quantiles only, never the test
+set. Both methods use identical calibration/test splits, α = 0.1, and the same symmetric nonconformity score,
+isolating the effect of per-category versus pooled calibration as the only difference between them.
+""", first_line_indent=False)
 
 
 def build_experimental_setup(doc):
@@ -262,6 +275,9 @@ marginal guarantee intact (Table I). Across all four targets, standard CP's per-
 (the fourth, n_patients, shows no significant conditional gap to correct - a genuine negative result reported
 rather than omitted).
 """)
+    ic.add_figure(doc, f"{FIG_DIR}/per_category_coverage_heatmap.png",
+                  "Department A per-category coverage for mean_wait_minutes: pooled (left) vs. Mondrian "
+                  "(right) calibration across the full 3x3 staffing x arrival-rate grid.", width=Inches(3.3))
 
     ic.add_subsection_heading(doc, "C", "Statistical Significance")
     ic.add_body(doc, """
@@ -271,6 +287,9 @@ consistent: +0.9 to +1.3 percentage points across all four targets, each signifi
 not this marginal difference - the marginal advantage is real but modest; the conditional-coverage repair is
 the substantive finding.
 """)
+    ic.add_full_width_figure(doc, f"{FIG_DIR}/repeated_evaluation_boxplot.png",
+                              "Distribution of empirical coverage across 30 independent (calibration, test) "
+                              "draws, all four targets; the dashed line is the 90% target.")
 
     ic.add_subsection_heading(doc, "D", "Cross-Site Replication")
     ic.add_body(doc, """
@@ -282,6 +301,9 @@ replicates at a structurally different site, not merely on a resampled split of 
 conditional coverage gap is a property of pooled-versus-conditional calibration in this domain generally, not
 an artifact of Department A's specific arrival pattern.
 """)
+    ic.add_figure(doc, f"{FIG_DIR}/dept_a_vs_b_structure.png",
+                  "Department A vs. B: real triage-acuity mix and daily volume/capacity - two structurally "
+                  "different real sites, not a resampled copy of one.", width=Inches(3.3))
 
     ic.add_subsection_heading(doc, "E", "Exchangeability Violation and Its Extensions")
     ic.add_body(doc, """
@@ -290,8 +312,14 @@ this directly: calibrating on arrival-rate multipliers in [0.8, 1.3] and evaluat
 Both methods' coverage collapses together under severe shift (to 5-32% at 3.0x, depending on target) - Mondrian
 CP's per-category structure offers no protection once test points fall entirely outside every calibration
 category's own support, confirming this is a distinct failure mode from the conditional-coverage gap in
-Section V-B, not a variant of it. Three corrections were evaluated against this same shift:
+Section V-B, not a variant of it.
 """)
+    ic.add_full_width_figure(doc, f"{FIG_DIR}/mondrian_vs_standard_under_shift.png",
+                              "Standard vs. Mondrian CP coverage across the severity sweep, all four targets. "
+                              "Mondrian CP tracks standard CP's collapse - per-category structure gives no "
+                              "protection outside its own calibrated support.")
+    ic.add_body(doc, "Three corrections were evaluated against this same shift, summarized in Table III and "
+                       "detailed individually below.", first_line_indent=False)
     ic.add_table(doc, "Coverage under out-of-range demand surge",
                  ["Method", "In-range", "Out-of-range"],
                  [
@@ -299,17 +327,52 @@ Section V-B, not a variant of it. Three corrections were evaluated against this 
                      ["Adaptive CP (ACI)", "~90%", "84-89%"],
                      ["Weighted CP*", "~90%", "87.7-92.7%*"],
                  ], col_widths=[Inches(1.3), Inches(0.85), Inches(0.9)], font_size=7.5)
+
     ic.add_body(doc, """
-*Weighted CP restores coverage inside the region of residual calibration/test overlap but correctly returns
-infinite-width intervals in the region entirely outside calibration support, rather than a falsely narrow
-one - an honest, not a free, correction. ACI recovers the largest share of lost out-of-range coverage
-without any exchangeability assumption, at the cost of an asymptotic rather than finite-sample guarantee.
-Conformal risk control (CRC), evaluated with a clipped-overshoot-severity loss (bounding how far an
-undercovered interval misses, not only whether it misses), keeps held-out test risk at 0.055-0.066 against a
-target of 0.10 across all four targets. Conformalized quantile regression (CQR) and its Mondrian variant were
-also evaluated as a stronger, width-adaptive baseline: Mondrian-CQR's coverage (90.9-92.2%) matches or
-exceeds Mondrian CP's, at 2-6% larger mean interval width from its added quantile-regression variance.
-""")
+Adaptive conformal inference (ACI) {gibbs} drops the exchangeability requirement by updating the working
+miscoverage level online in response to observed errors:""".format(gibbs=ic.cite("gibbs2021")),
+                first_line_indent=False)
+    ic.add_equation(doc, "α_{t+1} = α_t + γ (α − errₜ),   errₜ = 1[Yₜ ∉ Cₜ(Xₜ)]", "6")
+    ic.add_body(doc, "at the cost of only an asymptotic, rather than finite-sample, guarantee.",
+                first_line_indent=False)
+    ic.add_full_width_figure(doc, f"{FIG_DIR}/aci_rolling_coverage.png",
+                              "Rolling 60-step coverage, static CP vs. ACI, under a live demand-surge stream. "
+                              "ACI recovers most of the coverage static CP loses once the stream leaves the "
+                              "training range (dashed vertical line).")
+
+    ic.add_body(doc, """
+Conformal risk control (CRC) {bates} generalizes the coverage guarantee to any bounded loss ℓ_λ, selecting the
+smallest λ whose empirical risk, corrected by a finite-sample upper confidence bound, stays at or below the
+target:""".format(bates=ic.cite("bates2021")), first_line_indent=False)
+    ic.add_equation(doc, "λ̂ = inf{ λ ∈ Λ : R̂(λ) + B̂(λ) / n ≤ α }", "7")
+    ic.add_body(doc, """
+evaluated here with a clipped-overshoot-severity loss (bounding how far an undercovered interval misses, not
+only whether it misses):""", first_line_indent=False)
+    ic.add_figure(doc, f"{FIG_DIR}/crc_test_risk.png",
+                  "CRC held-out test risk stays at or below the α = 0.10 target for all four targets, both "
+                  "the 0/1 and the clipped-overshoot-severity loss.", width=Inches(3.3))
+
+    ic.add_body(doc, """
+Likelihood-ratio weighted CP {tibs} re-weights each calibration point by the covariate density ratio between
+test and calibration distributions,""".format(tibs=ic.cite("tibshirani2019")), first_line_indent=False)
+    ic.add_equation(doc, "w(x) = dQ_X(x) / dP_X(x)", "8")
+    ic.add_body(doc, "and takes the weighted empirical quantile", first_line_indent=False)
+    ic.add_equation(doc, "q̂(x) = inf{ q : Σᵢ pᵢ(x) 1[sᵢ ≤ q] ≥ 1 − α },   pᵢ(x) = w(xᵢ) / (Σⱼw(xⱼ) + w(x))", "9")
+    ic.add_body(doc, """
+under a moderate, deliberately partial-overlap shift. It restores coverage inside the region of residual
+calibration/test overlap but correctly returns infinite-width intervals in the region entirely outside
+calibration support, rather than a falsely narrow one - an honest, not a free, correction.
+""", first_line_indent=False)
+    ic.add_figure(doc, f"{FIG_DIR}/weighted_cp_coverage.png",
+                  "Likelihood-ratio weighted CP coverage by region: restores the target in the overlap "
+                  "region; correctly widens to 100%-coverage (infinite width) in the out-of-support tail.",
+                  width=Inches(3.3))
+
+    ic.add_body(doc, """
+Conformalized quantile regression (CQR) {romano} and its Mondrian variant were also evaluated as a stronger,
+width-adaptive baseline: Mondrian-CQR's coverage (90.9-92.2%) matches or exceeds Mondrian CP's, at 2-6% larger
+mean interval width from its added quantile-regression variance.
+""".format(romano=ic.cite("romano2019")))
 
     ic.add_subsection_heading(doc, "F", "Surrogate Architecture Benchmark")
     ic.add_table(doc, "Surrogate R², hardest and easiest targets",
@@ -329,16 +392,24 @@ boosting-to-residual architectures fit more directly than bagged averaging. All 
 recalibrated with both standard and Mondrian CP; the conditional coverage gap in Section V-B replicates
 qualitatively across all five (not reported in full here for space).
 """)
+    ic.add_figure(doc, f"{FIG_DIR}/five_architecture_r2.png",
+                  "Surrogate R² across all four targets and all five architectures, identical train/test "
+                  "split.", width=Inches(3.3))
 
 
 def build_discussion(doc):
     ic.add_section_heading(doc, "Discussion")
-    ic.add_body(doc, """
+    ic.add_body(doc, f"""
 The mechanism behind Section V-B's gap is a heteroscedastic, queueing-theoretic one, not an artifact of the
-surrogate or the CP procedure: wait-time variance grows sharply, and non-linearly, as utilization ρ
-approaches 1 (Kingman's heavy-traffic approximation), so a single pooled nonconformity quantile - fit mostly
-to the many low-utilization scenarios in the calibration set - systematically undercovers the few
-high-utilization scenarios where variance is largest. Mondrian CP's per-category quantile is exactly the
+surrogate or the CP procedure. Kingman's heavy-traffic approximation {ic.cite('kingman1962')} for the mean
+queueing delay Wq of a G/G/1 queue at utilization ρ,""", first_line_indent=False)
+    ic.add_equation(doc, "Wq ≈ ( (Cₐ² + C_s²) / 2 ) · ( ρ / (1 − ρ) ) · E[S]", "10")
+    ic.add_body(doc, """
+(Cₐ², C_s² the squared coefficients of variation of the interarrival and service-time distributions, E[S] the
+mean service time) shows delay - and its variance - diverging as ρ → 1, non-linearly and without bound. A
+single pooled nonconformity quantile - fit mostly to the many low-utilization scenarios in the calibration
+set - systematically undercovers the few high-utilization scenarios where this variance is largest. Mondrian
+CP's per-category quantile is exactly the
 correction this mechanism calls for: a separate quantile fit only to that category's own (larger) variance.
 This also explains why the gap is asymmetric across targets - n_patients, whose variance is comparatively
 flat across the staffing/arrival grid, shows no significant conditional gap to correct, while wait-time

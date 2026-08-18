@@ -1,9 +1,9 @@
 """
 Speaker notes / talking points handout for the mid-sem PPT
-(mid_sem_presentation.pptx, 13 slides). Assigns each slide to one of the
+(mid_sem_presentation.pptx, 14 slides). Assigns each slide to one of the
 4 team members in a fixed rotation (Rithvik, Venu, Vipin, Harshith,
-repeating), so the split is as equal as 13 slides / 4 people allows
-(4/3/3/3). Talking points are written to match what is actually on each
+repeating), so the split is as equal as 14 slides / 4 people allows
+(4/4/3/3). Talking points are written to match what is actually on each
 slide - not a restatement of the bullets, but what a presenter would
 actually say while that slide is on screen.
 
@@ -44,8 +44,9 @@ SLIDES = [
         "We'll start with the problem we're solving and the specific research gap we're addressing.",
         "Then two short concept slides - one explaining why a marginal coverage number can be misleading, "
         "and one showing the Mondrian partition idea - before we get into our actual bridging approach.",
-        "After that: methodology, the real dataset we calibrated on, what's concretely done so far, a "
-        "snapshot of our literature review, and finally what's planned for end-sem.",
+        "After that: methodology, the real dataset we calibrated on, what's concretely done so far, our core "
+        "finding, the simulation in more detail, a snapshot of our literature review, and finally what's "
+        "left for end-sem.",
      ]),
     ("Problem Statement",
      "Why point predictions from a surrogate aren't enough",
@@ -79,17 +80,18 @@ SLIDES = [
         "test case, not just a repeat of an already-answered question.",
      ]),
     ("Why Marginal Coverage Isn't Enough (concept)",
-     "An illustrative example - not our own results yet",
+     "An illustrative example - not our own results",
      [
-        "This chart is illustrative - a generic example, not our project's own results, since those come in "
-        "Phase 2. It's here to make one specific concept concrete before we describe our approach.",
+        "This chart is illustrative - a generic example, not our project's own numbers. It's here to make "
+        "one specific concept concrete before we describe our approach; our own real version of this exact "
+        "idea comes later, on Slide 11.",
         "Imagine four categories of a system. If you average coverage across all four, you get about 90.5 "
-        "percent - it looks like your 90 percent target is comfortably met.",
+        "percent - it looks like your 90 percent target is comfortably met, and the red line marks exactly "
+        "where that 90 percent target sits relative to each bar.",
         "But look closer: Category D alone sits at 68 percent, well below target. A decision-maker who only "
         "sees the marginal, averaged number would never know this specific category is unreliable.",
         "This is exactly the gap Mondrian conformal prediction is designed to close, by calibrating "
-        "separately within each category instead of pooling everything into one marginal number - which is "
-        "precisely what our Phase 2 work tests.",
+        "separately within each category instead of pooling everything into one marginal number.",
      ]),
     ("Our Bridging Approach",
      "Applying Mondrian CP, testing both limitations directly",
@@ -98,26 +100,27 @@ SLIDES = [
         "and test directly whether Gopakumar et al.'s two limitations actually show up in this domain.",
         "On the left: addressing marginal coverage. Mondrian CP partitions calibration by category - "
         "staffing tercile crossed with arrival-rate tercile - instead of lumping every scenario into one "
-        "marginal guarantee. The goal is coverage that holds up close to nominal within each category, not "
-        "just on average.",
-        "On the right: addressing exchangeability. Phase 2 includes a stress test - an out-of-distribution "
-        "'surge day' scenario, outside the normal training range.",
-        "That stress test is where we'll actually get to see whether standard CP and Mondrian CP hold up, "
-        "or break down, once exchangeability is genuinely violated.",
+        "marginal guarantee. That's done: Slide 11 confirms the worst category's coverage recovers from "
+        "68.2 to 90.9 percent, statistically significant across 30 repeats.",
+        "On the right: addressing exchangeability, with an out-of-distribution 'surge day' stress test "
+        "outside the normal training range - this is the main piece of work still remaining, the core of "
+        "our final ~20 percent.",
+        "That stress test is where we'll get to see whether standard CP and Mondrian CP hold up, or break "
+        "down, once exchangeability is genuinely violated.",
      ]),
     ("The Mondrian Partition (concept)",
      "How the 9-category grid works",
      [
-        "This is the actual partition structure Mondrian CP will use in Phase 2 - not results yet, just the "
-        "structure itself.",
+        "This is the actual partition structure Mondrian CP uses - not a future plan, this is the real "
+        "structure behind the result on Slide 11.",
         "Every scenario in our simulation has two covariates: staffing capacity and arrival-rate multiplier. "
         "We split each into three terciles - low, medium, high - giving a 3-by-3 grid of 9 categories.",
         "Every simulated scenario falls into exactly one of these 9 cells, based on its own staffing level "
-        "and arrival-rate multiplier - nothing is shared across cells.",
-        "Instead of one pooled quantile across all 9 cells, Mondrian CP will calibrate a separate quantile "
-        "within each one - so a category like the highlighted one, comparatively low-stress with medium "
-        "staffing and low arrival rate, gets its own calibration, distinct from a high-stress corner like "
-        "low staffing with high arrival rate.",
+        "and arrival-rate multiplier - nothing is shared across cells. Mondrian CP calibrates a separate "
+        "quantile within each one, instead of one pooled quantile across all 9.",
+        "The highlighted category is comparatively low-stress - medium staffing, low arrival rate. The "
+        "opposite corner - low staffing, high arrival rate - is the real category, in our own data, where "
+        "Slide 11's 68.2-to-90.9-percent recovery actually happens.",
      ]),
     ("Methodology Overview",
      "The three-stage pipeline and how each stage is checked",
@@ -127,12 +130,11 @@ SLIDES = [
         "sweep; and uncertainty quantification, comparing a GP baseline against standard CP and Mondrian CP.",
         "We don't just chain these stages together and hope for the best - each one is checked against the "
         "previous one before we move on.",
-        "The DES's output is checked against real aggregated ED statistics - we'll show that number in a "
-        "moment. Surrogate accuracy is checked against DES outputs held out from training, using MAE, RMSE, "
-        "and R-squared.",
+        "The DES's output is checked against real aggregated ED statistics. Surrogate accuracy is checked "
+        "against DES outputs held out from training, using MAE, RMSE, and R-squared.",
         "And critically, all three UQ methods use the identical fixed test split and the identical target "
-        "coverage of 90 percent, so GP, standard CP, and Mondrian CP end up directly, fairly comparable - "
-        "not evaluated under different conditions.",
+        "coverage of 90 percent, so GP, standard CP, and Mondrian CP end up directly comparable. All three "
+        "stages are complete now - the Uncertainty Quantification stage's headline result is on Slide 11.",
      ]),
     ("Real-World Data Used",
      "The Kaggle dataset and what's real vs. literature-calibrated",
@@ -149,10 +151,10 @@ SLIDES = [
         "no discharge timestamp, and we checked across all 972 columns to be sure before falling back to "
         "literature values.",
      ]),
-    ("Work Completed So Far (~50%)",
+    ("Work Completed So Far (~80%)",
      "DES validation, surrogate accuracy, and the GP baseline",
      [
-        "This slide is our concrete progress checkpoint, roughly half the project.",
+        "This slide is our concrete progress checkpoint - we're at roughly 80 percent of the project now.",
         "First, DES validation: across 200 simulated days, our simulation's mean visits per day is 235.1, "
         "against a real value of 258.2 - a 91 percent match, which we consider a strong validation given how "
         "much of the calibration is real-data-driven.",
@@ -160,8 +162,22 @@ SLIDES = [
         "patient count, and even the hardest target - the 95th-percentile wait time - reaches 0.647.",
         "Third, the GP baseline: at a 90 percent target, it undercovers on three of four targets, landing "
         "around 87.7 to 88.8 percent. That's not surprising - GPs rely on distributional assumptions rather "
-        "than a finite-sample guarantee - and whether conformal prediction, and specifically Mondrian CP, "
-        "closes that gap is exactly what Phase 2 is for.",
+        "than a finite-sample guarantee. Standard CP and Mondrian CP both close most of that gap on average "
+        "- the next slide shows the real, more important result underneath that average.",
+     ]),
+    ("Core Finding: Mondrian CP Closes the Coverage Gap",
+     "The real result: 68.2% -> 90.9% in the worst category",
+     [
+        "This is our central finding, and it's done, not projected.",
+        "On average - marginal coverage - all three methods land close to the 90 percent target: GP baseline "
+        "around 89 percent, standard CP and Mondrian CP both just above 90. On its own, this table would "
+        "look like a minor, almost unremarkable improvement.",
+        "But checked within each of the 9 categories rather than pooled, standard CP's coverage in the "
+        "single worst category - understaffed with a high arrival rate - collapses to 68.2 percent, well "
+        "under target. That failure is completely invisible in the marginal average above.",
+        "Mondrian CP, calibrating separately per category, restores that same category to 90.9 percent "
+        "coverage, without sacrificing the marginal guarantee. And this isn't a one-off lucky split - it's "
+        "confirmed statistically significant across 30 independent repeats, paired t-test, p less than 0.001.",
      ]),
     ("The Discrete-Event Simulation",
      "What the DES actually models, and how it's validated",
@@ -172,9 +188,9 @@ SLIDES = [
         "arrival pattern plus the real ESI acuity mix - not a generic textbook queueing example.",
         "It uses a priority-resource pool, where higher-acuity patients - lower ESI numbers - get priority "
         "for capacity, matching how real triage actually works.",
-        "And as we mentioned, it's validated against real aggregated daily volume at a 91 percent match "
-        "across 200 simulated days - this simulation is the foundation everything downstream, the surrogate "
-        "and the uncertainty quantification, is built on.",
+        "And as we mentioned on Slide 10, it's validated against real aggregated daily volume at a 91 "
+        "percent match across 200 simulated days - this simulation is the foundation everything downstream, "
+        "the surrogate and the uncertainty quantification, is built on.",
      ]),
     ("Literature Review Snapshot",
      "20 core papers plus 10 real-dataset cross-check papers",
@@ -192,18 +208,18 @@ SLIDES = [
         "like ours.",
      ]),
     ("Future Scope - End-Sem",
-     "What Phase 2 will deliver",
+     "What's left in the remaining ~20%",
      [
-        "To close, here's what's planned for the second half of the project.",
-        "We'll implement standard conformal prediction on the surrogate's residuals, using the DES and "
-        "surrogate pipeline we've already built and validated in Phase 1.",
-        "Then Mondrian CP itself - partitioning calibration by staffing tercile and arrival-rate tercile, "
-        "the 9 categories we showed earlier - to measure whether per-category coverage holds up where the "
-        "pooled, marginal guarantee doesn't.",
-        "We'll stress-test exchangeability with an out-of-distribution demand-surge scenario, run a full "
-        "comparison of GP, standard CP, and Mondrian CP on coverage and interval width, and bring it all "
-        "together in the end-sem report: a quantified answer on whether Mondrian CP actually closes the "
-        "marginal-versus-conditional coverage gap in this domain. Thank you.",
+        "To close: standard CP, Mondrian CP, and our core coverage-gap finding on Slide 11 are done. What's "
+        "left is the remaining roughly 20 percent of the project.",
+        "First, we'll stress-test exchangeability with an out-of-distribution demand-surge scenario, to see "
+        "exactly where standard CP and Mondrian CP hold up, or break down, once that assumption is "
+        "genuinely violated.",
+        "Second, we'll finalize the full comparison - GP baseline versus standard CP versus Mondrian CP - "
+        "on both coverage and interval width, across every target, not just the headline one.",
+        "And finally, we'll bring it all together in the end-sem report and presentation: a fully "
+        "quantified, written-up answer on whether Mondrian CP closes the marginal-versus-conditional "
+        "coverage gap in this domain. Thank you.",
      ]),
 ]
 

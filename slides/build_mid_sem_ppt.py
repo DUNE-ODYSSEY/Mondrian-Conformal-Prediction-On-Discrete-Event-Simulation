@@ -48,7 +48,7 @@ ACCENT_DARK = RGBColor(0x1E, 0x40, 0xAF)
 TEXT_MUTED = RGBColor(0x6B, 0x72, 0x80)
 LIGHT_ACCENT_TEXT = RGBColor(0x93, 0xC5, 0xFD)
 
-TOTAL_SLIDES = 10
+TOTAL_SLIDES = 13
 
 MARGIN = Inches(0.5)
 CONTENT_W = Inches(9.0)  # matches the default template's placeholder width (10in slide)
@@ -204,7 +204,22 @@ def build():
             r.font.size = Pt(16)
             r.font.color.rgb = LIGHT_ACCENT_TEXT
 
-    # ---------------- Slide 2: Problem Statement ----------------
+    # ---------------- Slide 2: Contents ----------------
+    add_bulleted_slide(prs, "Contents", [
+        "1. Problem Statement",
+        "2. Research Gap",
+        "3. Why Marginal Coverage Isn't Enough (concept)",
+        "4. Our Bridging Approach",
+        "5. The Mondrian Partition (concept)",
+        "6. Methodology Overview",
+        "7. Real-World Data Used",
+        "8. Work Completed So Far (~50%)",
+        "9. The Discrete-Event Simulation",
+        "10. Literature Review Snapshot",
+        "11. Future Scope - End-Sem",
+    ], size=18, index=2)
+
+    # ---------------- Slide 3: Problem Statement ----------------
     add_bulleted_slide(prs, "Problem Statement", [
         "Surrogate models are fast, learned approximations of expensive simulations. They're used more and "
         "more to guide decisions in stochastic service systems - ER staffing, queueing networks, etc.",
@@ -217,9 +232,9 @@ def build():
          "calibrate. But it's only been validated for surrogate models in a narrow set of domains so far.", 1),
         "That's the question this project is built around: does CP still hold up when the surrogate is "
         "trained on a discrete-event / queueing simulation instead of the domains it's been tested on?",
-    ], size=17, index=2)
+    ], size=17, index=3)
 
-    # ---------------- Slide 3: Research Gap ----------------
+    # ---------------- Slide 4: Research Gap ----------------
     add_bulleted_slide(prs, "Research Gap", [
         "Gopakumar et al. (2026) validate conformal prediction for surrogate-model UQ, but only in physics "
         "domains - PDEs, magnetohydrodynamics, weather, fusion.",
@@ -231,20 +246,83 @@ def build():
         "Neither of those has been checked outside physics simulation. Discrete-event / queueing systems are "
         "a genuinely different kind of domain - discrete stochastic arrivals and departures, resource "
         "contention, priority queues - not a continuous PDE field. That's the gap this project sits in.",
-    ], size=17, index=3)
+    ], size=17, index=4)
 
-    # ---------------- Slide 4: Bridging Approach ----------------
+    # ---------------- Slide 5: Why Marginal Coverage Isn't Enough (concept diagram) ----------------
+    s = prs.slides.add_slide(prs.slide_layouts[5])
+    set_title(s, "Why Marginal Coverage Isn't Enough", size=30)
+    add_accent_bar(s)
+    add_footer(s, 5)
+    chart_x = MARGIN
+    chart_y = Inches(1.9)
+    chart_w = Inches(7.5)
+    chart_h = Inches(3.2)
+    baseline_y = chart_y + chart_h
+
+    target_y = chart_y + Inches(0.55)
+    target_line = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, chart_x, target_y, chart_x + chart_w, target_y)
+    target_line.line.color.rgb = RGBColor(0xC0, 0x39, 0x2B)
+    target_line.line.width = Pt(1.5)
+    tgt_label = s.shapes.add_textbox(chart_x + chart_w + Inches(0.05), target_y - Inches(0.15), Inches(1.3), Inches(0.3))
+    tgt_label.text_frame.text = "90% target"
+    tgt_label.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
+    tgt_label.text_frame.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xC0, 0x39, 0x2B)
+
+    bars = [("Category A", 0.93, ACCENT), ("Category B", 0.91, ACCENT),
+            ("Category C", 0.90, ACCENT), ("Category D", 0.68, RGBColor(0xC0, 0x39, 0x2B))]
+    bar_w = Inches(1.4)
+    gap_w = Inches(0.45)
+    max_bar_h = chart_h - Inches(0.6)
+    for i, (label, frac, color) in enumerate(bars):
+        bh = int(max_bar_h * frac)
+        bx = chart_x + i * (bar_w + gap_w)
+        by = baseline_y - bh
+        box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, by, bar_w, bh)
+        box.fill.solid()
+        box.fill.fore_color.rgb = color
+        box.line.fill.background()
+        box.shadow.inherit = False
+        lbl = s.shapes.add_textbox(bx, baseline_y + Inches(0.05), bar_w, Inches(0.35))
+        lbl.text_frame.text = label
+        lbl.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        lbl.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
+        pct = s.shapes.add_textbox(bx, by - Inches(0.32), bar_w, Inches(0.3))
+        pct.text_frame.text = f"{frac*100:.0f}%"
+        pct.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        pct.text_frame.paragraphs[0].runs[0].font.size = Pt(12)
+        pct.text_frame.paragraphs[0].runs[0].font.bold = True
+
+    note = s.shapes.add_textbox(MARGIN, baseline_y + Inches(0.55), CONTENT_W, Inches(1.6))
+    note.text_frame.word_wrap = True
+    bullets = [
+        "Illustrative concept, not this project's own results (those come in Phase 2) - a generic 4-category "
+        "example of why a single marginal (pooled) coverage number can mislead.",
+        "Marginal average across all 4 categories here = 90.5% - looks like the target is met.",
+        "But Category D alone sits at 68% - a decision-maker relying only on the marginal number would never "
+        "see this specific failure.",
+        "This is exactly the gap Mondrian CP (per-category calibration) is designed to close - Phase 2's job.",
+    ]
+    for i, b in enumerate(bullets):
+        p = note.text_frame.paragraphs[0] if i == 0 else note.text_frame.add_paragraph()
+        p.text = b
+        for r in p.runs:
+            r.font.size = Pt(13)
+            if i == 0:
+                r.font.italic = True
+                r.font.color.rgb = TEXT_MUTED
+
+    # ---------------- Slide 6: Bridging Approach ----------------
     s = prs.slides.add_slide(prs.slide_layouts[3])  # Two Content
     set_title(s, "Our Bridging Approach")
     add_accent_bar(s)
-    add_footer(s, 4)
+    add_footer(s, 6)
 
     note = s.shapes.add_textbox(MARGIN, Inches(1.35), CONTENT_W, Inches(0.9))
     note.text_frame.word_wrap = True
     note.text_frame.text = ("Core idea: apply CP, specifically Mondrian CP, to an ER queueing surrogate, and "
                               "test directly whether Gopakumar et al.'s two limitations hold here.")
     for r in note.text_frame.paragraphs[0].runs:
-        r.font.size = Pt(15)
+        r.font.size = Pt(18)
         r.font.italic = True
         r.font.color.rgb = GREY
 
@@ -271,10 +349,75 @@ def build():
     for ph in (left, right):
         for p in ph.text_frame.paragraphs:
             for r in p.runs:
-                r.font.size = Pt(15) if p.level == 0 else Pt(13)
+                r.font.size = Pt(18) if p.level == 0 else Pt(16)
 
-    # ---------------- Slide 5: Methodology Overview ----------------
-    s = add_title_only_slide(prs, "Methodology Overview", index=5)
+    # ---------------- Slide 7: The Mondrian Partition (concept diagram) ----------------
+    s = add_title_only_slide(prs, "The Mondrian Partition", index=7)
+    grid_x = Inches(3.425)
+    grid_y = Inches(1.85)
+    cell = Inches(1.05)
+    row_labels = ["High", "Med", "Low"]
+    col_labels = ["Low", "Med", "High"]
+    for r_i, r_label in enumerate(row_labels):
+        for c_i, c_label in enumerate(col_labels):
+            cx = grid_x + c_i * cell
+            cy = grid_y + r_i * cell
+            n = r_i * 3 + c_i + 1
+            box = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, cx, cy, cell, cell)
+            box.fill.solid()
+            box.fill.fore_color.rgb = RGBColor(0xDB, 0xEA, 0xFE) if n != 4 else RGBColor(0xFD, 0xEE, 0xE6)
+            box.line.color.rgb = ACCENT_DARK
+            box.line.width = Pt(1)
+            box.shadow.inherit = False
+            tf = box.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
+            run = p.add_run()
+            run.text = f"Category {n}"
+            run.font.size = Pt(11)
+            run.font.bold = True
+            run.font.color.rgb = ACCENT_DARK
+            p2 = tf.add_paragraph()
+            p2.alignment = PP_ALIGN.CENTER
+            run2 = p2.add_run()
+            run2.text = f"staff={r_label}\narrival={c_label}"
+            run2.font.size = Pt(9)
+            run2.font.color.rgb = GREY
+    # Row/column axis labels
+    row_hdr = s.shapes.add_textbox(grid_x - Inches(1.6), grid_y + cell * 1.5 - Inches(0.5), Inches(1.5), Inches(1.0))
+    row_hdr.text_frame.word_wrap = True
+    row_hdr.text_frame.text = "Staffing\ntercile"
+    for p in row_hdr.text_frame.paragraphs:
+        p.alignment = PP_ALIGN.CENTER
+        for r in p.runs:
+            r.font.size = Pt(13)
+            r.font.bold = True
+    col_hdr = s.shapes.add_textbox(grid_x, grid_y - Inches(0.55), cell * 3, Inches(0.4))
+    col_hdr.text_frame.text = "Arrival-rate tercile"
+    col_hdr.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+    col_hdr.text_frame.paragraphs[0].runs[0].font.size = Pt(13)
+    col_hdr.text_frame.paragraphs[0].runs[0].font.bold = True
+
+    note = s.shapes.add_textbox(MARGIN, grid_y + cell * 3 + Inches(0.35), CONTENT_W, Inches(1.6))
+    note.text_frame.word_wrap = True
+    bullets = [
+        "9 categories total - every scenario falls into exactly one, based on its own staffing level and "
+        "arrival-rate multiplier.",
+        "Mondrian CP calibrates a separate quantile within each category, instead of one pooled quantile "
+        "across all 9.",
+        "Category 4 (staff=Med, arrival=Low - highlighted) is a comparatively low-stress cell; the opposite "
+        "corner (staff=Low, arrival=High) is the one Slide 5's concept diagram flags as the highest-risk "
+        "category.",
+    ]
+    for i, b in enumerate(bullets):
+        p = note.text_frame.paragraphs[0] if i == 0 else note.text_frame.add_paragraph()
+        p.text = b
+        for r in p.runs:
+            r.font.size = Pt(14)
+
+    # ---------------- Slide 8: Methodology Overview ----------------
+    s = add_title_only_slide(prs, "Methodology Overview", index=8)
     y = Inches(2.3)
     h = Inches(1.3)
     bw = Inches(2.6)
@@ -334,7 +477,7 @@ def build():
         for r in p.runs:
             r.font.size = Pt(15)
 
-    # ---------------- Slide 6: Real-world data used ----------------
+    # ---------------- Slide 9: Real-world data used ----------------
     add_bulleted_slide(prs, "Real-World Data Used", [
         "Hospital Triage and Patient History Data, Kaggle (maalona) - Yale New Haven Health System, "
         "retrospective, March 2014 to July 2017.",
@@ -345,13 +488,13 @@ def build():
          "department-level daily visit rate.", 1),
         ("From literature: service/treatment time per ESI level (log-normal). The dataset has no discharge "
          "timestamp - checked across all 972 columns to be sure before falling back to literature values.", 1),
-    ], size=16, index=6)
+    ], size=16, index=9)
 
-    # ---------------- Slide 7: Work Completed (~50%) ----------------
+    # ---------------- Slide 10: Work Completed (~50%) ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(s, "Work Completed So Far (~50%)", size=32)
     add_accent_bar(s)
-    add_footer(s, 7)
+    add_footer(s, 10)
     make_table(s, MARGIN, Inches(1.4), Inches(4.3), Inches(1.1),
                ["DES validation (200 sim. days)", ""],
                [
@@ -389,11 +532,11 @@ def build():
     note.text_frame.paragraphs[0].runs[0].font.size = Pt(14)
     note.text_frame.paragraphs[0].runs[0].font.italic = True
 
-    # ---------------- Slide 7b: DES simulation, calibrated on real data ----------------
+    # ---------------- Slide 11: DES simulation, calibrated on real data ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(s, "The Discrete-Event Simulation", size=32)
     add_accent_bar(s)
-    add_footer(s, 8)
+    add_footer(s, 11)
     pic = s.shapes.add_picture("reports/assignments/figures/real_arrivals_by_hour.png",
                                  MARGIN, Inches(1.3), height=Inches(3.6))
     note = s.shapes.add_textbox(MARGIN, Inches(5.05), CONTENT_W, Inches(1.9))
@@ -412,7 +555,7 @@ def build():
         for r in p.runs:
             r.font.size = Pt(14)
 
-    # ---------------- Slide 8: Literature review snapshot (focused core set) ----------------
+    # ---------------- Slide 12: Literature review snapshot (focused core set) ----------------
     s = add_bulleted_slide(prs, "Literature Review Snapshot", [
         "Focused core review: 20 papers across 5 categories, 3 reviewed in depth (including Gopakumar et al. "
         "2026), plus 10 real-dataset papers below.",
@@ -425,9 +568,9 @@ def build():
         "datasets, used to cross-check this project's own DES calibration numerically, not just cite them.",
         "Includes a critical assessment: where the reviewed literature's own assumptions do or don't transfer "
         "to a discrete-event queueing domain.",
-    ], size=15, index=9)
+    ], size=15, index=12)
 
-    # ---------------- Slide 9: Future scope ----------------
+    # ---------------- Slide 13: Future scope ----------------
     add_bulleted_slide(prs, "Future Scope - End-Sem", [
         "Standard conformal prediction on surrogate residuals, using the DES/surrogate pipeline already "
         "built and validated in Phase 1.",
@@ -438,7 +581,7 @@ def build():
         "Full comparison - GP baseline vs. standard CP vs. Mondrian CP on coverage and interval width.",
         "End-sem PPT and report: a quantified answer on whether Mondrian CP closes the marginal-vs-"
         "conditional coverage gap in this domain.",
-    ], size=18, index=10)
+    ], size=18, index=13)
 
     prs.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

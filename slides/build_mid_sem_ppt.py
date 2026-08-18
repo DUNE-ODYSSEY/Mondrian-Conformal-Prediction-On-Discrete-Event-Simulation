@@ -2,16 +2,22 @@
 Builds the mid-sem review PPT from the real results in results/tables/.
 Re-run any time those tables change: .venv\\Scripts\\python.exe slides\\build_mid_sem_ppt.py
 
-Uses PowerPoint's default theme and native placeholders/bullets rather than
-custom-drawn boxes for every slide - a hand-built student deck, not a
-templated pitch deck.
+Styled to match this project's other decks (zeroth_review.pptx,
+full_project_results.pptx): a dark title slide, a consistent accent-blue
+color palette on titles/tables/accent bars, and a slide-number footer -
+not PowerPoint's untouched default theme.
 
 This deck deliberately reports Phase 1 progress only (~50%: DES, surrogate,
-GP baseline, literature review - see literature/candidate_papers.md for the
-finished 30-paper review), even though Phase 2 (Mondrian CP) and
+GP baseline, literature review), even though Phase 2 (Mondrian CP) and
 substantial further work are already done in this project - a mid-sem
 review presents where the project stood at that checkpoint, not the final
-state. Phase 2 stays a forward-looking "Future Scope" slide on purpose.
+state. Phase 2 stays a forward-looking "Future Scope" slide (plain list,
+no week numbers) on purpose.
+
+The literature review slide shows a trimmed, focused core set (20 papers,
+down from the book's full 30) plus the 10 real-dataset cross-check papers
+kept in full - see literature/candidate_papers.md for the complete,
+untrimmed review this slide is a summary of.
 """
 
 from pptx import Presentation
@@ -33,6 +39,16 @@ PROJECT_TITLE = "Mondrian Conformal Prediction for Uncertainty Quantification\ni
 
 GREY = RGBColor(0x40, 0x40, 0x40)
 
+# Color palette (matches the styling used in zeroth_review.pptx /
+# full_project_results.pptx, so this deck doesn't look like a different,
+# plainer product than the rest of the project's slide decks).
+DARK = RGBColor(0x1B, 0x22, 0x38)
+ACCENT = RGBColor(0x3B, 0x82, 0xF6)
+ACCENT_DARK = RGBColor(0x1E, 0x40, 0xAF)
+TEXT_MUTED = RGBColor(0x6B, 0x72, 0x80)
+LIGHT_ACCENT_TEXT = RGBColor(0x93, 0xC5, 0xFD)
+
+TOTAL_SLIDES = 10
 
 MARGIN = Inches(0.5)
 CONTENT_W = Inches(9.0)  # matches the default template's placeholder width (10in slide)
@@ -44,10 +60,31 @@ def new_deck():
 
 def set_title(slide, text, size=None):
     slide.shapes.title.text = text
-    if size:
-        for p in slide.shapes.title.text_frame.paragraphs:
-            for r in p.runs:
+    for p in slide.shapes.title.text_frame.paragraphs:
+        for r in p.runs:
+            r.font.bold = True
+            r.font.color.rgb = ACCENT_DARK
+            if size:
                 r.font.size = Pt(size)
+
+
+def add_accent_bar(slide, y=Inches(1.28)):
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, MARGIN, y, Inches(1.4), Pt(3.5))
+    bar.fill.solid()
+    bar.fill.fore_color.rgb = ACCENT
+    bar.line.fill.background()
+    bar.shadow.inherit = False
+    return bar
+
+
+def add_footer(slide, index):
+    box = slide.shapes.add_textbox(Inches(8.7), Inches(7.05), Inches(1.1), Inches(0.35))
+    tf = box.text_frame
+    tf.text = f"{COURSE_CODE}  ·  {index}/{TOTAL_SLIDES}"
+    for r in tf.paragraphs[0].runs:
+        r.font.size = Pt(9)
+        r.font.color.rgb = TEXT_MUTED
+    tf.paragraphs[0].alignment = PP_ALIGN.RIGHT
 
 
 def body_placeholder(slide):
@@ -68,15 +105,21 @@ def fill_bullets(placeholder, items):
         p.level = level
 
 
-def add_title_only_slide(prs, title_text):
+def add_title_only_slide(prs, title_text, index=None):
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(slide, title_text)
+    add_accent_bar(slide)
+    if index:
+        add_footer(slide, index)
     return slide
 
 
-def add_bulleted_slide(prs, title_text, items, size=None):
+def add_bulleted_slide(prs, title_text, items, size=None, index=None):
     slide = prs.slides.add_slide(prs.slide_layouts[1])
     set_title(slide, title_text)
+    add_accent_bar(slide)
+    if index:
+        add_footer(slide, index)
     ph = body_placeholder(slide)
     fill_bullets(ph, items)
     if size:
@@ -89,10 +132,13 @@ def add_bulleted_slide(prs, title_text, items, size=None):
 def style_table(table, header_bold=True, font_size=13):
     for j in range(len(table.columns)):
         cell = table.cell(0, j)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = ACCENT_DARK
         for p in cell.text_frame.paragraphs:
             for r in p.runs:
                 r.font.bold = header_bold
                 r.font.size = Pt(font_size)
+                r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
     for i in range(1, len(table.rows)):
         for j in range(len(table.columns)):
             cell = table.cell(i, j)
@@ -124,6 +170,9 @@ def build():
 
     # ---------------- Slide 1: Title ----------------
     s = prs.slides.add_slide(prs.slide_layouts[0])
+    s.background.fill.solid()
+    s.background.fill.fore_color.rgb = DARK
+
     title_ph = s.shapes.title
     title_ph.text = PROJECT_TITLE
     title_ph.left, title_ph.top = MARGIN, Inches(0.4)
@@ -131,6 +180,14 @@ def build():
     for p in title_ph.text_frame.paragraphs:
         for r in p.runs:
             r.font.size = Pt(26)
+            r.font.bold = True
+            r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+
+    bar = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, MARGIN, Inches(3.05), Inches(1.4), Pt(3.5))
+    bar.fill.solid()
+    bar.fill.fore_color.rgb = ACCENT
+    bar.line.fill.background()
+    bar.shadow.inherit = False
 
     subtitle = s.placeholders[1]
     subtitle.left, subtitle.top = MARGIN, Inches(3.25)
@@ -145,6 +202,7 @@ def build():
     for p in subtitle.text_frame.paragraphs:
         for r in p.runs:
             r.font.size = Pt(16)
+            r.font.color.rgb = LIGHT_ACCENT_TEXT
 
     # ---------------- Slide 2: Problem Statement ----------------
     add_bulleted_slide(prs, "Problem Statement", [
@@ -159,7 +217,7 @@ def build():
          "calibrate. But it's only been validated for surrogate models in a narrow set of domains so far.", 1),
         "That's the question this project is built around: does CP still hold up when the surrogate is "
         "trained on a discrete-event / queueing simulation instead of the domains it's been tested on?",
-    ], size=17)
+    ], size=17, index=2)
 
     # ---------------- Slide 3: Research Gap ----------------
     add_bulleted_slide(prs, "Research Gap", [
@@ -173,11 +231,13 @@ def build():
         "Neither of those has been checked outside physics simulation. Discrete-event / queueing systems are "
         "a genuinely different kind of domain - discrete stochastic arrivals and departures, resource "
         "contention, priority queues - not a continuous PDE field. That's the gap this project sits in.",
-    ], size=17)
+    ], size=17, index=3)
 
     # ---------------- Slide 4: Bridging Approach ----------------
     s = prs.slides.add_slide(prs.slide_layouts[3])  # Two Content
     set_title(s, "Our Bridging Approach")
+    add_accent_bar(s)
+    add_footer(s, 4)
 
     note = s.shapes.add_textbox(MARGIN, Inches(1.35), CONTENT_W, Inches(0.9))
     note.text_frame.word_wrap = True
@@ -197,7 +257,7 @@ def build():
         ph.height = Inches(4.6)
     fill_bullets(left, [
         ("Addresses marginal coverage", 0),
-        ("Mondrian CP partitions calibration by category - staffing level, shift, arrival-rate regime - "
+        ("Mondrian CP partitions calibration by category - staffing tercile x arrival-rate tercile - "
          "instead of lumping everything into one marginal guarantee.", 1),
         ("Goal: coverage that holds up close to nominal within each category, not just on average.", 1),
     ])
@@ -214,7 +274,7 @@ def build():
                 r.font.size = Pt(15) if p.level == 0 else Pt(13)
 
     # ---------------- Slide 5: Methodology Overview ----------------
-    s = add_title_only_slide(prs, "Methodology Overview")
+    s = add_title_only_slide(prs, "Methodology Overview", index=5)
     y = Inches(2.3)
     h = Inches(1.3)
     bw = Inches(2.6)
@@ -285,11 +345,13 @@ def build():
          "department-level daily visit rate.", 1),
         ("From literature: service/treatment time per ESI level (log-normal). The dataset has no discharge "
          "timestamp - checked across all 972 columns to be sure before falling back to literature values.", 1),
-    ], size=16)
+    ], size=16, index=6)
 
     # ---------------- Slide 7: Work Completed (~50%) ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(s, "Work Completed So Far (~50%)", size=32)
+    add_accent_bar(s)
+    add_footer(s, 7)
     make_table(s, MARGIN, Inches(1.4), Inches(4.3), Inches(1.1),
                ["DES validation (200 sim. days)", ""],
                [
@@ -330,6 +392,8 @@ def build():
     # ---------------- Slide 7b: DES simulation, calibrated on real data ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(s, "The Discrete-Event Simulation", size=32)
+    add_accent_bar(s)
+    add_footer(s, 8)
     pic = s.shapes.add_picture("reports/assignments/figures/real_arrivals_by_hour.png",
                                  MARGIN, Inches(1.3), height=Inches(3.6))
     note = s.shapes.add_textbox(MARGIN, Inches(5.05), CONTENT_W, Inches(1.9))
@@ -348,37 +412,33 @@ def build():
         for r in p.runs:
             r.font.size = Pt(14)
 
-    # ---------------- Slide 8: Literature review snapshot (completed) ----------------
+    # ---------------- Slide 8: Literature review snapshot (focused core set) ----------------
     s = add_bulleted_slide(prs, "Literature Review Snapshot", [
-        "Completed: 30 papers across 5 categories, 3 reviewed in depth (including Gopakumar et al. 2026).",
-        ("Conformal prediction foundations: 8 papers", 1),
+        "Focused core review: 20 papers across 5 categories, 3 reviewed in depth (including Gopakumar et al. "
+        "2026), plus 10 real-dataset papers below.",
+        ("Conformal prediction foundations: 5 papers", 1),
         ("Mondrian / conditional-coverage CP: 4 papers", 1),
-        ("Surrogate modeling & uncertainty quantification: 6 papers", 1),
-        ("Queueing theory & ED operations research: 5 papers", 1),
-        ("Discrete-event simulation & ED-specific ML: 7 papers", 1),
-        "Plus 10 additional papers cross-checking the DES's real vs. literature-calibrated service-time "
-        "parameters against published ED length-of-stay datasets, added after the initial 30-paper review.",
-        "Includes a critical assessment section (not just a summary): where the reviewed literature's own "
-        "assumptions do or don't transfer to a discrete-event queueing domain.",
-    ], size=15)
+        ("Surrogate modeling & uncertainty quantification: 4 papers", 1),
+        ("Queueing theory & ED operations research: 3 papers", 1),
+        ("Discrete-event simulation & ED-specific ML: 4 papers", 1),
+        "Plus 10 papers each reporting real ED service-time / length-of-stay data from their own hospital "
+        "datasets, used to cross-check this project's own DES calibration numerically, not just cite them.",
+        "Includes a critical assessment: where the reviewed literature's own assumptions do or don't transfer "
+        "to a discrete-event queueing domain.",
+    ], size=15, index=9)
 
     # ---------------- Slide 9: Future scope ----------------
-    s = add_title_only_slide(prs, "Future Scope - End-Sem")
-    make_table(s, MARGIN, Inches(1.5), CONTENT_W, Inches(4.7),
-               ["Weeks", "Plan"],
-               [
-                   ["9-10", "Standard conformal prediction on surrogate residuals; try a few different "
-                             "nonconformity measures."],
-                   ["11-12", "Mondrian CP - partition by staffing level / shift / arrival-rate category; "
-                              "measure per-category coverage."],
-                   ["13", "Stress-test exchangeability with an out-of-distribution \"surge day\" scenario; "
-                           "see where standard CP and Mondrian CP hold or break."],
-                   ["14-15", "Full comparison - GP vs. standard CP vs. Mondrian CP on coverage, interval "
-                              "width, and computation time."],
-                   ["16", "End-sem PPT and report: a quantified answer on whether Mondrian CP closes the "
-                           "marginal-vs-conditional coverage gap in this domain."],
-               ],
-               col_widths=[Inches(1.1), Inches(7.9)], font_size=13)
+    add_bulleted_slide(prs, "Future Scope - End-Sem", [
+        "Standard conformal prediction on surrogate residuals, using the DES/surrogate pipeline already "
+        "built and validated in Phase 1.",
+        "Mondrian CP - partition calibration by staffing tercile x arrival-rate tercile (9 categories); "
+        "measure whether per-category coverage holds where the pooled/marginal guarantee doesn't.",
+        "Stress-test exchangeability with an out-of-distribution demand-surge scenario; see where standard "
+        "CP and Mondrian CP hold up or break down.",
+        "Full comparison - GP baseline vs. standard CP vs. Mondrian CP on coverage and interval width.",
+        "End-sem PPT and report: a quantified answer on whether Mondrian CP closes the marginal-vs-"
+        "conditional coverage gap in this domain.",
+    ], size=18, index=10)
 
     prs.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

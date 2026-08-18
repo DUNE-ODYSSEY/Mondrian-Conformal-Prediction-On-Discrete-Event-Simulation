@@ -1,11 +1,14 @@
 """
 Speaker notes / talking points handout for the mid-sem PPT
-(mid_sem_presentation.pptx, 14 slides). Assigns each slide to one of the
-4 team members in a fixed rotation (Rithvik, Venu, Vipin, Harshith,
-repeating), so the split is as equal as 14 slides / 4 people allows
-(4/4/3/3). Talking points are written to match what is actually on each
-slide - not a restatement of the bullets, but what a presenter would
-actually say while that slide is on screen.
+(mid_sem_presentation.pptx, 14 slides). Each team member presents a
+CONTIGUOUS block of slides, not an alternating round-robin - Rithvik
+does the intro, then hands off to Venu for the approach/methodology
+section, then Vipin for data and results, then Harshith to close out
+(4/4/3/3 slides, matching the natural section breaks in the deck).
+Talking points are written to match what is actually on each slide - not
+a restatement of the bullets, but what a presenter would actually say
+while that slide is on screen - plus a one-line handoff at the end of
+each speaker's last slide.
 
 Re-run: .venv\\Scripts\\python.exe slides\\build_speaker_notes.py
 """
@@ -19,7 +22,15 @@ from docx.oxml import OxmlElement
 OUT_DOCX = "slides/mid_sem_speaker_notes.docx"
 OUT_PDF = "slides/mid_sem_speaker_notes.pdf"
 
-SPEAKERS = ["Rithvik", "Venu", "Vipin", "Harshith"]
+# Contiguous blocks, not round-robin: each name repeated once per slide in
+# their block, in slide order.
+SPEAKER_BLOCKS = [
+    ("Rithvik", 4),    # Slides 1-4: title, contents, problem, gap
+    ("Venu", 4),       # Slides 5-8: concept diagrams, approach, methodology
+    ("Vipin", 3),      # Slides 9-11: data, work completed, core finding
+    ("Harshith", 3),   # Slides 12-14: DES detail, lit review, future scope
+]
+SPEAKERS = [name for name, count in SPEAKER_BLOCKS for _ in range(count)]
 
 NAVY = RGBColor(0x1E, 0x40, 0xAF)
 GREY = RGBColor(0x40, 0x40, 0x40)
@@ -32,10 +43,11 @@ SLIDES = [
         "Welcome everyone - we're presenting our mid-semester review for course 23AID201.",
         "Our project applies conformal prediction, specifically Mondrian conformal prediction, to a "
         "surrogate model trained on an emergency-department discrete-event simulation.",
-        "Quick intros: I'm Rithvik, and with me are Venu, Vipin, and Harshith - we'll each walk through "
-        "different sections.",
-        "Today's review covers roughly the first half of the project - what's built, validated, and "
-        "checked so far, and what's planned for the second half.",
+        "Quick intros: I'm Rithvik, and with me are Venu, Vipin, and Harshith - I'll take the introduction, "
+        "then each of them will take over in turn for one section apiece, so you'll hear from all four of "
+        "us in sequence.",
+        "We're at roughly 80 percent of the project now - what's built, validated, and checked so far, and "
+        "what's left for end-sem.",
      ]),
     ("Contents",
      "Roadmap for this presentation",
@@ -78,6 +90,8 @@ SLIDES = [
         "contention, priority queues - not a continuous PDE field.",
         "That's exactly the gap our project sits in, and it's the reason this domain is a genuinely new "
         "test case, not just a repeat of an already-answered question.",
+        "I'll hand it over to Venu now, who'll walk through our actual approach, starting with a quick "
+        "concept slide.",
      ]),
     ("Why Marginal Coverage Isn't Enough (concept)",
      "An illustrative example - not our own results",
@@ -135,6 +149,7 @@ SLIDES = [
         "And critically, all three UQ methods use the identical fixed test split and the identical target "
         "coverage of 90 percent, so GP, standard CP, and Mondrian CP end up directly comparable. All three "
         "stages are complete now - the Uncertainty Quantification stage's headline result is on Slide 11.",
+        "Over to Vipin now, who'll walk through the real dataset and our actual results.",
      ]),
     ("Real-World Data Used",
      "The Kaggle dataset and what's real vs. literature-calibrated",
@@ -178,6 +193,8 @@ SLIDES = [
         "Mondrian CP, calibrating separately per category, restores that same category to 90.9 percent "
         "coverage, without sacrificing the marginal guarantee. And this isn't a one-off lucky split - it's "
         "confirmed statistically significant across 30 independent repeats, paired t-test, p less than 0.001.",
+        "I'll pass it to Harshith now to close out with the simulation in more detail, our literature "
+        "review, and what's left to do.",
      ]),
     ("The Discrete-Event Simulation",
      "What the DES actually models, and how it's validated",
@@ -264,14 +281,15 @@ def build():
 
     note = doc.add_paragraph()
     note.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = note.add_run("Speaking order: Rithvik → Venu → Vipin → Harshith, repeating "
-                      "every 4 slides (13 slides total: 4/3/3/3 split)")
+    r = note.add_run("Speaking order: each person presents a contiguous block, not alternating - "
+                      "Rithvik (Slides 1-4, intro) → Venu (5-8, approach & methodology) → "
+                      "Vipin (9-11, data & core finding) → Harshith (12-14, detail & wrap-up)")
     r.font.size = Pt(10.5)
     r.font.color.rgb = SPEAKER_COLOR
     doc.add_paragraph()
 
     for i, (slide_title, slide_sub, points) in enumerate(SLIDES, start=1):
-        speaker = SPEAKERS[(i - 1) % 4]
+        speaker = SPEAKERS[i - 1]
 
         h = doc.add_paragraph()
         h.paragraph_format.space_before = Pt(14)

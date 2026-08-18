@@ -304,8 +304,6 @@ def build():
     note = s.shapes.add_textbox(MARGIN, baseline_y + Inches(0.35), CONTENT_W, Inches(2.3))
     note.text_frame.word_wrap = True
     bullets = [
-        "Illustrative concept, not this project's own results (those come in Phase 2) - a generic 4-category "
-        "example of why a single marginal (pooled) coverage number can mislead.",
         "Marginal average across all 4 categories here = 90.5% - looks like the target is comfortably met.",
         "But Category D alone sits at 68%, well under target - a decision-maker relying only on the marginal "
         "number would never see this specific failure.",
@@ -317,9 +315,6 @@ def build():
         p.text = b
         for r in p.runs:
             r.font.size = Pt(15)
-            if i == 0:
-                r.font.italic = True
-                r.font.color.rgb = TEXT_MUTED
 
     # ---------------- Slide 6: Bridging Approach ----------------
     s = prs.slides.add_slide(prs.slide_layouts[3])  # Two Content

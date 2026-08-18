@@ -13,8 +13,9 @@ Metamodel Benchmarking; When Exchangeability Fails; Cross-Site
 Generalization; Translational Health Operations; Synthesis and Uncharted
 Horizons), References, and the code appendix are built in that script.
 
-Formatting: Times New Roman 11pt body, 1.15 line spacing, 7in x 10in page
-with a 0.85in binding gutter - a standard bound technical-textbook layout.
+Formatting: Times New Roman 11pt body, 1.15 line spacing, B5 (17.6 x
+25.0cm) page, 2.7cm margins, 0.15cm gutter - sized for digital/Kindle
+distribution rather than a physically bound print run.
 Every number/citation used here traces to results/tables/, PROJECT_LOG.md, or
 literature/candidate_papers.md - nothing invented, consistent with this
 project's standing practice.
@@ -55,10 +56,13 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..")
 # Content width used to place equation tab stops (page width minus margins
 # and gutter); kept as a module constant since add_equation() needs it and
 # has no direct handle on the live section object.
-PAGE_WIDTH_IN = 7.0
-PAGE_HEIGHT_IN = 10.0
-MARGIN_IN = 0.75
-GUTTER_IN = 0.85
+# B5 trim (17.6 x 25.0cm), 2.7cm margins, 0.15cm gutter (within the
+# recommended 0-0.3cm range for a digital/Kindle-first book - a bound
+# print run would want more, but this book targets ebook distribution).
+PAGE_WIDTH_IN = 17.6 / 2.54
+PAGE_HEIGHT_IN = 25.0 / 2.54
+MARGIN_IN = 2.7 / 2.54
+GUTTER_IN = 0.15 / 2.54
 CONTENT_WIDTH_IN = PAGE_WIDTH_IN - MARGIN_IN - GUTTER_IN
 
 # Current chapter number, tracked so add_table/add_figure/add_equation can

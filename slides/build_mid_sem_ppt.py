@@ -48,7 +48,7 @@ ACCENT_DARK = RGBColor(0x1E, 0x40, 0xAF)
 TEXT_MUTED = RGBColor(0x6B, 0x72, 0x80)
 LIGHT_ACCENT_TEXT = RGBColor(0x93, 0xC5, 0xFD)
 
-TOTAL_SLIDES = 13
+TOTAL_SLIDES = 14
 
 MARGIN = Inches(0.5)
 CONTENT_W = Inches(9.0)  # matches the default template's placeholder width (10in slide)
@@ -213,10 +213,11 @@ def build():
         "5. The Mondrian Partition (concept)",
         "6. Methodology Overview",
         "7. Real-World Data Used",
-        "8. Work Completed So Far (~50%)",
-        "9. The Discrete-Event Simulation",
-        "10. Literature Review Snapshot",
-        "11. Future Scope - End-Sem",
+        "8. Work Completed So Far (~80%)",
+        "9. Core Finding: Mondrian CP Closes the Coverage Gap",
+        "10. The Discrete-Event Simulation",
+        "11. Literature Review Snapshot",
+        "12. Future Scope - End-Sem",
     ], size=18, index=2)
 
     # ---------------- Slide 3: Problem Statement ----------------
@@ -246,7 +247,7 @@ def build():
         "Neither of those has been checked outside physics simulation. Discrete-event / queueing systems are "
         "a genuinely different kind of domain - discrete stochastic arrivals and departures, resource "
         "contention, priority queues - not a continuous PDE field. That's the gap this project sits in.",
-    ], size=17, index=4)
+    ], size=19, index=4)
 
     # ---------------- Slide 5: Why Marginal Coverage Isn't Enough (concept diagram) ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
@@ -254,25 +255,33 @@ def build():
     add_accent_bar(s)
     add_footer(s, 5)
     chart_x = MARGIN
-    chart_y = Inches(1.9)
-    chart_w = Inches(7.5)
-    chart_h = Inches(3.2)
+    chart_y = Inches(1.7)
+    chart_w = Inches(7.8)
+    chart_h = Inches(2.7)
     baseline_y = chart_y + chart_h
 
-    target_y = chart_y + Inches(0.55)
+    # Bars and the target line are computed on the SAME 0-100% scale, so
+    # the line lands exactly at the true 90% mark relative to bar height,
+    # not a visually-guessed fixed offset (a real bug found and fixed here:
+    # the line previously sat above every bar, including the 91%/93% ones
+    # that are actually above target).
+    max_bar_h = chart_h - Inches(0.7)  # headroom above the tallest (93%) bar
+    target_frac = 0.90
+    target_y = baseline_y - int(max_bar_h * target_frac)
+
     target_line = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, chart_x, target_y, chart_x + chart_w, target_y)
     target_line.line.color.rgb = RGBColor(0xC0, 0x39, 0x2B)
     target_line.line.width = Pt(1.5)
-    tgt_label = s.shapes.add_textbox(chart_x + chart_w + Inches(0.05), target_y - Inches(0.15), Inches(1.3), Inches(0.3))
+    tgt_label = s.shapes.add_textbox(chart_x + chart_w + Inches(0.05), target_y - Inches(0.15), Inches(1.4), Inches(0.3))
     tgt_label.text_frame.text = "90% target"
-    tgt_label.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
+    tgt_label.text_frame.paragraphs[0].runs[0].font.size = Pt(12)
+    tgt_label.text_frame.paragraphs[0].runs[0].font.bold = True
     tgt_label.text_frame.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xC0, 0x39, 0x2B)
 
     bars = [("Category A", 0.93, ACCENT), ("Category B", 0.91, ACCENT),
             ("Category C", 0.90, ACCENT), ("Category D", 0.68, RGBColor(0xC0, 0x39, 0x2B))]
-    bar_w = Inches(1.4)
-    gap_w = Inches(0.45)
-    max_bar_h = chart_h - Inches(0.6)
+    bar_w = Inches(1.5)
+    gap_w = Inches(0.55)
     for i, (label, frac, color) in enumerate(bars):
         bh = int(max_bar_h * frac)
         bx = chart_x + i * (bar_w + gap_w)
@@ -285,28 +294,29 @@ def build():
         lbl = s.shapes.add_textbox(bx, baseline_y + Inches(0.05), bar_w, Inches(0.35))
         lbl.text_frame.text = label
         lbl.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-        lbl.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
-        pct = s.shapes.add_textbox(bx, by - Inches(0.32), bar_w, Inches(0.3))
+        lbl.text_frame.paragraphs[0].runs[0].font.size = Pt(12)
+        pct = s.shapes.add_textbox(bx, by - Inches(0.34), bar_w, Inches(0.3))
         pct.text_frame.text = f"{frac*100:.0f}%"
         pct.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-        pct.text_frame.paragraphs[0].runs[0].font.size = Pt(12)
+        pct.text_frame.paragraphs[0].runs[0].font.size = Pt(13)
         pct.text_frame.paragraphs[0].runs[0].font.bold = True
 
-    note = s.shapes.add_textbox(MARGIN, baseline_y + Inches(0.55), CONTENT_W, Inches(1.6))
+    note = s.shapes.add_textbox(MARGIN, baseline_y + Inches(0.35), CONTENT_W, Inches(2.3))
     note.text_frame.word_wrap = True
     bullets = [
         "Illustrative concept, not this project's own results (those come in Phase 2) - a generic 4-category "
         "example of why a single marginal (pooled) coverage number can mislead.",
-        "Marginal average across all 4 categories here = 90.5% - looks like the target is met.",
-        "But Category D alone sits at 68% - a decision-maker relying only on the marginal number would never "
-        "see this specific failure.",
-        "This is exactly the gap Mondrian CP (per-category calibration) is designed to close - Phase 2's job.",
+        "Marginal average across all 4 categories here = 90.5% - looks like the target is comfortably met.",
+        "But Category D alone sits at 68%, well under target - a decision-maker relying only on the marginal "
+        "number would never see this specific failure.",
+        "This is exactly the gap Mondrian CP (per-category calibration) is designed to close - see the next "
+        "two slides for how, and Slide 11 for our own project's real version of this result.",
     ]
     for i, b in enumerate(bullets):
         p = note.text_frame.paragraphs[0] if i == 0 else note.text_frame.add_paragraph()
         p.text = b
         for r in p.runs:
-            r.font.size = Pt(13)
+            r.font.size = Pt(15)
             if i == 0:
                 r.font.italic = True
                 r.font.color.rgb = TEXT_MUTED
@@ -338,24 +348,26 @@ def build():
         ("Mondrian CP partitions calibration by category - staffing tercile x arrival-rate tercile - "
          "instead of lumping everything into one marginal guarantee.", 1),
         ("Goal: coverage that holds up close to nominal within each category, not just on average.", 1),
+        ("Result (Slide 11, done): confirmed - the worst category's coverage recovers from 68.2% to 90.9%, "
+         "statistically significant across 30 repeats.", 1),
     ])
     fill_bullets(right, [
         ("Addresses exchangeability", 0),
-        ("Phase 2 includes a stress test: an out-of-distribution \"surge day\" scenario outside the normal "
-         "training range.", 1),
+        ("A stress test: an out-of-distribution \"surge day\" scenario outside the normal training range.", 1),
         ("That's where we actually get to see whether standard CP and Mondrian CP hold up or break when "
          "exchangeability is violated.", 1),
+        ("Status: this is the main piece of the remaining ~20% of the project (Slide 14).", 1),
     ])
     for ph in (left, right):
         for p in ph.text_frame.paragraphs:
             for r in p.runs:
-                r.font.size = Pt(18) if p.level == 0 else Pt(16)
+                r.font.size = Pt(19) if p.level == 0 else Pt(17)
 
     # ---------------- Slide 7: The Mondrian Partition (concept diagram) ----------------
     s = add_title_only_slide(prs, "The Mondrian Partition", index=7)
-    grid_x = Inches(3.425)
+    grid_x = Inches(3.35)
     grid_y = Inches(1.85)
-    cell = Inches(1.05)
+    cell = Inches(1.1)
     row_labels = ["High", "Med", "Low"]
     col_labels = ["Low", "Med", "High"]
     for r_i, r_label in enumerate(row_labels):
@@ -375,14 +387,14 @@ def build():
             p.alignment = PP_ALIGN.CENTER
             run = p.add_run()
             run.text = f"Category {n}"
-            run.font.size = Pt(11)
+            run.font.size = Pt(13)
             run.font.bold = True
             run.font.color.rgb = ACCENT_DARK
             p2 = tf.add_paragraph()
             p2.alignment = PP_ALIGN.CENTER
             run2 = p2.add_run()
             run2.text = f"staff={r_label}\narrival={c_label}"
-            run2.font.size = Pt(9)
+            run2.font.size = Pt(10)
             run2.font.color.rgb = GREY
     # Row/column axis labels
     row_hdr = s.shapes.add_textbox(grid_x - Inches(1.6), grid_y + cell * 1.5 - Inches(0.5), Inches(1.5), Inches(1.0))
@@ -399,22 +411,21 @@ def build():
     col_hdr.text_frame.paragraphs[0].runs[0].font.size = Pt(13)
     col_hdr.text_frame.paragraphs[0].runs[0].font.bold = True
 
-    note = s.shapes.add_textbox(MARGIN, grid_y + cell * 3 + Inches(0.35), CONTENT_W, Inches(1.6))
+    note = s.shapes.add_textbox(MARGIN, grid_y + cell * 3 + Inches(0.3), CONTENT_W, Inches(1.7))
     note.text_frame.word_wrap = True
     bullets = [
         "9 categories total - every scenario falls into exactly one, based on its own staffing level and "
-        "arrival-rate multiplier.",
-        "Mondrian CP calibrates a separate quantile within each category, instead of one pooled quantile "
-        "across all 9.",
-        "Category 4 (staff=Med, arrival=Low - highlighted) is a comparatively low-stress cell; the opposite "
-        "corner (staff=Low, arrival=High) is the one Slide 5's concept diagram flags as the highest-risk "
-        "category.",
+        "arrival-rate multiplier. Mondrian CP calibrates a separate quantile within each one, instead of "
+        "one pooled quantile across all 9.",
+        "Category 4 (staff=Med, arrival=Low - highlighted) is comparatively low-stress; the opposite corner "
+        "(staff=Low, arrival=High) is the one Slide 5's concept diagram flags as highest-risk - and the "
+        "real category, in our own data, where Slide 11's 68.2% -> 90.9% recovery actually happens.",
     ]
     for i, b in enumerate(bullets):
         p = note.text_frame.paragraphs[0] if i == 0 else note.text_frame.add_paragraph()
         p.text = b
         for r in p.runs:
-            r.font.size = Pt(14)
+            r.font.size = Pt(15)
 
     # ---------------- Slide 8: Methodology Overview ----------------
     s = add_title_only_slide(prs, "Methodology Overview", index=8)
@@ -458,24 +469,26 @@ def build():
         connector.line.color.rgb = RGBColor(0x40, 0x40, 0x40)
         connector.line.width = Pt(1.5)
 
-    note_box = s.shapes.add_textbox(MARGIN, Inches(4.0), CONTENT_W, Inches(2.9))
+    note_box = s.shapes.add_textbox(MARGIN, Inches(4.0), CONTENT_W, Inches(3.2))
     tf = note_box.text_frame
     tf.word_wrap = True
     tf.text = "Each stage is checked against the previous one before moving on:"
     tf.paragraphs[0].runs[0].font.italic = True
-    tf.paragraphs[0].runs[0].font.size = Pt(14)
+    tf.paragraphs[0].runs[0].font.size = Pt(17)
     checks = [
         "- DES output checked against real aggregated ED stats (91.0% match on daily volume)",
         "- Surrogate accuracy checked against DES outputs held out from training (MAE / RMSE / R²)",
         "- All UQ methods use the same fixed test split and the same target coverage (alpha = 0.1), so "
         "GP, standard CP and Mondrian CP end up directly comparable",
+        "- All three stages are complete and cross-checked - the Uncertainty Quantification stage's "
+        "headline result is on Slide 11",
     ]
     for c in checks:
         p = tf.add_paragraph()
         p.text = c
         p.level = 0
         for r in p.runs:
-            r.font.size = Pt(15)
+            r.font.size = Pt(18)
 
     # ---------------- Slide 9: Real-world data used ----------------
     add_bulleted_slide(prs, "Real-World Data Used", [
@@ -488,11 +501,11 @@ def build():
          "department-level daily visit rate.", 1),
         ("From literature: service/treatment time per ESI level (log-normal). The dataset has no discharge "
          "timestamp - checked across all 972 columns to be sure before falling back to literature values.", 1),
-    ], size=16, index=9)
+    ], size=19, index=9)
 
-    # ---------------- Slide 10: Work Completed (~50%) ----------------
+    # ---------------- Slide 10: Work Completed (~80%) ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
-    set_title(s, "Work Completed So Far (~50%)", size=32)
+    set_title(s, "Work Completed So Far (~80%)", size=32)
     add_accent_bar(s)
     add_footer(s, 10)
     make_table(s, MARGIN, Inches(1.4), Inches(4.3), Inches(1.1),
@@ -528,15 +541,59 @@ def build():
     note.text_frame.word_wrap = True
     note.text_frame.text = ("GP undercovers on 3 of 4 targets (87.7-88.8% vs. a 90% target) - not surprising, "
                               "since it relies on distributional assumptions rather than a finite-sample "
-                              "guarantee. Whether CP / Mondrian CP close that gap is what Phase 2 is for.")
+                              "guarantee. Standard CP and Mondrian CP both close most of that gap on average "
+                              "- next slide shows the real, more important result underneath the average.")
     note.text_frame.paragraphs[0].runs[0].font.size = Pt(14)
     note.text_frame.paragraphs[0].runs[0].font.italic = True
 
-    # ---------------- Slide 11: DES simulation, calibrated on real data ----------------
+    # ---------------- Slide 11: Core Finding - Mondrian CP closes the coverage gap ----------------
+    s = prs.slides.add_slide(prs.slide_layouts[5])
+    set_title(s, "Core Finding: Mondrian CP Closes the Coverage Gap", size=26)
+    add_accent_bar(s)
+    add_footer(s, 11)
+    make_table(s, MARGIN, Inches(1.35), CONTENT_W, Inches(1.7),
+               ["Method (30-repeat mean)", "n_patients", "mean_wait_min", "mean_total_min", "p95_wait_min"],
+               [
+                   ["GP baseline", "89.6%", "88.3%", "89.1%", "89.0%"],
+                   ["Standard CP", "90.1%", "90.1%", "89.8%", "90.1%"],
+                   ["Mondrian CP", "91.0%", "91.1%", "90.8%", "91.4%"],
+               ],
+               col_widths=[Inches(2.6), Inches(1.6), Inches(1.7), Inches(1.7), Inches(1.4)], font_size=13)
+
+    note = s.shapes.add_textbox(MARGIN, Inches(3.15), CONTENT_W, Inches(0.6))
+    note.text_frame.word_wrap = True
+    note.text_frame.text = ("On average (marginal coverage), all three methods land close to the 90% target - "
+                              "this alone would look like a minor, unremarkable improvement.")
+    note.text_frame.paragraphs[0].runs[0].font.size = Pt(14)
+    note.text_frame.paragraphs[0].runs[0].font.italic = True
+
+    make_table(s, MARGIN, Inches(3.85), CONTENT_W, Inches(1.15),
+               ["Worst operating category (mean_wait_minutes)", "Pooled (standard) CP", "Mondrian CP"],
+               [["Understaffed + high arrival-rate", "68.2%", "90.9%"]],
+               col_widths=[Inches(4.5), Inches(2.5), Inches(2.0)], font_size=14)
+
+    note2 = s.shapes.add_textbox(MARGIN, Inches(5.15), CONTENT_W, Inches(1.9))
+    note2.text_frame.word_wrap = True
+    bullets2 = [
+        "This is our actual central finding, the real version of Slide 5's illustrative concept: standard "
+        "CP's marginal guarantee hides a severe undercoverage failure in exactly the highest-stakes operating "
+        "regime - understaffed with high arrival rate.",
+        "Mondrian CP - calibrating separately per staffing x arrival-rate category - closes that gap without "
+        "sacrificing the marginal guarantee above.",
+        "Confirmed statistically significant across 30 independent repeats (paired t-test, p < 0.001) - not "
+        "a one-off lucky split.",
+    ]
+    for i, b in enumerate(bullets2):
+        p = note2.text_frame.paragraphs[0] if i == 0 else note2.text_frame.add_paragraph()
+        p.text = b
+        for r in p.runs:
+            r.font.size = Pt(14)
+
+    # ---------------- Slide 12: DES simulation, calibrated on real data ----------------
     s = prs.slides.add_slide(prs.slide_layouts[5])
     set_title(s, "The Discrete-Event Simulation", size=32)
     add_accent_bar(s)
-    add_footer(s, 11)
+    add_footer(s, 12)
     pic = s.shapes.add_picture("reports/assignments/figures/real_arrivals_by_hour.png",
                                  MARGIN, Inches(1.3), height=Inches(3.6))
     note = s.shapes.add_textbox(MARGIN, Inches(5.05), CONTENT_W, Inches(1.9))
@@ -546,8 +603,8 @@ def build():
         "plus the real ESI acuity mix - not a generic queueing textbook example.",
         "Priority-resource pool: higher-acuity (lower ESI) patients get priority, matching real triage "
         "behavior.",
-        "Validated against real aggregated daily volume: 91.0% match across 200 simulated days (previous "
-        "slide) - the DES is the foundation everything downstream (surrogate, UQ) builds on.",
+        "Validated against real aggregated daily volume: 91.0% match across 200 simulated days (Slide 10) - "
+        "the DES is the foundation everything downstream (surrogate, UQ) builds on.",
     ]
     for i, b in enumerate(bullets):
         p = note.text_frame.paragraphs[0] if i == 0 else note.text_frame.add_paragraph()
@@ -568,20 +625,19 @@ def build():
         "datasets, used to cross-check this project's own DES calibration numerically, not just cite them.",
         "Includes a critical assessment: where the reviewed literature's own assumptions do or don't transfer "
         "to a discrete-event queueing domain.",
-    ], size=15, index=12)
-
-    # ---------------- Slide 13: Future scope ----------------
-    add_bulleted_slide(prs, "Future Scope - End-Sem", [
-        "Standard conformal prediction on surrogate residuals, using the DES/surrogate pipeline already "
-        "built and validated in Phase 1.",
-        "Mondrian CP - partition calibration by staffing tercile x arrival-rate tercile (9 categories); "
-        "measure whether per-category coverage holds where the pooled/marginal guarantee doesn't.",
-        "Stress-test exchangeability with an out-of-distribution demand-surge scenario; see where standard "
-        "CP and Mondrian CP hold up or break down.",
-        "Full comparison - GP baseline vs. standard CP vs. Mondrian CP on coverage and interval width.",
-        "End-sem PPT and report: a quantified answer on whether Mondrian CP closes the marginal-vs-"
-        "conditional coverage gap in this domain.",
     ], size=18, index=13)
+
+    # ---------------- Slide 14: Future scope (remaining ~20%) ----------------
+    add_bulleted_slide(prs, "Future Scope - End-Sem", [
+        "Standard CP, Mondrian CP, and the core coverage-gap finding (Slide 11) are done - what's left is "
+        "the remaining ~20%:",
+        ("Stress-test exchangeability with an out-of-distribution demand-surge scenario; see where standard "
+         "CP and Mondrian CP hold up or break down.", 1),
+        ("Finalize the full comparison - GP baseline vs. standard CP vs. Mondrian CP - on both coverage and "
+         "interval width, across every target.", 1),
+        ("Write up the end-sem report and presentation: a fully quantified, written-up answer on whether "
+         "Mondrian CP closes the marginal-vs-conditional coverage gap in this domain.", 1),
+    ], size=24, index=14)
 
     prs.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

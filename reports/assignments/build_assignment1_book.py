@@ -154,7 +154,7 @@ def build_chapter6_beyond_standard_cp(doc):
     bc.add_body(doc, """
 Chapter 4 develops standard and Mondrian conformal prediction in full,
 including formal proofs of their coverage guarantees (Section 4.4.5).
-This chapter extends that toolkit with four further methods, each
+This chapter extends that toolkit with five further methods, each
 addressing a specific limitation the base methods leave open: conformalized
 quantile regression and its Mondrian combination (Section 6.1), which
 Section 4.4.5 also proves a coverage guarantee for and which Chapter 7
@@ -162,12 +162,16 @@ already uses as a stronger baseline; conformal risk control (Section 6.2),
 which generalizes the coverage guarantee itself from a fixed 0/1 loss to
 any bounded, monotone operational risk; adaptive conformal inference
 (Section 6.3), which drops the exchangeability assumption entirely in
-exchange for a weaker, long-run average guarantee; and likelihood-ratio
+exchange for a weaker, long-run average guarantee; likelihood-ratio
 weighted conformal prediction (Section 6.4), which restores the exact
-guarantee under a known, bounded covariate shift. Sections 6.2-6.4 are
-new methods this report implements and evaluates on real data - not
-surveyed from the literature review (Chapter 2) without independent
-verification, consistent with this report's standing practice throughout.
+guarantee under a known, bounded covariate shift; and a new nonconformity
+score this report proposes, queueing-theoretic normalized conformal
+prediction (Section 6.5), which replaces Mondrian's discrete category
+bins with a continuous scale derived directly from queueing theory.
+Sections 6.2-6.5 are new methods this report implements and evaluates on
+real data - not surveyed from the literature review (Chapter 2) without
+independent verification, consistent with this report's standing practice
+throughout.
 """)
     bc.add_section_heading(doc, "6.1 Conformalized Quantile Regression and Mondrian-CQR")
     bc.add_body(doc, """
@@ -417,6 +421,163 @@ Chapter 8's own exchangeability stress test pushes arrival rates as far as
 directly, on the same severe shift the rest of that chapter studies.
 """)
 
+    bc.add_section_heading(doc, "6.5 Queueing-Theoretic Normalized Conformal Prediction")
+    bc.add_body(doc, """
+Sections 6.1-6.4 extend standard CP along three known routes from the
+literature: width-adaptivity (CQR), generalized risk (CRC), online
+adaptation (ACI), and known-shift reweighting (weighted CP). Mondrian CP
+itself (Section 4.4.3) - this report's central method - takes a fourth
+route: partition the input space into discrete categories and calibrate
+separately within each. This section proposes a genuinely new alternative
+to that fourth route, not previously described in the reviewed literature
+(Chapter 2): rather than discrete staffing x arrival-rate bins, normalize
+each nonconformity score by a continuous difficulty estimate derived
+directly from queueing theory - specifically, Kingman's heavy-traffic
+approximation (Section 4.7.1) - rather than the generic, machine-learned
+difficulty estimators the normalized-conformal-prediction literature
+typically uses. This report calls the resulting method queueing-theoretic
+normalized conformal prediction (QT-CP), implements it in full
+(src/uq/queueing_weighted_cp.py), and reports its results with the same
+honesty this report applies everywhere else: a real, mixed result, not a
+manufactured win over Mondrian CP.
+""")
+
+    bc.add_section_heading(doc, "6.5.1 Formulation: A Continuous Alternative to Discrete Bins", level=3)
+    bc.add_body(doc, """
+Mondrian CP's category bins require a design choice - how many terciles,
+where the bin edges fall - and each additional category shrinks the
+calibration-set size available to fit that category's own quantile.
+Section 4.7.1 (Kingman's heavy-traffic approximation) already establishes
+that queueing delay, and its variance, scale sharply and predictably with
+utilization rho as rho approaches 1. QT-CP takes this relationship
+literally: instead of a discrete partition, it estimates a continuous
+utilization rho_hat for every scenario directly from the same real
+calibration constants the DES itself uses (arrival-rate distribution and
+ESI mix, Section 4.2.3) - no additional simulation runs, no bin edges to
+choose.
+""")
+    bc.add_equation(doc,
+        "rho_hat(c, m) = m . (lambda_bar . E[S]) / c",
+        note="c = staffing capacity, m = arrival-rate multiplier, lambda_bar the real mean daily arrival rate (258.2/day, Department A), E[S] the mean service time under the real ESI mix (120.7 minutes) - both computed once from results/tables/arrivals_by_hour_bin.csv and esi_mix.csv, the identical constants Section 4.2.3's DES calibration already uses.")
+    bc.add_body(doc, """
+The per-point scale estimate and the resulting normalized nonconformity
+score follow directly from the heavy-traffic relationship's own
+rho / (1 - rho) divergence:
+""")
+    bc.add_equation(doc,
+        "sigma_hat(x) = 1 / (1 - min(rho_hat(x), rho_cap)),      s_tilde_i = s_i / sigma_hat(x_i)")
+    bc.add_body(doc, """
+calibrated exactly as in Section 4.4.2's split-CP quantile formula but on
+the normalized scores {s_tilde_i} rather than the raw residuals, and the
+test-time interval half-width becomes q_tilde . sigma_hat(x) - continuously
+scenario-dependent, unlike standard CP's constant width, and requiring no
+discrete bin edges, unlike Mondrian CP. This design would be purely
+cosmetic if this project's own scenario sweep stayed safely inside the
+regime Kingman's approximation assumes; it does not. Utilization rho_hat
+across the calibration set averages 0.84, with 35 percent of scenarios at
+rho_hat of 0.9 or higher, and some genuinely exceed 1.0 - a deliberately
+oversaturated regime (Section 4.2.2's scenario sweep spans arrival-rate
+multipliers up to 3.0x specifically to stress-test this range, the same
+range Chapter 8's exchangeability study uses). Kingman's steady-state
+approximation is not strictly valid once rho exceeds 1, so rho_cap is a
+necessary correction this section's own data forces, not a cosmetic
+safety margin added out of caution.
+""")
+
+    bc.add_section_heading(doc, "6.5.2 Selecting rho_cap Without Touching the Test Set", level=3)
+    bc.add_body(doc, """
+An early version of this method used rho_cap = 0.98, close to the
+theoretical ceiling, and it performed badly: because 28 percent of
+calibration scenarios sit at or above that cap, a large share of test
+points receive sigma_hat near its maximum value (1 / (1 - 0.98) = 50),
+inflating mean interval width by roughly six-fold relative to standard CP
+and, worse, actually widening the per-category coverage spread rather than
+narrowing it - the opposite of the intended effect. This failure is
+reported here, briefly, rather than silently discarded, because the fix
+that replaced it is methodologically important: rho_cap is not a free
+parameter tuned to produce a favorable-looking result, but a genuine
+hyperparameter selected the same principled way this report selects every
+other design choice - using only calibration data, never the test set.
+The calibration set is split 70/30; each candidate rho_cap in
+{0.99, 0.95, 0.90, 0.85, 0.80, 0.75} is calibrated on the 70 percent split
+and evaluated for coverage and mean width on the held-out 30 percent; the
+cap with the smallest mean width among those meeting target coverage is
+kept, and the final quantile is then refit on the complete calibration
+set at that selected cap. This mirrors exactly how Section 4.4.3's own
+Mondrian bin edges are chosen from calibration quantiles alone (Section
+4.4.3) - a hyperparameter selection procedure applied consistently, not
+invented specially to rescue this one method.
+""")
+
+    bc.add_section_heading(doc, "6.5.3 Results: A Genuine Trade-Off, Not a Clean Win", level=3)
+    bc.add_table(doc,
+        ["Target", "Selected rho_cap", "Standard CP width", "QT-CP width"],
+        [
+            ["n_patients", "0.75", "43.6", "51.2 (1.17x)"],
+            ["mean_wait_minutes", "0.80", "47.2", "38.9 (0.83x)"],
+            ["mean_total_minutes", "0.75", "46.4", "40.0 (0.86x)"],
+            ["p95_wait_minutes", "0.80", "362.9", "295.2 (0.81x)"],
+        ],
+        caption="Marginal mean interval width, standard CP vs. QT-CP, all four targets. QT-CP's rho_cap selected per-target via Section 6.5.2's calibration-only procedure.",
+        col_widths=[Inches(1.9), Inches(1.2), Inches(1.3), Inches(1.4)])
+    bc.add_table(doc,
+        ["Target", "Standard CP worst-cat.", "Mondrian CP worst-cat.", "QT-CP worst-cat."],
+        [
+            ["n_patients", "87.3%", "83.3%", "70.3%"],
+            ["mean_wait_minutes", "68.2%", "85.5%", "76.1%"],
+            ["mean_total_minutes", "80.7%", "86.8%", "83.0%"],
+            ["p95_wait_minutes", "72.7%", "86.3%", "76.1%"],
+        ],
+        caption="Worst single-category coverage, all three methods, all four targets (target 90%).",
+        col_widths=[Inches(1.9), Inches(1.3), Inches(1.3), Inches(1.3)])
+    bc.add_figure(doc, f"{FIG}/qtcp_per_category_heatmap.png",
+        "Per-category coverage, all three methods, mean_wait_minutes across the same 3x3 staffing x arrival-rate grid used throughout this report (target 90%).")
+    bc.add_figure(doc, f"{FIG}/qtcp_comparison.png",
+        "QT-CP vs. standard and Mondrian CP: worst-category coverage (left) and marginal width relative to standard CP (right), all four targets.")
+    bc.add_body(doc, """
+QT-CP retains valid marginal coverage by construction on every target
+(91.3, 89.3, 90.1, and 90.8 percent for n_patients, mean_wait_minutes,
+mean_total_minutes, and p95_wait_minutes respectively - all within a
+point of standard CP's own 92.1, 89.0, 90.2, and 90.8 percent) and, on
+three of four targets, achieves narrower mean interval width than
+standard CP -
+0.81 to 0.86 times standard CP's width, a genuine efficiency gain from
+letting interval width vary continuously with estimated utilization
+rather than staying fixed. The heatmap above makes the mechanism visible
+directly: QT-CP's coverage in the Low-staffing / High-arrival cell for
+mean_wait_minutes - the same cell Section 7.5's core finding identifies as
+the worst pooled-CP category - improves from pooled CP's 68.2 percent to
+76.1 percent, tracking the same direction Mondrian CP corrects in, because
+QT-CP's rho_hat is highest in exactly that cell.
+""")
+    bc.add_body(doc, """
+QT-CP does not, however, match Mondrian CP's worst-category coverage on
+any of the four targets, and on n_patients - the one target Section 7.5
+already shows has no real conditional gap for Mondrian CP to correct -
+QT-CP's worst-category coverage (70.3 percent) is worse than even pooled
+standard CP's (87.3 percent). The most plausible explanation is visible in
+the heatmap's own structure: Mondrian CP fits a separate quantile
+empirically within each of the 9 cells, free to absorb whatever residual
+heterogeneity actually exists there - ESI-mix effects, surrogate-specific
+error patterns, anything correlated with the staffing/arrival partition,
+not only utilization. QT-CP instead compresses every cell's difficulty
+into a single scalar, rho_hat, derived from one theoretical relationship;
+where the real heterogeneity genuinely is utilization-driven (the
+wait-time targets), this captures most of the useful signal, but where it
+is not (n_patients, whose variance Section 7.5 already shows is
+comparatively flat across the partition), a theory-derived scalar has
+nothing to correct and can only add noise. This is reported as an honest,
+mixed result, consistent with this report's standing practice throughout
+(Section 8.6's scorecard, Section 6.4's weighted-CP caveat): QT-CP is a
+genuine methodological contribution - bin-free, theoretically grounded,
+and more width-efficient than standard CP on most targets - but Mondrian
+CP's nonparametric, per-category empirical fit remains the stronger
+correction for this report's central conditional-coverage question. A
+natural direction this result points toward, left for future work
+(Section 11.3), is a hybrid that applies QT-CP's continuous rho_hat
+weighting inside each of Mondrian's own categories, rather than treating
+the two as competing alternatives.
+""")
 
 
 def build_chapter7_empirical_validation(doc):
@@ -2181,7 +2342,15 @@ tercile grid (Section 4.7.3), would let the taxonomy itself be learned
 from calibration data rather than fixed by construction - a direct
 response to Section 4.7.3's own stated tradeoff between empirical-quantile
 and domain-threshold binning, potentially capturing both binning
-strategies' advantages simultaneously. Multi-hospital network simulation
+strategies' advantages simultaneously. A related, more targeted
+combination follows directly from Section 6.5's own result: applying
+QT-CP's continuous rho_hat reweighting inside each of Mondrian's 9
+categories, rather than treating the two as competing alternatives, would
+test whether the two corrections are complementary - Mondrian absorbing
+category-level heterogeneity QT-CP's single scalar cannot, QT-CP adding
+within-category adaptivity Mondrian's flat per-category quantile does not
+provide - or whether, as Section 6.5.3's mixed result suggests, most of
+the useful signal is already captured by one or the other alone. Multi-hospital network simulation
 emulators - jointly modeling several EDs with shared regional demand and
 ambulance-diversion coupling between them, rather than this report's
 independent single-department DES instances (Section 4.2) - would extend

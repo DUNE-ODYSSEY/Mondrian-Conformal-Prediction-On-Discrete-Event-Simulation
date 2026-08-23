@@ -2508,6 +2508,7 @@ def build():
     bc.reset_counters()
     bc.reset_citations()
 
+    bc.build_cover_page(doc, TITLE, SUBTITLE)
     bc.build_title_page(doc, TITLE, SUBTITLE)
     bc.build_preface(doc, _abstract(bc))
     bc.build_toc_page(doc)

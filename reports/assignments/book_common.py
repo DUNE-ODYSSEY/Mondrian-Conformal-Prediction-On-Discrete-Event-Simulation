@@ -32,6 +32,7 @@ import os
 import re
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
@@ -584,6 +585,109 @@ def add_code_listing(doc, rel_path, title=None):
 # --------------------------------------------------------------------------
 # Front matter
 # --------------------------------------------------------------------------
+
+INSTITUTION = "Amrita Vishwa Vidyapeetham"
+DEPARTMENT = "Department of Artificial Intelligence"
+
+
+def build_cover_page(doc, title, subtitle):
+    """Institutional cover page for the course submission - separate from
+    the book's own clean title page (build_title_page, the next page),
+    which stays free of this academic-submission framing so the book
+    itself still reads like the reference Kindle book it's modeled on."""
+    for _ in range(1):
+        doc.add_paragraph()
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(INSTITUTION)
+    r.font.size = Pt(20)
+    r.font.bold = True
+    r.font.color.rgb = NAVY
+    r.font.name = "Times New Roman"
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(DEPARTMENT)
+    r.font.size = Pt(14)
+    r.font.color.rgb = GREY
+    r.font.name = "Times New Roman"
+
+    for _ in range(2):
+        doc.add_paragraph()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(f"Course Project Report — {COURSE_CODE}")
+    r.font.size = Pt(13)
+    r.font.italic = True
+    r.font.color.rgb = INK
+    r.font.name = "Times New Roman"
+
+    for _ in range(2):
+        doc.add_paragraph()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(title)
+    r.font.size = Pt(20)
+    r.font.bold = True
+    r.font.color.rgb = NAVY
+    r.font.name = "Times New Roman"
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(subtitle)
+    r.font.size = Pt(13)
+    r.font.italic = True
+    r.font.color.rgb = GREY
+    r.font.name = "Times New Roman"
+
+    for _ in range(3):
+        doc.add_paragraph()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run("Submitted by")
+    r.font.size = Pt(12)
+    r.font.bold = True
+    r.font.name = "Times New Roman"
+
+    doc.add_paragraph()
+    for name, roll in TEAM:
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run(f"{name}  ({roll})")
+        r.font.size = Pt(12)
+        r.font.name = "Times New Roman"
+
+    for _ in range(2):
+        doc.add_paragraph()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(f"Under the guidance of: {FACULTY_GUIDE}")
+    r.font.size = Pt(12)
+    r.font.italic = True
+    r.font.color.rgb = GREY
+    r.font.name = "Times New Roman"
+
+    # A real section break (not a plain inline page-break run, unlike every
+    # other page break in this book) - a plain break here produced a
+    # mysterious blank filler page between the cover and the title page in
+    # Word's PDF export even though the underlying XML had no second break;
+    # a genuine new section resolves it and also lets this front page carry
+    # its own section properties independent of the rest of the book.
+    new_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    new_section.page_width = Inches(PAGE_WIDTH_IN)
+    new_section.page_height = Inches(PAGE_HEIGHT_IN)
+    new_section.left_margin = Inches(MARGIN_IN)
+    new_section.right_margin = Inches(MARGIN_IN)
+    new_section.top_margin = Inches(MARGIN_IN)
+    new_section.bottom_margin = Inches(MARGIN_IN)
+    new_section.gutter = Inches(GUTTER_IN)
+    mirror = OxmlElement("w:mirrorMargins")
+    new_section._sectPr.append(mirror)
+
 
 def build_title_page(doc, title, subtitle):
     for _ in range(2):

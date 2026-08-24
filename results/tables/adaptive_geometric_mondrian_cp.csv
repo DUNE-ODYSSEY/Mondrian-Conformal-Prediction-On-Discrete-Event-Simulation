@@ -1,0 +1,5 @@
+target,selected_n_min,n_bins,adaptive_worst_category_coverage
+mean_wait_minutes,130,9,0.8656716417910447
+mean_total_minutes,100,12,0.8604651162790697
+p95_wait_minutes,100,12,0.85
+n_patients,100,12,0.85

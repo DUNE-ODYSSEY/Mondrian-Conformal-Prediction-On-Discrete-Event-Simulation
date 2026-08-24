@@ -136,7 +136,7 @@ def add_chapter_heading(doc, chapter_no, title, new_page=True, subtitle=None):
     chapter number, so add_table/add_figure/add_equation can number
     captions 'N.M' without the caller passing the chapter in."""
     if new_page:
-        add_page_break(doc)
+        add_body_section_break(doc)
     _current_chapter["n"] = chapter_no
     _table_counter["n"] = 0
     _figure_counter["n"] = 0
@@ -437,33 +437,33 @@ CITATION_DB = {
     "hu2018": ("X. Hu et al.",
                  '"Applying Queueing Theory to the Study of Emergency Department Operations: A Survey and a Discussion of Comparable Simulation Studies,"',
                  "International Transactions in Operational Research, 2018."),
-    "mg1_queue": ("Anonymous",
+    "mg1_queue": ("V. Kuppusamy and L. Gowrishankar",
                  '"Performance Evaluation of a M/G/1 Queue Model for Patient Flow in a Health Care System,"',
-                 "Mathematical Modelling of Engineering Problems, IIETA."),
-    "staffing_pmc": ("Anonymous",
+                 "Mathematical Modelling of Engineering Problems, vol. 11, no. 4, pp. 863-871, 2024."),
+    "staffing_pmc": ("F.-C. Jiang, C.-M. Shih, Y.-M. Wang, C.-T. Yang, Y.-J. Chiang, and C.-H. Lee",
                  '"Decision Support for the Optimization of Provider Staffing for Hospital Emergency Departments with a Queue-Based Approach,"',
-                 "PMC6947400."),
-    "des_calibration2021": ("Anonymous",
+                 "Journal of Clinical Medicine, vol. 8, no. 12, art. 2154, 2019."),
+    "des_calibration2021": ("A. De Santis, T. Giovannelli, S. Lucidi, M. Messedaglia, and M. Roma",
                  '"A Simulation-Based Optimization Approach for the Calibration of a Discrete Event Simulation Model of an Emergency Department,"',
                  "arXiv:2102.00945, 2021."),
-    "des_review2022": ("Anonymous",
+    "des_review2022": ("E. Doudareva and M. Carter",
                  '"Discrete Event Simulation for Emergency Department Modelling: A Systematic Review of Validation Methods,"',
-                 "ScienceDirect, 2022."),
-    "des_kolding": ("Anonymous",
+                 "Operations Research for Health Care, vol. 33, 100340, 2022."),
+    "des_kolding": ("D. Kozlowski, C. B. Mogensen, and N. C. Petersen",
                  '"Discrete Event Simulation Modelling for an Improved Patient Flow at the Emergency Department, Sygehus Lillebælt, Kolding,"',
-                 "PMC3327033."),
-    "ambulance_diversion2021": ("Anonymous",
+                 "Scandinavian J. Trauma, Resuscitation and Emergency Medicine, vol. 20, suppl. 2, P14, 2012."),
+    "ambulance_diversion2021": ("C. Piermarini and M. Roma",
                  '"A Simulation-Based Optimization Approach for Analyzing the Ambulance Diversion Phenomenon in an Emergency Department Network,"',
                  "arXiv:2108.04162, 2021."),
-    "los_prediction2023": ("Anonymous",
+    "los_prediction2023": ("A. J. Zeleke, P. Palumbo, P. Tubertini, R. Miglio, and L. Chiari",
                  '"Machine Learning-Based Prediction of Hospital Prolonged Length of Stay Admission at Emergency Department: A Gradient Boosting Algorithm Analysis,"',
-                 "Frontiers in Artificial Intelligence, 2023."),
-    "overcrowding2025": ("Anonymous",
+                 "Frontiers in Artificial Intelligence, vol. 6, art. 1179226, 2023."),
+    "overcrowding2025": ("O. Vural, B. Ozaydin, K. Y. Aram, J. Booth, B. F. Lindsey, and A. Ahmed",
                  '"An Artificial Intelligence-Based Framework for Predicting Emergency Department Overcrowding: Development and Evaluation Study,"',
                  "arXiv:2504.18578, 2025."),
-    "triage_ml_pmc": ("Anonymous",
+    "triage_ml_pmc": ("Y.-H. Chang, H.-M. Shih, J.-E. Wu, F.-W. Huang, W.-K. Chen, D.-M. Chen, Y.-T. Chung, and C. C. N. Wang",
                  '"Machine Learning-Based Triage to Identify Low-Severity Patients with a Short Discharge Length of Stay in Emergency Department,"',
-                 "PMC9123815."),
+                 "BMC Emergency Medicine, vol. 22, art. 88, 2022."),
     "kaggle_dataset": ("maalona (Kaggle username)",
                  '"Hospital Triage and Patient History Data,"',
                  "Kaggle dataset - Yale New Haven Health System, retrospective study, March 2014 - July 2017."),
@@ -590,93 +590,15 @@ INSTITUTION = "Amrita Vishwa Vidyapeetham"
 DEPARTMENT = "Department of Artificial Intelligence"
 
 
-def build_cover_page(doc, title, subtitle):
-    """Institutional cover page for the course submission - separate from
-    the book's own clean title page (build_title_page, the next page),
-    which stays free of this academic-submission framing so the book
-    itself still reads like the reference Kindle book it's modeled on."""
-    for _ in range(1):
-        doc.add_paragraph()
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(INSTITUTION)
-    r.font.size = Pt(20)
-    r.font.bold = True
-    r.font.color.rgb = NAVY
-    r.font.name = "Times New Roman"
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(DEPARTMENT)
-    r.font.size = Pt(14)
-    r.font.color.rgb = GREY
-    r.font.name = "Times New Roman"
-
-    for _ in range(2):
-        doc.add_paragraph()
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(f"Course Project Report — {COURSE_CODE}")
-    r.font.size = Pt(13)
-    r.font.italic = True
-    r.font.color.rgb = INK
-    r.font.name = "Times New Roman"
-
-    for _ in range(2):
-        doc.add_paragraph()
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(title)
-    r.font.size = Pt(20)
-    r.font.bold = True
-    r.font.color.rgb = NAVY
-    r.font.name = "Times New Roman"
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(subtitle)
-    r.font.size = Pt(13)
-    r.font.italic = True
-    r.font.color.rgb = GREY
-    r.font.name = "Times New Roman"
-
-    for _ in range(3):
-        doc.add_paragraph()
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("Submitted by")
-    r.font.size = Pt(12)
-    r.font.bold = True
-    r.font.name = "Times New Roman"
-
-    doc.add_paragraph()
-    for name, roll in TEAM:
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = p.add_run(f"{name}  ({roll})")
-        r.font.size = Pt(12)
-        r.font.name = "Times New Roman"
-
-    for _ in range(2):
-        doc.add_paragraph()
-
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run(f"Under the guidance of: {FACULTY_GUIDE}")
-    r.font.size = Pt(12)
-    r.font.italic = True
-    r.font.color.rgb = GREY
-    r.font.name = "Times New Roman"
-
-    # A real section break (not a plain inline page-break run, unlike every
-    # other page break in this book) - a plain break here produced a
-    # mysterious blank filler page between the cover and the title page in
-    # Word's PDF export even though the underlying XML had no second break;
-    # a genuine new section resolves it and also lets this front page carry
-    # its own section properties independent of the rest of the book.
+def add_body_section_break(doc):
+    """Starts a new page in a genuine new section, carrying the book's
+    normal B5 geometry - not a plain inline page-break run. Word has
+    produced a real extra blank page from a plain add_page_break() at two
+    separate front-matter transitions now (cover -> title page, and here,
+    TOC -> Abbreviations, the latter only appearing once the TOC field is
+    actually computed and spans several pages) - a genuine section break
+    resolves both, so this is the one to reach for at any front-matter
+    transition that follows a page-break-sensitive element like a TOC field."""
     new_section = doc.add_section(WD_SECTION.NEW_PAGE)
     new_section.page_width = Inches(PAGE_WIDTH_IN)
     new_section.page_height = Inches(PAGE_HEIGHT_IN)
@@ -687,6 +609,55 @@ def build_cover_page(doc, title, subtitle):
     new_section.gutter = Inches(GUTTER_IN)
     mirror = OxmlElement("w:mirrorMargins")
     new_section._sectPr.append(mirror)
+
+
+def _full_bleed_picture(doc, image_path):
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(0)
+    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.line_spacing = 1.0
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run()
+    run.add_picture(image_path, width=Inches(PAGE_WIDTH_IN), height=Inches(PAGE_HEIGHT_IN))
+
+
+def build_front_cover_page(doc, image_path):
+    """Full-bleed illustrated front cover (literal page 1) - title, the
+    book's real core finding as a coverage-gap diagram, team names and
+    faculty guide, styled after the reference Kindle-book cover the
+    professor liked. Zero-margin section of its own so the image fills the
+    page edge to edge, then a genuine section break (not a plain inline
+    page-break run - that produced a mysterious blank filler page here in
+    an earlier version) back to the book's normal B5 geometry for
+    build_title_page, which follows immediately after."""
+    section = doc.sections[-1]
+    section.left_margin = Inches(0)
+    section.right_margin = Inches(0)
+    section.top_margin = Inches(0)
+    section.bottom_margin = Inches(0)
+    section.header_distance = Inches(0)
+    section.footer_distance = Inches(0)
+
+    _full_bleed_picture(doc, image_path)
+    add_body_section_break(doc)
+
+
+def build_back_cover_page(doc, image_path):
+    """Full-bleed illustrated back cover - the literal last page of the
+    book: a 'Book Overview' blurb drawn from the real Preface/Chapter 6-7
+    content plus the Mondrian partition grid. Its own zero-margin section
+    so it doesn't inherit the body's B5 margins."""
+    new_section = doc.add_section(WD_SECTION.NEW_PAGE)
+    new_section.page_width = Inches(PAGE_WIDTH_IN)
+    new_section.page_height = Inches(PAGE_HEIGHT_IN)
+    new_section.left_margin = Inches(0)
+    new_section.right_margin = Inches(0)
+    new_section.top_margin = Inches(0)
+    new_section.bottom_margin = Inches(0)
+    new_section.header_distance = Inches(0)
+    new_section.footer_distance = Inches(0)
+
+    _full_bleed_picture(doc, image_path)
 
 
 def build_title_page(doc, title, subtitle):
@@ -831,7 +802,7 @@ def build_preface(doc, preface_text):
     matter (title page -> Preface -> Contents, no certificate/declaration/
     acknowledgement/abstract block), used in place of build_abstract for
     the single consolidated book report."""
-    add_page_break(doc)
+    add_body_section_break(doc)
     h = doc.add_paragraph()
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = h.add_run("Preface")
@@ -843,7 +814,7 @@ def build_preface(doc, preface_text):
 
 
 def build_toc_page(doc):
-    add_page_break(doc)
+    add_body_section_break(doc)
     h = doc.add_paragraph()
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = h.add_run("TABLE OF CONTENTS")
@@ -881,7 +852,7 @@ def build_list_of_figures_tables(doc):
 
 
 def build_abbreviations(doc):
-    add_page_break(doc)
+    add_body_section_break(doc)
     h = doc.add_paragraph()
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = h.add_run("LIST OF ABBREVIATIONS")

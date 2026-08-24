@@ -17,7 +17,7 @@ OUT_PATH = "reports/paper/mondrian_cp_er_des_paper.docx"
 FIG_DIR = "reports/assignments/figures"
 
 TITLE = "Beyond Marginal Guarantees: Mondrian Conformal Prediction for High-Variance Discrete-Event Queueing Systems"
-AUTHORS = ["G. Venugopalan", "V. Sudhakar", "R. Arulprakash", "H. K.V."]
+AUTHORS = ["G. Venugopalan", "V. Sudhakar", "R. Arulprakash", "Harshith Kv"]
 AFFILIATION = "Department of Artificial Intelligence, Amrita Vishwa Vidyapeetham (Faculty Guide: Akhil V.M.)"
 
 ABSTRACT = (
@@ -599,11 +599,13 @@ def build_references(doc):
         "hoot2008": ("N. R. Hoot, L. J. LeBlanc, I. Jones, S. R. Levin, C. Zhou, C. S. Gadd, and D. Aronsky",
                     '"Forecasting Emergency Department Crowding: A Discrete Event Simulation,"',
                     "Annals of Emergency Medicine, vol. 52, no. 2, pp. 116-125, 2008."),
-        "des_calibration2021": ("Anonymous", '"A Simulation-Based Optimization Approach for the Calibration '
+        "des_calibration2021": ("A. De Santis, T. Giovannelli, S. Lucidi, M. Messedaglia, and M. Roma",
+                                '"A Simulation-Based Optimization Approach for the Calibration '
                                 'of a Discrete Event Simulation Model of an Emergency Department,"',
                                 "arXiv:2102.00945, 2021."),
-        "des_review2022": ("Anonymous", '"Discrete Event Simulation for Emergency Department Modelling: A '
-                           'Systematic Review of Validation Methods,"', "ScienceDirect, 2022."),
+        "des_review2022": ("E. Doudareva and M. Carter", '"Discrete Event Simulation for Emergency '
+                           'Department Modelling: A Systematic Review of Validation Methods,"',
+                           "Operations Research for Health Care, vol. 33, 100340, 2022."),
         "kingman1962": ("J. F. C. Kingman", '"On Queues in Heavy Traffic,"',
                         "J. R. Stat. Soc. Ser. B, vol. 24, no. 2, pp. 383-392, 1962."),
         "sakasegawa1977": ("H. Sakasegawa", '"An Approximation Formula Lq = alpha . rho^beta / (1 - rho),"',

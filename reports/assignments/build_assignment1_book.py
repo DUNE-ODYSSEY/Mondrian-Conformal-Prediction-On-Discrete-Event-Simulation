@@ -2436,7 +2436,7 @@ def add_references(doc):
 
 
 def add_appendix_a(doc):
-    bc.add_page_break(doc)
+    bc.add_body_section_break(doc)
     bc._current_chapter["n"] = "A"
     bc._table_counter["n"] = 0
     bc._figure_counter["n"] = 0
@@ -2460,7 +2460,7 @@ def add_appendix_a(doc):
 
 
 def add_appendix_b(doc):
-    bc.add_page_break(doc)
+    bc.add_body_section_break(doc)
     bc._current_chapter["n"] = "B"
     bc._table_counter["n"] = 0
     bc._figure_counter["n"] = 0
@@ -2508,7 +2508,7 @@ def build():
     bc.reset_counters()
     bc.reset_citations()
 
-    bc.build_cover_page(doc, TITLE, SUBTITLE)
+    bc.build_front_cover_page(doc, os.path.join(bc.REPO_ROOT, "reports", "assignments", "figures", "front_cover.png"))
     bc.build_title_page(doc, TITLE, SUBTITLE)
     bc.build_preface(doc, _abstract(bc))
     bc.build_toc_page(doc)
@@ -2528,6 +2528,7 @@ def build():
     add_references(doc)
     add_appendix_a(doc)
     add_appendix_b(doc)
+    bc.build_back_cover_page(doc, os.path.join(bc.REPO_ROOT, "reports", "assignments", "figures", "back_cover.png"))
 
     doc.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

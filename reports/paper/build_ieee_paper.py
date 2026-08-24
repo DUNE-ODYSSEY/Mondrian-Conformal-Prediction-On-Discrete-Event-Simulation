@@ -43,9 +43,12 @@ ABSTRACT = (
     "targets, but - reported honestly rather than omitted - does not match Mondrian CP's conditional-coverage "
     "repair. We also prove that equal-width bins along the utilization axis have provably unbounded scale "
     "distortion as utilization approaches 1, and use this to build SA-Mondrian CP, a sample-size-floored "
-    "adaptive binning scheme along a single derived covariate: it matches the 2-covariate Mondrian grid's "
-    "worst-category coverage (two wins, two narrow losses across four targets) while consistently "
-    "outperforming QT-CP. Code and data tables are publicly available."
+    "adaptive binning scheme along a single derived covariate. Tested rigorously across 30 independent "
+    "repeats with paired significance testing - not the single split a first look suggested was a tie - it "
+    "consistently underperforms the 2-covariate Mondrian grid (significantly on three of four targets, "
+    "p ≤ 0.017), while still significantly outperforming QT-CP on three of four targets (p < 0.001): a "
+    "genuine negative result for collapsing Mondrian's partition to one covariate, reported as such. Code "
+    "and data tables are publicly available."
 )
 
 INDEX_TERMS = ("Conformal prediction, Mondrian conformal prediction, normalized nonconformity measures, "
@@ -531,27 +534,41 @@ finite-sample failure mode rather than bin geometry alone. n_min is itself selec
 calibration data only - never the test set - mirroring exactly how ρ_cap is chosen for QT-CP (Section VI-B).
 """)
 
-    ic.add_subsection_heading(doc, "C", "Results: Matches Mondrian CP with One Covariate, Beats QT-CP")
-    ic.add_table(doc, "Worst-Category Coverage: Mondrian CP vs. QT-CP vs. SA-Mondrian CP",
-                 ["Target", "Mondrian (2D)", "QT-CP", "SA-Mondrian (1D)"],
+    ic.add_subsection_heading(doc, "C", "Results: A Real Loss to Mondrian CP, a Real Win Over QT-CP")
+    ic.add_body(doc, """
+A first look, on a single calibration/test split, made SA-Mondrian CP appear to match the 2-covariate
+Mondrian grid (two wins, two narrow losses). This project's own standing practice (Section IV) is not to
+trust a single split, so we repeated the comparison across 30 independent (calibration, test) draws - the
+same draws, and the same paired-significance discipline, used for this paper's central marginal-coverage
+result (Section V-C) - with SA-Mondrian's n_min reselected from calibration data alone on every repeat. The
+single-split tie did not hold up.
+""")
+    ic.add_table(doc, "Worst-Category Coverage, 30-Repeat Mean ± Std (Target 90%; p-value is SA-Mondrian vs. Mondrian, paired t-test)",
+                 ["Target", "Mondrian (2D)", "QT-CP", "SA-Mondrian (1D)", "p-value"],
                  [
-                     ["n_patients", "83.3%", "70.3%", "85.0%"],
-                     ["mean_wait", "85.5%", "76.1%", "86.6%"],
-                     ["mean_total", "86.8%", "83.0%", "86.0%"],
-                     ["p95_wait", "86.3%", "76.1%", "85.0%"],
-                 ], col_widths=[Inches(0.85), Inches(0.85), Inches(0.7), Inches(0.95)], font_size=7.5)
+                     ["n_patients", "85.3 ± 2.7%", "71.3 ± 4.0%", "83.1 ± 3.9%", "0.009"],
+                     ["mean_wait", "84.3 ± 3.1%", "80.3 ± 3.1%", "83.7 ± 3.5%", "0.404"],
+                     ["mean_total", "84.7 ± 2.7%", "81.5 ± 3.2%", "82.3 ± 4.8%", "0.017"],
+                     ["p95_wait", "85.5 ± 2.9%", "78.7 ± 4.3%", "83.2 ± 2.4%", "<0.001"],
+                 ], col_widths=[Inches(0.6), Inches(0.72), Inches(0.68), Inches(0.72), Inches(0.48)], font_size=6.3)
     ic.add_figure(doc, "reports/paper/figures/sa_mondrian_comparison.png",
                   "Left: equal-width bins' worst-bin scale ratio vs. geometric bins', as a function of the "
-                  "observed utilization ceiling (log scale). Right: worst-category coverage, all four "
-                  "targets.", width=Inches(3.3))
+                  "observed utilization ceiling (log scale). Right: worst-category coverage, 30-repeat mean "
+                  "± std, all four targets (* p<0.05, ** p<0.001, paired t-test vs. Mondrian CP).",
+                  width=Inches(3.3))
     ic.add_body(doc, """
-Selected with calibration data alone, SA-Mondrian CP wins on two targets (n_patients, mean_wait_minutes) and
-loses narrowly on two (mean_total_minutes, p95_wait_minutes; largest gap 1.3 points) against the existing
-2-covariate Mondrian grid - a genuine wash, not a clean win, reported as such. What it does consistently is
-beat QT-CP by 5-15 points on every target while matching Mondrian CP's performance using a single derived
-covariate and a bin-construction rule chosen for a stated reason, rather than an arbitrary tercile split on
-two raw covariates. We read this as evidence that ρ̂ alone captures most of what the 2D grid captures for
-this problem, and that how bins are built along it matters as much as how many there are.
+SA-Mondrian CP loses to the 2-covariate Mondrian grid on every target - significantly on three of four
+(paired t-test, p ≤ 0.017), with only mean_wait_minutes not reaching significance (p = 0.40). Collapsing
+Mondrian's two raw covariates into a single derived one costs real conditional-coverage performance: the
+2D grid's fully nonparametric per-cell quantile evidently captures structure (interaction effects between
+staffing and arrival rate not reducible to their ratio ρ̂ alone) that a 1D construction, however carefully
+binned, cannot. We report this as a genuine negative result for the hypothesis that ρ̂ alone is sufficient,
+rather than reframing a loss as a tie. What does hold up under the same rigor, checked with the identical
+paired test: SA-Mondrian CP significantly outperforms QT-CP on three of four targets (mean_wait_minutes,
+n_patients, p95_wait_minutes; p < 0.001 each) - only mean_total_minutes shows no significant difference
+between them (p = 0.44). So while a single derived covariate is not enough to match Mondrian's own 2D
+partition, how that covariate's bins are built still matters more than QT-CP's fixed parametric rescaling
+of it, on most though not all targets.
 """)
 
 
@@ -606,9 +623,13 @@ genuine width-efficiency gain over standard CP, but not a replacement for Mondri
 repair. Examining why motivates a further result: equal-width bins along the utilization axis have provably
 unbounded scale distortion as utilization approaches 1, and the geometric-spacing fix this implies fails
 empirically from calibration-sample scarcity in the tail - correcting for which yields SA-Mondrian CP, a
-sample-size-floored adaptive binning scheme that matches the 2-covariate Mondrian grid using one derived
-covariate and consistently beats QT-CP, evidence that how bins are built along the difficulty axis matters
-as much as how many there are, and a concrete direction for combining the two remaining open questions.
+sample-size-floored adaptive binning scheme along that one derived covariate. Tested with the same 30-repeat
+rigor as this paper's central finding rather than trusted from a single split, it significantly underperforms
+the 2-covariate Mondrian grid on three of four targets - a genuine negative result for the hypothesis that a
+single derived covariate suffices - while still significantly outperforming QT-CP on three of four,
+evidence that how bins are built along the difficulty axis matters even where how many covariates define it
+does not fully substitute for Mondrian's own nonparametric partition, and a concrete direction for combining
+the two remaining open questions.
 These results argue that, in queueing-driven operational domains specifically, conditional - not only
 marginal - coverage should be the reported and trusted quantity wherever the decision itself is conditional
 on the operating regime.

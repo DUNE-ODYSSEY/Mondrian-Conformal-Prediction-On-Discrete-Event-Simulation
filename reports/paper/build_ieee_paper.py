@@ -605,10 +605,13 @@ and its variance - diverging as utilization ρ → 1, non-linearly and without b
 nonconformity quantile - fit mostly to the many low-utilization scenarios in the calibration set -
 systematically undercovers the few high-utilization scenarios where this variance is largest. Mondrian
 CP's per-category quantile is exactly the correction this mechanism calls for: a separate quantile fit only
-to that category's own (larger) variance. This also explains why the gap is asymmetric across targets -
-n_patients, whose variance is comparatively flat across the staffing/arrival grid, shows no significant
-conditional gap to correct, while wait-time targets, whose variance is sharply regime-dependent, show the
-largest gap. The practical implication for a staffing decision-maker is direct: a marginal coverage number,
+to that category's own (larger) variance. This also explains why the gap is asymmetric across targets, and
+it is checkable directly against calibration-set residual variance per category, not left as narrative:
+n_patients' per-category residual standard deviation ranges only 5.1-9.3 (a 1.8x spread) across the 9
+categories and shows no significant conditional gap to correct, while wait-time targets' residual spread is
+far more regime-dependent - 4.1x for mean_total_minutes, 19.1x for mean_wait_minutes, 23.9x for
+p95_wait_minutes - tracking directly with the size of each target's own conditional coverage gap. The
+practical implication for a staffing decision-maker is direct: a marginal coverage number,
 however statistically valid, is the wrong number to trust when the decision at hand is specifically about the
 high-utilization regime where marginal coverage is least informative about that regime's own reliability.
 """, first_line_indent=False)

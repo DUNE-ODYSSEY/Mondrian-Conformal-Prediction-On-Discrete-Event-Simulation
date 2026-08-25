@@ -606,12 +606,21 @@ nonconformity quantile - fit mostly to the many low-utilization scenarios in the
 systematically undercovers the few high-utilization scenarios where this variance is largest. Mondrian
 CP's per-category quantile is exactly the correction this mechanism calls for: a separate quantile fit only
 to that category's own (larger) variance. This also explains why the gap is asymmetric across targets, and
-it is checkable directly against calibration-set residual variance per category, not left as narrative:
-n_patients' per-category residual standard deviation ranges only 5.1-9.3 (a 1.8x spread) across the 9
-categories and shows no significant conditional gap to correct, while wait-time targets' residual spread is
-far more regime-dependent - 4.1x for mean_total_minutes, 19.1x for mean_wait_minutes, 23.9x for
-p95_wait_minutes - tracking directly with the size of each target's own conditional coverage gap. The
-practical implication for a staffing decision-maker is direct: a marginal coverage number,
+it is checkable directly against calibration-set residual variance per category (Table VII), not left as
+narrative: n_patients' per-category residual standard deviation barely spreads across the 9 categories and
+shows no significant conditional gap to correct, while wait-time targets' residual spread is far more
+regime-dependent, tracking directly with the size of each target's own conditional coverage gap.
+""", first_line_indent=False)
+    ic.add_table(doc, "Per-Category Calibration Residual Std., Min-Max (9 Categories)",
+                 ["Target", "Min std", "Max std", "Max/min ratio"],
+                 [
+                     ["n_patients", "5.1", "9.3", "1.8x"],
+                     ["mean_total", "2.8", "11.5", "4.1x"],
+                     ["mean_wait", "0.6", "12.0", "19.1x"],
+                     ["p95_wait", "4.8", "115.6", "23.9x"],
+                 ], col_widths=[Inches(0.75), Inches(0.55), Inches(0.55), Inches(0.75)], font_size=7.5)
+    ic.add_body(doc, """
+The practical implication for a staffing decision-maker is direct: a marginal coverage number,
 however statistically valid, is the wrong number to trust when the decision at hand is specifically about the
 high-utilization regime where marginal coverage is least informative about that regime's own reliability.
 """, first_line_indent=False)

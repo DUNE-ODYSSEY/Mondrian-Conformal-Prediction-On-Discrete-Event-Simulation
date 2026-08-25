@@ -571,6 +571,22 @@ partition, how that covariate's bins are built still matters more than QT-CP's f
 of it, on most though not all targets.
 """)
 
+    ic.add_subsection_heading(doc, "D", "A Natural Refinement That Changes Nothing")
+    ic.add_body(doc, """
+If replacing Mondrian's 2D grid with one derived covariate loses, a narrower question follows: does
+refining the 2D grid, rather than replacing it, help? Within each of Mondrian's 9 existing cells, ρ̂ still
+varies somewhat, so we normalized residuals by QT-CP's σ̂(x) before calibrating each cell's own quantile -
+keeping Mondrian's partition intact and adding only a continuous within-cell correction. Tested with the
+same 30-repeat, paired-significance rigor, this makes no significant difference on any target (|Δ| ≤ 0.54
+points, p ≥ 0.19 throughout) - a genuine null result, not a small win reframed. The most likely reason:
+Mondrian's tercile-width cells are already narrow enough that ρ̂, and so σ̂(x), barely varies within one -
+the normalization is close to a no-op. This is itself informative: whatever keeps Mondrian CP's own
+worst-category coverage at 84-86% rather than the full 90% target is not leftover within-cell utilization
+heterogeneity, and combining Mondrian's partition with QT-CP's rescaling - the direction Section VII-B
+might suggest - does not resolve it. We leave the actual source of that residual gap as an open question
+rather than speculate past what these results support.
+""")
+
 
 def build_discussion(doc):
     ic.add_section_heading(doc, "Discussion")
@@ -647,11 +663,12 @@ rigor as this paper's central finding rather than trusted from a single split, i
 the 2-covariate Mondrian grid on three of four targets - a genuine negative result for the hypothesis that a
 single derived covariate suffices - while still significantly outperforming QT-CP on three of four,
 evidence that how bins are built along the difficulty axis matters even where how many covariates define it
-does not fully substitute for Mondrian's own nonparametric partition, and a concrete direction for combining
-the two remaining open questions.
-These results argue that, in queueing-driven operational domains specifically, conditional - not only
-marginal - coverage should be the reported and trusted quantity wherever the decision itself is conditional
-on the operating regime.
+does not fully substitute for Mondrian's own nonparametric partition. The natural next attempt - refining
+Mondrian's own grid with QT-CP's continuous rescaling rather than replacing it - changes nothing (a genuine
+null result, Section VII-D), narrowing rather than resolving the open question of what keeps even Mondrian
+CP's own worst-category coverage below its 90% target. These results argue that, in queueing-driven
+operational domains specifically, conditional - not only marginal - coverage should be the reported and
+trusted quantity wherever the decision itself is conditional on the operating regime.
 """.format(gopakumar=ic.cite("gopakumar2026")))
 
 

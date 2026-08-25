@@ -47,8 +47,14 @@ ABSTRACT = (
     "repeats with paired significance testing - not the single split a first look suggested was a tie - it "
     "consistently underperforms the 2-covariate Mondrian grid (significantly on three of four targets, "
     "p ≤ 0.017), while still significantly outperforming QT-CP on three of four targets (p < 0.001): a "
-    "genuine negative result for collapsing Mondrian's partition to one covariate, reported as such. Code "
-    "and data tables are publicly available."
+    "genuine negative result for collapsing Mondrian's partition to one covariate, reported as such. We "
+    "formalize the paper's mechanism account as a proposition - under a heavy-traffic-motivated scale model, "
+    "conditional coverage is provably monotonic in utilization for any pooled quantile - and distinguish "
+    "this structural claim from a looser quantitative approximation of it, checked honestly against the "
+    "data rather than assumed. A further natural refinement, rescaling within Mondrian's own categories "
+    "rather than replacing them, changes nothing (a genuine null result, p ≥ 0.19 throughout), narrowing "
+    "rather than resolving what still limits Mondrian CP's own worst-category coverage. Code and data "
+    "tables are publicly available."
 )
 
 INDEX_TERMS = ("Conformal prediction, Mondrian conformal prediction, normalized nonconformity measures, "
@@ -483,8 +489,10 @@ where wait-time variance is utilization-driven. However, QT-CP does not match Mo
 coverage on any of the four targets, and on n_patients - the one target Section V-B already showed has no
 real conditional gap to correct - QT-CP's worst-category coverage is worse than even standard CP's, plausibly
 because a single scalar utilization proxy is a coarser correction than Mondrian's fully nonparametric,
-per-category empirical quantile, which can absorb structure (ESI-mix effects, surrogate-specific residual
-patterns) a one-dimensional ρ̂ cannot. We report this as an honest, mixed result rather than omitting the
+per-category empirical quantile, which can absorb interaction effects between staffing and arrival rate not
+reducible to their ratio ρ̂ alone - Section VII-C provides direct evidence for exactly this: SA-Mondrian CP,
+built on ρ̂ alone, measurably loses to the 2-covariate grid. We report this as an honest, mixed result rather
+than omitting the
 comparison: QT-CP is a genuine methodological alternative - bin-free, theoretically grounded, and more
 width-efficient - but Mondrian CP's discrete empirical binning remains the stronger correction for this
 paper's central conditional-coverage question.

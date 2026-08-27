@@ -1,0 +1,17 @@
+family,target,raw_p,holm_significant
+central_mondrian_vs_standard,mean_total_minutes,6.898380321200187e-06,True
+central_mondrian_vs_standard,mean_wait_minutes,0.0003255725701571774,True
+central_mondrian_vs_standard,n_patients,3.5469306884574658e-06,True
+central_mondrian_vs_standard,p95_wait_minutes,1.724626919242303e-06,True
+sa_mondrian_vs_mondrian,mean_total_minutes,0.0166091392058926,True
+sa_mondrian_vs_mondrian,mean_wait_minutes,0.4044115869783073,False
+sa_mondrian_vs_mondrian,n_patients,0.0086601414061608,True
+sa_mondrian_vs_mondrian,p95_wait_minutes,0.0003841705476964,True
+sa_mondrian_vs_qtcp,mean_total_minutes,0.44137031695596035,False
+sa_mondrian_vs_qtcp,mean_wait_minutes,0.0002627982597399617,True
+sa_mondrian_vs_qtcp,n_patients,6.4760977430526225e-12,True
+sa_mondrian_vs_qtcp,p95_wait_minutes,5.145704924946636e-05,True
+hybrid_vs_mondrian,mean_total_minutes,0.324764061133058,False
+hybrid_vs_mondrian,mean_wait_minutes,0.1936999033135229,False
+hybrid_vs_mondrian,n_patients,0.2537914971584901,False
+hybrid_vs_mondrian,p95_wait_minutes,0.7245081363608468,False

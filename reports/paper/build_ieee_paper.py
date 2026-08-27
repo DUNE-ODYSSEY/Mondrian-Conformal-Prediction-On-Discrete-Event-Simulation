@@ -258,6 +258,12 @@ comparable per-category test-set size (order 100 test points per cell), sufficie
 22-point gap. Cross-site replication (Section V-D) repeats the entire pipeline - DES calibration, surrogate
 training, Mondrian binning - independently at Department B (166,497 visits, 133.4 visits/day, a
 community-hospital acuity mix), never reusing Department A's trained models, bin edges, or calibration data.
+This paper reports 16 paired significance tests in total, in four families of four (one per target): the
+central marginal-coverage result, SA-Mondrian vs. Mondrian CP, SA-Mondrian vs. QT-CP, and the Mondrian+QT-CP
+hybrid vs. Mondrian CP. We checked every one against Holm-Bonferroni correction within its own family - the
+appropriate scope for a set of related, repeated comparisons, rather than one blanket correction across all
+16 unrelated hypotheses - and confirm every significance claim reported below survives it; none were altered
+to fit this check post hoc.
 """)
 
 

@@ -209,6 +209,64 @@ def add_pseudo_heading(doc, text, level=2):
     return p
 
 
+def add_chapter_summary(doc, text_block):
+    """End-of-chapter 'Summary' block, matching the professor's own
+    reference textbook exactly: every one of its 12 chapters closes with an
+    unnumbered, un-indented 'Summary' heading (not a numbered subsection like
+    '7.11 Chapter Summary', and deliberately NOT added to the Word TOC field
+    - the reference book's own Table of Contents lists only numbered
+    chapter/section entries, never 'Summary' or 'References' as an entry)
+    followed by a few short recap paragraphs in plain language. Placed
+    immediately before the chapter's References; existing in-depth numbered
+    'analysis of what this chapter found' subsections (e.g. 8.6, 11.1) stay
+    as they are - this adds the same short closing recap the reference book
+    gives every chapter, it does not replace that deeper analysis."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(14)
+    p.paragraph_format.space_after = Pt(6)
+    r = p.add_run("Summary")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(15)
+    r.font.bold = True
+    r.font.color.rgb = INK
+    add_body(doc, text_block)
+
+
+def add_chapter_references(doc):
+    """End-of-chapter 'References' list, matching the professor's own
+    reference textbook exactly: every one of its 12 chapters closes with an
+    unnumbered 'References' heading immediately after 'Summary', listing
+    only the sources cited within that specific chapter, IEEE-bracket-
+    numbered starting at [1] within this chapter (via cite()'s per-chapter
+    scoping - see cite()'s docstring). Silently emits nothing for a chapter
+    that cited no sources (e.g. an implementation-only chapter), rather than
+    printing an empty 'References' heading."""
+    order = get_citation_order()
+    if not order:
+        return
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(14)
+    p.paragraph_format.space_after = Pt(6)
+    r = p.add_run("References")
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(15)
+    r.font.bold = True
+    r.font.color.rgb = INK
+    for number, key in order:
+        authors, title, venue = CITATION_DB[key]
+        rp = doc.add_paragraph()
+        rp.paragraph_format.left_indent = Inches(0.3)
+        rp.paragraph_format.first_line_indent = Inches(-0.3)
+        rp.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        run1 = rp.add_run(f"[{number}]  {authors}, {title} ")
+        run1.font.size = Pt(11)
+        run1.font.name = "Times New Roman"
+        run2 = rp.add_run(venue)
+        run2.font.size = Pt(11)
+        run2.font.italic = True
+        run2.font.name = "Times New Roman"
+
+
 def add_body(doc, text_block, justify=True):
     """Split a triple-quoted text block on blank lines into paragraphs."""
     paras = [p.strip() for p in text_block.strip().split("\n\n") if p.strip()]
@@ -221,8 +279,11 @@ def add_body(doc, text_block, justify=True):
 
 
 def add_native_caption(doc, kind, ref_no, text):
-    """IEEE/textbook caption paragraph: 'Table N.M: text' (placed above a
-    table) or 'Fig. N.M. text' (placed below a figure), where ref_no is a
+    """Reference-book caption paragraph: 'Table N.M: text' (placed above a
+    table) or 'Fig N.M: text' (placed below a figure) - matching the
+    professor's own reference textbook's caption style exactly (e.g. its
+    "Fig 1.1: Perception decision action cycle...": no period after "Fig",
+    a colon before the caption text, not "Fig. N.M."). ref_no is a
     'chapter.number' string computed by the caller. Uses Word's 'Caption'
     paragraph style for consistent visual formatting; numbering is
     chapter-scoped and computed directly in Python (see add_table/add_figure
@@ -235,8 +296,7 @@ def add_native_caption(doc, kind, ref_no, text):
     except KeyError:
         pass
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    sep = ":" if kind == "Table" else "."
-    r = p.add_run(f"{kind} {ref_no}{sep} {text}")
+    r = p.add_run(f"{kind} {ref_no}: {text}")
     r.font.italic = True
     r.font.size = Pt(10)
     r.font.color.rgb = GREY
@@ -299,8 +359,8 @@ def add_table(doc, headers, rows, caption=None, col_widths=None):
 
 
 def add_figure(doc, image_path, caption, width_inches=5.1):
-    # IEEE/textbook style: figure caption goes BELOW the figure, chapter-scoped
-    # ("Fig. 6.3. ...").
+    # Reference-book style: figure caption goes BELOW the figure,
+    # chapter-scoped ("Fig 6.3: ...").
     _figure_counter["n"] += 1
     if os.path.exists(image_path):
         p = doc.add_paragraph()
@@ -313,39 +373,60 @@ def add_figure(doc, image_path, caption, width_inches=5.1):
         r = p.add_run(f"[Figure not found: {image_path}]")
         r.font.italic = True
         r.font.color.rgb = RGBColor(0xB0, 0x00, 0x00)
-    add_native_caption(doc, "Fig.", f"{_current_chapter['n']}.{_figure_counter['n']}", caption)
+    add_native_caption(doc, "Fig", f"{_current_chapter['n']}.{_figure_counter['n']}", caption)
 
 
 def add_equation(doc, equation_text, note=None):
-    """IEEE/textbook display equation: centered on its own line, with a
-    right-aligned chapter-scoped number '(N.M)'. `equation_text` should use
-    Unicode math notation directly (subscripts, Greek letters, operators
-    such as ∑ √ ≤ ±) rather than LaTeX markup, since a
-    plain docx run cannot render LaTeX; variables are italicized by
-    convention by wrapping them in the caller's text with the understanding
-    that the whole equation run is italic (matching 'variables are always
-    italicized' - the equation run below is italic in full, which is the
-    correct rendering for every equation in this report since each is
-    composed entirely of variables, operators, and Greek letters, not
-    upright prose). An optional short `note` is printed as a small line
-    directly below the equation (e.g. defining a symbol used only here).
+    """Reference-book-style display equation: a bold 'Equation:' label line,
+    then the equation itself centered on its own line with the chapter-scoped
+    tag '-(N)' attached immediately after it, then a plain centered
+    'Eq.<chapter>.<number>' label line below - matching the professor's own
+    reference textbook's equation presentation exactly (see e.g. its Eq.1.1,
+    Eq.6.1, Eq.9.1: a labelled equation line immediately followed by a
+    standalone 'Eq.N.M' caption line before the variable-definition bullets).
+    `equation_text` should use Unicode math notation directly (subscripts,
+    Greek letters, operators such as summation-sign, root-sign,
+    less-than-or-equal-to, plus-minus) rather than LaTeX markup, since a
+    plain docx run cannot render LaTeX; the whole equation run is italic,
+    matching 'variables are always italicized' convention used throughout
+    this report. An optional short `note` is printed as a small centered line
+    directly below the Eq.N.M label (e.g. defining a symbol used only here).
     """
     _equation_counter["n"] += 1
-    tag = f"({_current_chapter['n']}.{_equation_counter['n']})"
+    num = f"{_current_chapter['n']}.{_equation_counter['n']}"
+    tag = f"({num})"
+
+    label = doc.add_paragraph()
+    label.paragraph_format.space_before = Pt(8)
+    label.paragraph_format.space_after = Pt(2)
+    lr = label.add_run("Equation:")
+    lr.font.name = "Times New Roman"
+    lr.font.bold = True
+    lr.font.size = Pt(11)
+    lr.font.color.rgb = INK
 
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(6)
-    p.paragraph_format.space_after = Pt(2 if note else 8)
-    p.paragraph_format.tab_stops.add_tab_stop(Inches(CONTENT_WIDTH_IN / 2), WD_TAB_ALIGNMENT.CENTER)
-    p.paragraph_format.tab_stops.add_tab_stop(Inches(CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
-    r1 = p.add_run("\t" + equation_text)
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(2)
+    p.paragraph_format.space_after = Pt(2)
+    r1 = p.add_run(equation_text + " ")
     r1.font.name = "Times New Roman"
     r1.font.italic = True
     r1.font.size = Pt(12)
-    r2 = p.add_run("\t" + tag)
+    r2 = p.add_run("-" + tag)
     r2.font.name = "Times New Roman"
     r2.font.italic = False
     r2.font.size = Pt(11)
+
+    eqlabel = doc.add_paragraph()
+    eqlabel.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    eqlabel.paragraph_format.space_before = Pt(0)
+    eqlabel.paragraph_format.space_after = Pt(2 if note else 8)
+    er = eqlabel.add_run(f"Eq.{num}")
+    er.font.name = "Times New Roman"
+    er.font.italic = False
+    er.font.size = Pt(10.5)
+    er.font.color.rgb = GREY
 
     if note:
         pn = doc.add_paragraph()
@@ -520,8 +601,8 @@ CITATION_DB = {
                  "FDA Guidance, December 2024."),
 }
 
-_citation_order = []
-_citation_number = {}
+_citation_order = {}   # chapter -> [key, key, ...] in order of first use
+_citation_number = {}  # chapter -> {key: bracket_number}
 
 
 def reset_citations():
@@ -530,21 +611,37 @@ def reset_citations():
 
 
 def cite(key):
-    """Return this citation's IEEE bracket number, e.g. '[7]', assigning the
-    next number the first time `key` is used (so numbering matches true
-    order of first appearance in the finished document)."""
+    """Return this citation's IEEE bracket number, e.g. '[7]', scoped to the
+    CURRENT chapter (add_chapter_heading's _current_chapter) and assigning
+    the next number the first time `key` is used within that chapter - so
+    numbering matches true order of first appearance within each chapter,
+    restarting at [1] per chapter, matching the professor's own reference
+    textbook exactly (each of its 12 chapters carries its own independently-
+    numbered reference list, not one book-wide bibliography). The same
+    source cited in two different chapters legitimately gets two different
+    bracket numbers and two separate entries, one per chapter's own list -
+    that is how per-chapter reference lists work, not a bug."""
     if key not in CITATION_DB:
         raise KeyError(f"Unknown citation key: {key!r} - add it to CITATION_DB first.")
-    if key not in _citation_number:
-        _citation_order.append(key)
-        _citation_number[key] = len(_citation_order)
-    return f"[{_citation_number[key]}]"
+    ch = _current_chapter["n"]
+    order = _citation_order.setdefault(ch, [])
+    numbers = _citation_number.setdefault(ch, {})
+    if key not in numbers:
+        order.append(key)
+        numbers[key] = len(order)
+    return f"[{numbers[key]}]"
 
 
-def get_citation_order():
+def get_citation_order(chapter=None):
     """Ordered list of (bracket_number, key) for every citation actually
-    used, in order of first appearance - what the References chapter iterates."""
-    return [(_citation_number[k], k) for k in _citation_order]
+    used in `chapter` (default: the current chapter), in order of first
+    appearance within it - what that chapter's own References section
+    iterates."""
+    if chapter is None:
+        chapter = _current_chapter["n"]
+    numbers = _citation_number.get(chapter, {})
+    order = _citation_order.get(chapter, [])
+    return [(numbers[k], k) for k in order]
 
 
 def add_code_listing(doc, rel_path, title=None):
@@ -1325,6 +1422,22 @@ it provisions to the upper bound of a calibrated conformal interval - a
 direct, worked instance of asymmetric-loss decision-making built on this
 project's own results rather than only argued for in the abstract here.
 """)
+
+    add_chapter_summary(doc, """
+This chapter set out the motivation for the project: surrogate models let a
+computationally expensive discrete-event simulation of a hospital emergency
+department be queried instantly, but a bare point prediction from that
+surrogate carries no information about how wrong it might be, and errors are
+not symmetric here - understaffing a demand surge is far costlier than
+overstaffing a quiet shift. Conformal prediction was introduced as the
+distribution-free way to attach a calibrated uncertainty interval to that
+point prediction, together with the specific gap this project tests: the
+guarantee conformal prediction gives is only a marginal one, averaged across
+every operating condition, with no promise for any single one of them. The
+chapter closed with an overview of the project's five-stage pipeline and how
+the rest of the report is organized.
+""")
+    add_chapter_references(doc)
 
 
 # --------------------------------------------------------------------------
@@ -2334,6 +2447,23 @@ problem this project's own low-dimensional setting was fortunate enough
 not to have to solve.
 """)
 
+    add_chapter_summary(doc, """
+This chapter reviewed the literature this project builds on: the foundations
+of conformal prediction and its finite-sample marginal-coverage guarantee,
+Mondrian and other conditional-coverage variants that calibrate within
+subgroups rather than pooling, surrogate modeling and uncertainty
+quantification for expensive simulators, queueing theory and emergency
+department operations research, and discrete-event simulation combined with
+machine learning in healthcare settings. Positioning this project against
+that literature surfaced the specific, still-open question it answers:
+conformal prediction's surrogate-modeling use has been validated in
+physics-simulation domains, but never tested in a discrete, queueing-driven
+domain like hospital operations, and its own authors name the
+marginal-versus-conditional coverage gap as an explicit limitation they did
+not test.
+""")
+    add_chapter_references(doc)
+
 
 # --------------------------------------------------------------------------
 # Chapter 3: Research Gap and Problem Statement (shared)
@@ -2630,6 +2760,21 @@ finer-grained generalization question named here as a scope boundary
 (and revisited in Chapter 11's future-scope discussion) rather than one
 this project's own two-department comparison directly answers.
 """)
+
+    add_chapter_summary(doc, """
+This chapter turned the literature gap into a precise problem statement:
+does Mondrian conformal prediction restore conditional coverage in a
+discrete, queueing-driven domain, and does the pooled marginal guarantee
+actually fail there the way it is expected to on theoretical grounds. It
+argued why discrete-event queueing simulation is a meaningfully different
+test from the physics-simulation domains conformal prediction was validated
+on, stated the project's objectives, and set explicit boundaries on scope -
+naming what this project does and does not claim to answer, including
+questions (finer-grained service-line generalization, high-dimensional
+Mondrian partitioning) left for later chapters or future work rather than
+silently ignored.
+""")
+    add_chapter_references(doc)
 
 
 # --------------------------------------------------------------------------
@@ -3983,6 +4128,23 @@ worth naming explicitly as a scope boundary between this project's
 methodological validation setting and an actual deployment (Chapter 10).
 """)
 
+    add_chapter_summary(doc, """
+This chapter laid out the full methodology: the discrete-event simulation
+of the emergency department, calibrated on real arrival and triage-acuity
+data rather than assumed parameters; the gradient-boosting surrogate that
+learns to approximate the simulator's outputs from staffing capacity and
+arrival-rate multiplier alone; and the four uncertainty quantification
+methods compared on identical calibration and test data - a Gaussian
+process baseline, standard (pooled) conformal prediction, Mondrian
+conformal prediction, and conformalized quantile regression. It also gave
+formal algorithm statements and proofs for the theoretical results later
+chapters rely on, described the robustness checks (repeated evaluation with
+significance testing, the exchangeability stress test, cross-site
+generalization) built into the study design from the start, and defined the
+evaluation metrics used throughout the rest of the report.
+""")
+    add_chapter_references(doc)
+
 
 # --------------------------------------------------------------------------
 # Chapter 5: Implementation (shared)
@@ -4315,3 +4477,17 @@ concrete design rather than implemented as a running service in a project
 whose data source (Section 5.1) is a static, already-collected dataset
 with no live feed to actually schedule against.
 """)
+
+    add_chapter_summary(doc, """
+This chapter documented how the methodology of Chapter 4 was actually built:
+the dataset and its provenance, the software stack, and a module-by-module
+walkthrough of the codebase, from distribution extraction and the
+discrete-event simulator through surrogate training, uncertainty
+quantification, and cross-site generalization. It also set out the
+reproducibility and verification practice followed throughout the project -
+every number in this report traces to a committed script and a real data
+file, never a hand-typed figure - and closed with the software architecture,
+computational cost, and a concrete recalibration design for a streaming
+deployment beyond this report's own static, already-collected dataset.
+""")
+    add_chapter_references(doc)

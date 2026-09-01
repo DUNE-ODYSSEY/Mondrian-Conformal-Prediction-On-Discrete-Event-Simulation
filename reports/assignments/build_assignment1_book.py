@@ -3,20 +3,23 @@ Single 200+ page book-format assignment: "Closing the Marginal-to-
 Conditional Coverage Gap: Mondrian Conformal Prediction in ER Discrete-Event
 Simulation."
 
-Reformatted to the IEEE/Springer technical-textbook layout (per the
-professor's brief, using published engineering/robotics textbooks as the
-style reference): numbered bracket citations assigned by true order of
-first appearance (book_common.bc.cite()/CITATION_DB), chapter-scoped equation/
-figure/table numbering, decimal heading hierarchy, top-captioned tables,
-bottom-captioned figures, 7in x 10in bound-book page geometry. Chapters 1-5
-(Introduction, Literature Review, Research Gap, Methodology, Implementation)
-are written once in book_common.py; this script supplies Chapter 6 (Beyond
-Standard CP: CQR, conformal risk control, adaptive conformal inference, and
-weighted conformal prediction), Chapter 7 (Empirical Validation and
-Metamodel Benchmarking - this report's central results), Chapter 8 (When
-Exchangeability Fails), Chapter 9 (Cross-Site Generalization), Chapter 10
-(Translational Health Operations), Chapter 11 (Synthesis and Uncharted
-Horizons), the auto-generated References chapter, and the code appendix,
+Reformatted to match the professor's own reference textbook exactly (a
+published Kindle-book primer he gave as the format to follow): numbered
+bracket citations assigned by true order of first appearance WITHIN EACH
+CHAPTER (book_common.bc.cite()/CITATION_DB, chapter-scoped - see cite()'s
+docstring), chapter-scoped equation/figure/table numbering, decimal heading
+hierarchy, top-captioned tables, bottom-captioned figures, an unnumbered
+"Summary" then "References" at the end of every chapter (not one
+consolidated bibliography chapter), 7in x 10in bound-book page geometry.
+Chapters 1-5 (Introduction, Literature Review, Research Gap, Methodology,
+Implementation) are written once in book_common.py; this script supplies
+Chapter 6 (Beyond Standard CP: CQR, conformal risk control, adaptive
+conformal inference, and weighted conformal prediction), Chapter 7
+(Empirical Validation and Metamodel Benchmarking - this report's central
+results), Chapter 8 (When Exchangeability Fails), Chapter 9 (Cross-Site
+Generalization), Chapter 10 (Translational Health Operations), Chapter 11
+(Synthesis and Uncharted Horizons - the book's last chapter, closing with
+its own Summary and References like every other), and the code appendix,
 then assembles and saves the full document.
 
 Every number below traces to a real file under results/tables/ or a
@@ -578,6 +581,21 @@ natural direction this result points toward, left for future work
 weighting inside each of Mondrian's own categories, rather than treating
 the two as competing alternatives.
 """)
+
+    bc.add_chapter_summary(doc, """
+This chapter extended the conformal toolkit beyond the four core methods of
+Chapter 4 with five further techniques evaluated on real data:
+conformalized quantile regression and Mondrian-CQR as a stronger,
+width-adaptive baseline; conformal risk control, which bounds operational
+overflow severity rather than only its probability; adaptive conformal
+inference, which recovers most of a static method's lost coverage under a
+live demand-surge stream without retraining; likelihood-ratio weighted
+conformal prediction as a real, bounded partial remedy under known
+covariate shift; and queueing-theoretic normalized conformal prediction, a
+continuous, bin-free alternative to Mondrian's discrete categories that
+turns out to be a genuine trade-off rather than a clean win.
+""")
+    bc.add_chapter_references(doc)
 
 
 def build_chapter7_empirical_validation(doc):
@@ -1495,6 +1513,20 @@ this chapter's central finding generalizes to an independent hospital
 department.
 """)
 
+    bc.add_chapter_summary(doc, """
+This chapter presented the report's central empirical result. A pooled,
+standard conformal quantile silently fails the operationally critical
+scenario - an understaffed emergency department during a demand surge -
+with worst-category coverage as low as 68.2 percent against a 90 percent
+target, while Mondrian conformal prediction, calibrating separately within
+each staffing-by-arrival-rate category, corrects this to 90.9-92.0 percent.
+The correction holds across every affected target, is statistically
+significant across 30 independent calibration/test draws, and costs roughly
+three orders of magnitude less compute than the Gaussian process
+alternative. The one target where Mondrian CP does not clearly help,
+n_patients, is examined honestly rather than omitted.
+""")
+    bc.add_chapter_references(doc)
 
 
 def build_chapter8_exchangeability(doc):
@@ -1749,6 +1781,21 @@ it is, rather than searching for a method that would let it claim
 otherwise.
 """)
 
+    bc.add_chapter_summary(doc, """
+This chapter tested the base paper's second stated limitation directly:
+conformal prediction's exchangeability assumption, stress-tested to
+destruction across two surrogate architectures. Coverage collapses once
+test scenarios move outside the calibration support, for the mechanistic
+reason that the true relationship being approximated saturates - and the
+direction of the collapse actually reverses between the gradient-boosting
+and MLP surrogates, ruling out any single fixed "extrapolation is always
+optimistic" story. Of the methods evaluated, only adaptive conformal
+inference and weighted conformal prediction offer any real mitigation, and
+each does so with its own honestly-stated cost rather than a full recovery
+of the original guarantee.
+""")
+    bc.add_chapter_references(doc)
+
 
 
 def build_chapter9_cross_site(doc):
@@ -1975,6 +2022,21 @@ generalization claim that survives disclosing real site-to-site
 differences is more credible than one that reports suspiciously uniform
 replication across every single target at every single site.
 """)
+
+    bc.add_chapter_summary(doc, """
+This chapter tested whether Chapter 7's central finding is specific to one
+hospital department or generalizes across sites. Department B - an
+independent department with materially different patient volume,
+triage-acuity mix, and surrogate accuracy - reproduces the same
+marginal-versus-conditional coverage gap and the same Mondrian correction
+at a comparable magnitude, giving the report's central claim genuine
+cross-site support. Two honest differences between the sites are disclosed
+rather than smoothed over: n_patients shows a real conditional gap at
+Department B that was absent at Department A, and the two sites' absolute
+pooled interval widths differ, both consistent with a replication that is
+credible precisely because it is not suspiciously uniform.
+""")
+    bc.add_chapter_references(doc)
 
 
 
@@ -2219,6 +2281,20 @@ actually taken, which is a meaningfully different and more defensible
 claim than asserting this project's prototype is itself deployment-ready.
 """)
 
+    bc.add_chapter_summary(doc, """
+This chapter translated the report's statistical results into operational
+terms. It described how the surrogate's calibrated intervals could feed a
+clinical dashboard, worked a capacity-planning optimization built directly
+on this project's own conformal intervals - including an honest sensitivity
+sweep that reports infeasibility rather than hiding it where the numbers do
+not cooperate - and examined how this project's methodological choices, a
+provable coverage guarantee and a standing practice of disclosing failure
+modes, sit relative to current AI/ML medical device regulatory guidance,
+while being explicit about the substantial gap that remains between this
+academic prototype and an actual deployment-ready system.
+""")
+    bc.add_chapter_references(doc)
+
 
 def build_chapter11_synthesis(doc):
     bc.add_chapter_heading(doc, 11, "Synthesis and Uncharted Horizons",
@@ -2413,26 +2489,20 @@ project's own data, not as statistically exhaustive as the central
 Mondrian CP finding they extend.
 """)
 
-
-def add_references(doc):
-    """IEEE-numbered reference list, auto-generated from the citation
-    registry in true order of first appearance (bc.get_citation_order()) -
-    every [n] used anywhere in the document above corresponds exactly to
-    entry n here, with no manual renumbering ever required."""
-    bc.add_chapter_heading(doc, 12, "References")
-    for number, key in bc.get_citation_order():
-        authors, title, venue = bc.CITATION_DB[key]
-        p = doc.add_paragraph()
-        p.paragraph_format.left_indent = Inches(0.3)
-        p.paragraph_format.first_line_indent = Inches(-0.3)
-        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        r = p.add_run(f"[{number}]  {authors}, {title} ")
-        r.font.size = Pt(11)
-        r.font.name = "Times New Roman"
-        rv = p.add_run(venue)
-        rv.font.size = Pt(11)
-        rv.font.italic = True
-        rv.font.name = "Times New Roman"
+    bc.add_chapter_summary(doc, """
+This closing chapter drew together the report's methodological
+contributions - the Mondrian correction to the pooled marginal-coverage
+guarantee, the five toolkit extensions of Chapter 6, and the cross-site
+generalization check of Chapter 9 - and set out the open theoretical
+questions and a roadmap for future research that this project's own
+findings point toward. It closed with an explicit, itemized list of
+limitations: the specific choice of Mondrian taxonomy, the single-split
+scope of the cross-site check, the departments and methods not evaluated
+under the full 30-repeat treatment, and the sim-to-real gap between the
+DES-based prototypes of Chapter 10 and any real deployment - each disclosed
+directly rather than left for a reader to discover.
+""")
+    bc.add_chapter_references(doc)
 
 
 def add_appendix_a(doc):
@@ -2525,7 +2595,6 @@ def build():
     build_chapter9_cross_site(doc)
     build_chapter10_translational(doc)
     build_chapter11_synthesis(doc)
-    add_references(doc)
     add_appendix_a(doc)
     add_appendix_b(doc)
     bc.build_back_cover_page(doc, os.path.join(bc.REPO_ROOT, "reports", "assignments", "figures", "back_cover.png"))

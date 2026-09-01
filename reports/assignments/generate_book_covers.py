@@ -225,7 +225,7 @@ PIPELINE_STEPS = [
 # ---------------------------------------------------------------------------
 # FRONT COVER
 # ---------------------------------------------------------------------------
-def build_front_cover(title, subtitle, team_names, faculty_guide):
+def build_front_cover(title, subtitle, team_names, faculty_guide, out_name="front_cover.png"):
     img = vgradient(W, H, INK, INK_2)
     d = ImageDraw.Draw(img)
 
@@ -334,7 +334,7 @@ def build_front_cover(title, subtitle, team_names, faculty_guide):
                "  ·  ".join(nm.upper() for nm in team_names),
                f"Faculty Guide: {faculty_guide}")
 
-    path = f"{OUT}/front_cover.png"
+    path = f"{OUT}/{out_name}"
     img.save(path, dpi=(DPI, DPI))
     print("Saved", path)
     return path
@@ -356,7 +356,7 @@ def build_back_cover():
 
     hy = round(0.088 * H)
     hf = title_font(round(H * 0.046))
-    d.text((MARGIN, hy), "Book Overview", font=hf, fill=INK)
+    d.text((MARGIN, hy), "About This Book", font=hf, fill=INK)
     hy += round(H * 0.058)
     d.line([(MARGIN, hy), (MARGIN + round(content_w * 0.14), hy)], fill=CORAL, width=5)
     hy += round(H * 0.026)
@@ -438,6 +438,98 @@ def build_back_cover():
     return path
 
 
+# ---------------------------------------------------------------------------
+# BACK COVER - Assignment 2 companion report (exchangeability stress test)
+# ---------------------------------------------------------------------------
+def build_back_cover_assignment2():
+    """Text-focused back cover for the companion report - deliberately no
+    supporting diagram, matching the reference book's own plain-text 'About
+    This Book' back covers, since this report's central result (a coverage
+    collapse curve across severity levels for two architectures) does not
+    reduce to a single small grid the way Assignment 1's Mondrian partition
+    does. Two large stat callouts stand in for a diagram instead."""
+    img = Image.new("RGB", (W, H), PARCHMENT)
+    d = ImageDraw.Draw(img)
+
+    content_w = W - 2 * MARGIN
+
+    ov_f = sans_font(round(H * 0.0125))
+    y = round(0.052 * H)
+    tracked_text(d, (MARGIN, y), "CONFORMAL PREDICTION  ·  EXCHANGEABILITY UNDER SHIFT",
+                 ov_f, MUTED_ON_PARCHMENT, tracking=3)
+
+    hy = round(0.088 * H)
+    hf = title_font(round(H * 0.046))
+    d.text((MARGIN, hy), "About This Book", font=hf, fill=INK)
+    hy += round(H * 0.058)
+    d.line([(MARGIN, hy), (MARGIN + round(content_w * 0.14), hy)], fill=CORAL, width=5)
+    hy += round(H * 0.026)
+
+    body_f = serif_font(round(H * 0.0168))
+    line_h = round(H * 0.0168 * 1.5)
+    paragraphs = [
+        "Conformal prediction's finite-sample coverage guarantee rests on an "
+        "exchangeability assumption between calibration and test data – it is "
+        "not designed, and not claimed by its own theory, to hold under "
+        "distribution shift. This companion report stress-tests that "
+        "assumption directly, in the same discrete-event simulation of a "
+        "hospital emergency department used throughout this project, by "
+        "pushing the test distribution's demand level from within the "
+        "training range up to three times the training boundary.",
+        "The stress test is run twice, using two structurally different "
+        "surrogate architectures: a gradient-boosting regressor, whose "
+        "tree-based predictions freeze at the training boundary rather than "
+        "extrapolate, and a multilayer perceptron, whose predictions keep "
+        "changing as the input moves further out of range. Coverage collapses "
+        "under both – but faster and more severely under the architecture "
+        "capable of extrapolating, because the true relationship itself "
+        "saturates under extreme demand.",
+        "An architecture's capacity to extrapolate, this report finds, is not "
+        "inherently protective against distribution shift; it is protective "
+        "only if the true relationship continues the trend the model learned "
+        "– which it does not here.",
+    ]
+    for para in paragraphs:
+        for ln in wrap_to_width(d, para, body_f, content_w * 0.94):
+            d.text((MARGIN, hy), ln, font=body_f, fill=INK_TEXT)
+            hy += line_h
+        hy += round(line_h * 0.4)
+
+    # --- Two large stat callouts in place of a diagram ---
+    hy += round(H * 0.018)
+    gf = sans_font(round(H * 0.0128))
+    d.text((MARGIN, hy), "COVERAGE AT 2X THE TRAINING BOUNDARY", font=gf, fill=CORAL)
+    hy += round(H * 0.038)
+
+    stat_w = content_w / 2
+    big_f = title_font(round(H * 0.062))
+    lab_f = sans_font(round(H * 0.0115))
+
+    d.text((MARGIN, hy), "0%", font=big_f, fill=INK)
+    lbl1 = "Multilayer perceptron – two targets, exact zero coverage"
+    ly = hy + round(H * 0.068)
+    for ln in wrap_to_width(d, lbl1, lab_f, stat_w * 0.85):
+        d.text((MARGIN, ly), ln, font=lab_f, fill=MUTED_ON_PARCHMENT)
+        ly += round(H * 0.0165)
+
+    x2 = MARGIN + stat_w
+    d.text((x2, hy), "31.7%", font=big_f, fill=INK)
+    lbl2 = "Gradient boosting, same target, at 3x the boundary (vs. 4.7% for the other)"
+    ly = hy + round(H * 0.068)
+    for ln in wrap_to_width(d, lbl2, lab_f, stat_w * 0.85):
+        d.text((x2, ly), ln, font=lab_f, fill=MUTED_ON_PARCHMENT)
+        ly += round(H * 0.0165)
+
+    content_bottom = ly + round(H * 0.02)
+    if content_bottom > H - MARGIN:
+        print(f"WARNING: back cover content bottom {content_bottom} exceeds page bottom margin {H - MARGIN}")
+
+    path = f"{OUT}/back_cover2.png"
+    img.save(path, dpi=(DPI, DPI))
+    print("Saved", path)
+    return path
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(__file__))
@@ -450,3 +542,12 @@ if __name__ == "__main__":
         bc.FACULTY_GUIDE,
     )
     build_back_cover()
+
+    build_front_cover(
+        "When Extrapolation Fails",
+        "Testing Conformal Prediction's Exchangeability Assumption Across Surrogate Architectures",
+        [n for n, _ in bc.TEAM],
+        bc.FACULTY_GUIDE,
+        out_name="front_cover2.png",
+    )
+    build_back_cover_assignment2()

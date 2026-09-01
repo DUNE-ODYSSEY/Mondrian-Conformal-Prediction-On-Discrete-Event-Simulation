@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import book_common as bc
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.shared import Pt, Inches
 
 OUT_PATH = "reports/assignments/assignment2_exchangeability_extrapolation_book.docx"
 FIG = "reports/assignments/figures"
@@ -76,36 +76,6 @@ inherently protective against distribution shift; it is protective only if
 the true relationship continues the trend the model learned, which it does
 not here.
 """
-
-REFERENCES = [
-    "Vovk, V., Gammerman, A., Shafer, G. (2005). Algorithmic Learning in a Random World. Springer.",
-    "Papadopoulos, H., Proedrou, K., Vovk, V., Gammerman, A. (2002). Inductive Confidence Machines for Regression. ECML 2002, LNCS 2430, pp. 345-356.",
-    "Shafer, G., Vovk, V. (2008). A Tutorial on Conformal Prediction. Journal of Machine Learning Research, 9, 371-421.",
-    "Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R.J., Wasserman, L. (2018). Distribution-Free Predictive Inference for Regression. JASA, 113(523), 1094-1111.",
-    "Tibshirani, R.J., Barber, R.F., Candès, E., Ramdas, A. (2019). Conformal Prediction Under Covariate Shift. NeurIPS 32.",
-    "Barber, R.F., Candès, E., Ramdas, A., Tibshirani, R.J. (2023). Conformal Prediction Beyond Exchangeability. Annals of Statistics, 51(2), 816-845.",
-    "Angelopoulos, A., Bates, S. (2021). A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification. arXiv:2107.07511.",
-    "Romano, Y., Patterson, E., Candès, E. (2019). Conformalized Quantile Regression. NeurIPS 32.",
-    "Vovk, V., Lindsay, D., Nouretdinov, I., Gammerman, A. (2003). Mondrian Confidence Machine. Technical Report, Royal Holloway, University of London.",
-    "Boström, H., Johansson, U. (2020). Mondrian Conformal Regressors. PMLR 128 (COPA 2020), pp. 114-133.",
-    "Gopakumar, V. et al. (2026). Uncertainty Quantification of Surrogate Models Using Conformal Prediction. Machine Learning: Science and Technology.",
-    "Friedman, J.H. (2001). Greedy Function Approximation: A Gradient Boosting Machine. Annals of Statistics, 29(5), 1189-1232.",
-    "Hastie, T., Tibshirani, R., Friedman, J. (2009). The Elements of Statistical Learning (2nd ed.), Chapter 9-10 (Trees, Boosting). Springer.",
-    "Rasmussen, C.E., Williams, C.K.I. (2006). Gaussian Processes for Machine Learning. MIT Press.",
-    "Goodfellow, I., Bengio, Y., Courville, A. (2016). Deep Learning, Chapter 6 (Deep Feedforward Networks). MIT Press.",
-    "Lakshminarayanan, B., Pritzel, A., Blundell, C. (2017). Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles. NeurIPS 30, 6402-6413.",
-    "Abdar, M. et al. (2021). A Review of Uncertainty Quantification in Deep Learning: Techniques, Applications and Challenges. Information Fusion, 76, 243-297.",
-    "Kennedy, M.C., O'Hagan, A. (2001). Bayesian Calibration of Computer Models. JRSS-B, 63(3), 425-464.",
-    "Xu, K. et al. (2021). How Neural Networks Extrapolate: From Feedforward to Graph Neural Networks. ICLR 2021.",
-    "Green, L.V., Soares, J., Giglio, J.F., Green, R.A. (2006). Using Queueing Theory to Increase the Effectiveness of Emergency Department Provider Staffing. Academic Emergency Medicine, 13(1), 61-68.",
-    "Hu, X. et al. (2018). Applying Queueing Theory to the Study of Emergency Department Operations: A Survey and a Discussion of Comparable Simulation Studies. International Transactions in Operational Research.",
-    "A Simulation-Based Optimization Approach for the Calibration of a Discrete Event Simulation Model of an Emergency Department. arXiv:2102.00945 (2021).",
-    "Discrete Event Simulation for Emergency Department Modelling: A Systematic Review of Validation Methods. ScienceDirect (2022).",
-    "A Simulation-Based Optimization Approach for Analyzing the Ambulance Diversion Phenomenon in an Emergency Department Network. arXiv:2108.04162.",
-    "Machine Learning-Based Prediction of Hospital Prolonged Length of Stay Admission at Emergency Department: A Gradient Boosting Algorithm Analysis. Frontiers in Artificial Intelligence (2023).",
-    "An Artificial Intelligence-Based Framework for Predicting Emergency Department Overcrowding: Development and Evaluation Study. arXiv:2504.18578 (2025).",
-    "Hospital Triage and Patient History Data. Kaggle (user maalona) - Yale New Haven Health System, retrospective study, March 2014 - July 2017.",
-]
 
 CODE_FILES_APPENDIX_A = [
     ("src/utils/extract_distributions.py", "Real-data distribution extraction (arrivals, ESI mix)"),
@@ -611,6 +581,22 @@ finding survives direct consideration of the most plausible alternative
 explanations (Section 6.10).
 """)
 
+    bc.add_chapter_summary(doc, """
+This chapter stress-tested conformal prediction's exchangeability
+assumption to destruction across two surrogate architectures. Coverage
+collapses once test scenarios fall outside the calibration support under
+both the gradient-boosting and MLP surrogates, but the direction of the
+collapse reverses between them, ruling out a single "extrapolation is
+always optimistic" explanation. The mechanism traces to the true
+relationship saturating near a right-censoring boundary rather than any
+flaw specific to one surrogate architecture, Mondrian conformal prediction
+does not meaningfully protect against this particular, out-of-distribution
+failure mode, and the failure is at least measurably detectable, a genuine
+if partial mitigation examined honestly against the most plausible
+alternative explanations.
+""")
+    bc.add_chapter_references(doc)
+
 
 def build_chapter7_conclusion(doc):
     bc.add_chapter_heading(doc, 7, "Conclusion and Future Scope")
@@ -698,7 +684,7 @@ networks rather than specific to this project's particular configuration.
 """)
 
     bc.add_section_heading(doc, "7.4 Future Scope")
-    bc.add_body(doc, """
+    bc.add_body(doc, f"""
 Several directions follow naturally from this project's findings and
 limitations. Testing additional surrogate architectures - particularly
 ones with explicit mechanisms for recognizing or flagging out-of-distribution
@@ -709,7 +695,7 @@ this chapter's two-architecture comparison into a broader map of which
 architectural properties help, hurt, or are neutral under this specific
 kind of distribution shift. Conformal prediction methods explicitly
 designed for covariate shift and non-exchangeable data (Section 2.6,
-Tibshirani et al., 2019; Barber et al., 2023) were outside this report's
+Tibshirani et al. {bc.cite('tibshirani2019')}; Barber et al. {bc.cite('barber2023')}) were outside this report's
 scope but represent a direct, literature-grounded next step for
 recovering some coverage guarantee under exactly the kind of shift studied
 here, rather than only documenting its failure. Testing a shift in
@@ -726,15 +712,20 @@ natural next question raised by, but not answered within, either of this
 project's two reports.
 """)
 
-
-def add_references(doc):
-    bc.add_chapter_heading(doc, 8, "References")
-    for i, ref in enumerate(REFERENCES, start=1):
-        p = doc.add_paragraph()
-        p.paragraph_format.left_indent = None
-        r = p.add_run(f"[{i}] {ref}")
-        r.font.size = Pt(11)
-        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    bc.add_chapter_summary(doc, """
+This closing chapter summarized the report's findings, stated its
+contribution and novelty relative to the literature reviewed in Chapter 2,
+and set out its limitations directly - the specific surrogate architectures
+and shift direction tested, the single-split scope of some comparisons, and
+the gap between this project's DES-simulated scenarios and a real deployment.
+It closed with a concrete future scope: testing additional surrogate
+architectures with explicit out-of-distribution signals, applying
+conformal methods designed for non-exchangeable data, testing a staffing-
+capacity shift rather than only an arrival-rate shift, and combining this
+report's exchangeability finding with the companion report's Mondrian
+conditional-coverage finding.
+""")
+    bc.add_chapter_references(doc)
 
 
 def add_appendix_a(doc):
@@ -806,14 +797,12 @@ def build():
     doc = Document()
     bc.set_document_defaults(doc)
     bc.reset_counters()
+    bc.reset_citations()
 
+    bc.build_front_cover_page(doc, os.path.join(bc.REPO_ROOT, "reports", "assignments", "figures", "front_cover2.png"))
     bc.build_title_page(doc, TITLE, SUBTITLE)
-    bc.build_certificate(doc)
-    bc.build_declaration(doc)
-    bc.build_acknowledgement(doc)
-    bc.build_abstract(doc, ABSTRACT)
+    bc.build_preface(doc, ABSTRACT)
     bc.build_toc_page(doc)
-    bc.build_list_of_figures_tables(doc)
     bc.build_abbreviations(doc)
 
     bc.build_chapter1_introduction(doc)
@@ -823,9 +812,9 @@ def build():
     bc.build_chapter5_implementation(doc)
     build_chapter6_results(doc)
     build_chapter7_conclusion(doc)
-    add_references(doc)
     add_appendix_a(doc)
     add_appendix_b(doc)
+    bc.build_back_cover_page(doc, os.path.join(bc.REPO_ROOT, "reports", "assignments", "figures", "back_cover2.png"))
 
     doc.save(OUT_PATH)
     print(f"Saved {OUT_PATH}")

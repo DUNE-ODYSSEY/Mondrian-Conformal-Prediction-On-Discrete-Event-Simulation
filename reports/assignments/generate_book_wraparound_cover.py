@@ -32,7 +32,7 @@ def font(name, size):
 TITLE = "BEYOND MARGINAL GUARANTEES"
 
 
-def build_spine(height, width):
+def build_spine(height, width, title=TITLE):
     spine = Image.new("RGB", (width, height), INK_3)
     d = ImageDraw.Draw(spine)
 
@@ -43,12 +43,12 @@ def build_spine(height, width):
     tf = font("georgiab.ttf", tsize)
     tmp = Image.new("RGB", (10, 10))
     td = ImageDraw.Draw(tmp)
-    text_w = td.textlength(TITLE, font=tf)
+    text_w = td.textlength(title, font=tf)
     text_h = tsize * 1.3
 
     label = Image.new("RGB", (int(text_w) + 40, int(text_h)), INK_3)
     ld = ImageDraw.Draw(label)
-    ld.text((20, int(text_h * 0.12)), TITLE, font=tf, fill=WARM_WHITE)
+    ld.text((20, int(text_h * 0.12)), title, font=tf, fill=WARM_WHITE)
     rotated = label.rotate(-90, expand=True)
 
     rx = (width - rotated.width) // 2
@@ -71,14 +71,14 @@ def dashed_vline(draw, x, y0, y1, fill, dash=14, gap=10, width=2):
         y += dash + gap
 
 
-def main():
-    back = Image.open(f"{FIG_DIR}/back_cover.png")
-    front = Image.open(f"{FIG_DIR}/front_cover.png")
+def build_wraparound(back_name, front_name, title, out_stem):
+    back = Image.open(f"{FIG_DIR}/{back_name}")
+    front = Image.open(f"{FIG_DIR}/{front_name}")
     assert back.size == front.size
     w, h = back.size
 
     spine_w = round(1.3 / 2.54 * DPI)  # 1.3cm spine, a plausible width for a book this length
-    spine = build_spine(h, spine_w)
+    spine = build_spine(h, spine_w, title=title)
 
     total_w = w + spine_w + w
     spread = Image.new("RGB", (total_w, h), INK)
@@ -90,13 +90,20 @@ def main():
     dashed_vline(d, w, 0, h, MUTED_ON_INK)
     dashed_vline(d, w + spine_w, 0, h, MUTED_ON_INK)
 
-    png_path = f"{FIG_DIR}/book_cover_wraparound.png"
+    png_path = f"{FIG_DIR}/{out_stem}.png"
     spread.save(png_path, dpi=(DPI, DPI))
     print("Saved", png_path)
 
-    pdf_path = f"{OUT_DIR}/book_cover_wraparound.pdf"
+    pdf_path = f"{OUT_DIR}/{out_stem}.pdf"
     spread.save(pdf_path, "PDF", resolution=DPI)
     print("Saved", pdf_path)
+
+
+def main():
+    build_wraparound("back_cover.png", "front_cover.png", "BEYOND MARGINAL GUARANTEES",
+                      "book_cover_wraparound")
+    build_wraparound("back_cover2.png", "front_cover2.png", "WHEN EXTRAPOLATION FAILS",
+                      "book_cover_wraparound2")
 
 
 if __name__ == "__main__":
